@@ -360,6 +360,92 @@
       height: var(--card-h);
     }
 
+    /* ── Unlock Celebration ───────────────────────── */
+    #unlock-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      opacity: 0;
+    }
+    #unlock-overlay.playing {
+      pointer-events: all;
+    }
+    #unlock-canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+    #unlock-text {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      transform: scale(0);
+      opacity: 0;
+    }
+    #unlock-emoji {
+      font-size: 72px;
+      filter: drop-shadow(0 0 30px rgba(230,57,70,0.9));
+      animation: none;
+    }
+    #unlock-headline {
+      font-size: 34px;
+      font-weight: 900;
+      letter-spacing: -1px;
+      background: linear-gradient(135deg, #e63946 0%, #ff6b6b 50%, #ffb703 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1.1;
+    }
+    #unlock-sub {
+      font-size: 16px;
+      color: rgba(255,255,255,0.7);
+      font-weight: 500;
+    }
+    #unlock-btn {
+      margin-top: 28px;
+      background: linear-gradient(135deg, #e63946, #ff6b6b);
+      color: #fff;
+      border: none;
+      border-radius: 50px;
+      font-size: 18px;
+      font-weight: 800;
+      padding: 18px 52px;
+      cursor: pointer;
+      box-shadow: 0 0 40px rgba(230,57,70,0.6);
+      letter-spacing: 0.5px;
+      transform: scale(0);
+      opacity: 0;
+    }
+
+    /* First-card entrance animation */
+    @keyframes cardSlam {
+      0%   { transform: scale(2.2) rotate(-8deg); opacity: 0; }
+      55%  { transform: scale(0.92) rotate(2deg); opacity: 1; }
+      75%  { transform: scale(1.05) rotate(-1deg); }
+      90%  { transform: scale(0.98) rotate(0.5deg); }
+      100% { transform: scale(1)   rotate(0deg); opacity: 1; }
+    }
+    .card-slam {
+      animation: cardSlam 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% { filter: drop-shadow(0 0 20px rgba(230,57,70,0.5)); }
+      50%       { filter: drop-shadow(0 0 50px rgba(230,57,70,1)); }
+    }
+
     /* Loading spinner */
     .spinner-wrap {
       position: absolute;
@@ -559,6 +645,19 @@
 <!-- ══════════════════════════════════════════════ -->
 <!--  RECOMMENDATIONS SCREEN                       -->
 <!-- ══════════════════════════════════════════════ -->
+<!-- ══════════════════════════════════════════════ -->
+<!--  UNLOCK CELEBRATION OVERLAY                   -->
+<!-- ══════════════════════════════════════════════ -->
+<div id="unlock-overlay">
+  <canvas id="unlock-canvas"></canvas>
+  <div id="unlock-text">
+    <div id="unlock-emoji">🎌</div>
+    <div id="unlock-headline">Your picks<br>are ready.</div>
+    <div id="unlock-sub">We found anime you'll actually love</div>
+    <button id="unlock-btn">Let's go →</button>
+  </div>
+</div>
+
 <section id="screen-recs" class="screen">
   <div class="recs-header">
     <h1>For You</h1>
@@ -621,6 +720,7 @@ query ($page: Int, $perPage: Int, $sort: [MediaSort]) {
       tags { name rank } averageScore popularity episodes
       externalLinks { site url }
       studios(isMain: true) { nodes { name } }
+      relations { edges { relationType } }
     }
   }
 }`;
@@ -634,6 +734,7 @@ query ($ids: [Int], $page: Int, $perPage: Int) {
       tags { name rank } averageScore popularity episodes
       externalLinks { site url }
       studios(isMain: true) { nodes { name } }
+      relations { edges { relationType } }
     }
   }
 }`;
@@ -661,6 +762,7 @@ query ($ids: [Int]) {
       tags { name rank } averageScore popularity episodes
       externalLinks { site url }
       studios(isMain: true) { nodes { name } }
+      relations { edges { relationType } }
     }
   }
 }`;
@@ -782,18 +884,39 @@ function normalizeTitle(title) {
 }
 
 /**
+ * Returns true if AniList's own relations data marks this entry as a sequel,
+ * continuation, or spin-off of something that came before.
+ * An anime has a PREQUEL relation when it IS a sequel (something preceded it).
+ * We also block SEQUEL_MANGA and ALTERNATIVE_SETTING spin-offs to keep the
+ * feed clean — users see only standalone originals.
+ */
+function isSequel(anime) {
+  const edges = anime.relations?.edges || [];
+  return edges.some(e =>
+    e.relationType === 'PREQUEL' ||
+    e.relationType === 'PARENT'
+  );
+}
+
+/**
  * From a raw AniList batch:
- *   1. Group entries by normalised franchise name
- *   2. Keep only the earliest entry per franchise (lowest AniList ID = first season)
- *   3. Filter out franchises the user has already seen
+ *   1. Remove entries AniList explicitly marks as sequels/continuations
+ *   2. Group remaining entries by normalised franchise name
+ *   3. Keep only the earliest entry per franchise (lowest AniList ID = first season)
+ *   4. Filter out franchises the user has already seen
  *
  * @param {object[]} animeList
  * @returns {object[]}
  */
 function deduplicateByFranchise(animeList) {
+  // Primary filter: drop anything AniList explicitly marks as a continuation
+  const originals = animeList.filter(a => !isSequel(a));
+
+  // Secondary filter: title-normalisation dedup (catches cases where
+  // relations data is incomplete, e.g. older catalogue entries)
   const franchiseMap = new Map(); // normalisedKey → anime
 
-  for (const anime of animeList) {
+  for (const anime of originals) {
     const key = normalizeTitle(anime.title?.english || anime.title?.romaji || '');
     if (!key) continue;
     // Lowest ID wins (first season / original airing)
@@ -1027,9 +1150,194 @@ function swipeTaste(card, index, action) {
 
 function finishTaste() {
   engine.finishOnboarding();
-  showOverlay('overlay-recs');
-  loadRecQueue(); // preload in background
+  loadRecQueue(); // preload in background while celebration plays
+  launchUnlockCelebration();
 }
+
+/* ─── Unlock Celebration ────────────────────────── */
+(function () {
+  let rafId = null;
+  let particles = [];
+
+  const COLORS = ['#e63946','#ff6b6b','#ffb703','#2ec4b6','#ff9f1c','#ffffff','#ff4d6d'];
+
+  function rand(min, max) { return min + Math.random() * (max - min); }
+
+  function createParticles(canvas) {
+    const cx = canvas.width  / 2;
+    const cy = canvas.height / 2;
+    particles = [];
+
+    // 120 sparks in three waves
+    for (let i = 0; i < 120; i++) {
+      const angle  = rand(0, Math.PI * 2);
+      const speed  = rand(4, 18);
+      const size   = rand(4, 12);
+      const shape  = Math.random() < 0.4 ? 'circle' : Math.random() < 0.5 ? 'rect' : 'star';
+      particles.push({
+        x: cx, y: cy,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - rand(2, 8),
+        gravity: rand(0.18, 0.35),
+        size,
+        color: COLORS[Math.floor(Math.random() * COLORS.length)],
+        alpha: 1,
+        decay: rand(0.012, 0.022),
+        rotation: rand(0, Math.PI * 2),
+        rotSpeed: rand(-0.15, 0.15),
+        shape,
+      });
+    }
+
+    // 40 larger confetti squares
+    for (let i = 0; i < 40; i++) {
+      particles.push({
+        x: rand(0, canvas.width),
+        y: rand(-80, -10),
+        vx: rand(-2, 2),
+        vy: rand(3, 8),
+        gravity: rand(0.05, 0.12),
+        size: rand(8, 18),
+        color: COLORS[Math.floor(Math.random() * COLORS.length)],
+        alpha: 1,
+        decay: rand(0.006, 0.012),
+        rotation: rand(0, Math.PI * 2),
+        rotSpeed: rand(-0.12, 0.12),
+        shape: 'rect',
+      });
+    }
+  }
+
+  function drawStar(ctx, x, y, r) {
+    ctx.beginPath();
+    for (let i = 0; i < 5; i++) {
+      const outer = (i * Math.PI * 2) / 5 - Math.PI / 2;
+      const inner = outer + Math.PI / 5;
+      if (i === 0) ctx.moveTo(x + Math.cos(outer) * r, y + Math.sin(outer) * r);
+      else          ctx.lineTo(x + Math.cos(outer) * r, y + Math.sin(outer) * r);
+      ctx.lineTo(x + Math.cos(inner) * (r * 0.4), y + Math.sin(inner) * (r * 0.4));
+    }
+    ctx.closePath();
+  }
+
+  function tick(canvas, ctx, startTime) {
+    const elapsed = Date.now() - startTime;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Deep glow background pulse on first 600ms
+    if (elapsed < 600) {
+      const t = elapsed / 600;
+      ctx.fillStyle = `rgba(230,57,70,${0.18 * Math.sin(t * Math.PI)})`;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+
+    let alive = 0;
+    for (const p of particles) {
+      if (p.alpha <= 0) continue;
+      alive++;
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += p.gravity;
+      p.vx *= 0.99;
+      p.rotation += p.rotSpeed;
+      p.alpha -= p.decay;
+
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, p.alpha);
+      ctx.fillStyle   = p.color;
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rotation);
+
+      if (p.shape === 'circle') {
+        ctx.beginPath();
+        ctx.arc(0, 0, p.size / 2, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (p.shape === 'rect') {
+        ctx.fillRect(-p.size / 2, -p.size / 4, p.size, p.size / 2);
+      } else {
+        drawStar(ctx, 0, 0, p.size / 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    if (alive > 0 || elapsed < 600) {
+      rafId = requestAnimationFrame(() => tick(canvas, ctx, startTime));
+    }
+  }
+
+  window.launchUnlockCelebration = function () {
+    const overlay = document.getElementById('unlock-overlay');
+    const canvas  = document.getElementById('unlock-canvas');
+    const text    = document.getElementById('unlock-text');
+    const btn     = document.getElementById('unlock-btn');
+    const emoji   = document.getElementById('unlock-emoji');
+
+    // Size canvas
+    canvas.width  = window.innerWidth;
+    canvas.height = window.innerHeight;
+    const ctx = canvas.getContext('2d');
+
+    // Show overlay
+    overlay.classList.add('playing');
+    overlay.style.opacity = '1';
+    overlay.style.background = 'rgba(10,10,10,0.92)';
+
+    // Blast particles
+    createParticles(canvas);
+    if (rafId) cancelAnimationFrame(rafId);
+    const startTime = Date.now();
+    tick(canvas, ctx, startTime);
+
+    // Slam text in
+    text.style.transform = 'scale(0)';
+    text.style.opacity   = '0';
+    text.style.transition = 'none';
+    btn.style.transform  = 'scale(0)';
+    btn.style.opacity    = '0';
+
+    setTimeout(() => {
+      text.style.transition = 'transform 0.5s cubic-bezier(0.34,1.7,0.64,1), opacity 0.25s ease';
+      text.style.transform  = 'scale(1)';
+      text.style.opacity    = '1';
+
+      // Pulse emoji
+      emoji.style.animation = 'pulseGlow 1.4s ease-in-out 2';
+    }, 120);
+
+    // Pop button in with delay
+    setTimeout(() => {
+      btn.style.transition = 'transform 0.45s cubic-bezier(0.34,1.7,0.64,1), opacity 0.2s ease';
+      btn.style.transform  = 'scale(1)';
+      btn.style.opacity    = '1';
+    }, 600);
+  };
+
+  window.dismissUnlockCelebration = function () {
+    const overlay = document.getElementById('unlock-overlay');
+    const text    = document.getElementById('unlock-text');
+    const btn     = document.getElementById('unlock-btn');
+
+    if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+
+    overlay.style.transition = 'opacity 0.35s ease';
+    overlay.style.opacity = '0';
+    setTimeout(() => {
+      overlay.classList.remove('playing');
+    }, 350);
+
+    // Show recs screen
+    showScreen('screen-recs');
+
+    if (recQueue.length === 0) {
+      // Still loading — spinner will show, loadRecQueue will call showNextRec when ready
+      document.getElementById('recs-spinner').style.display = 'flex';
+    } else {
+      // First card slams in dramatically
+      showNextRec(true);
+    }
+  };
+})();
 
 /* ─── Button handlers for taste ────────────────── */
 document.getElementById('btn-like').addEventListener('click', () => {
@@ -1047,7 +1355,11 @@ document.getElementById('btn-dislike').addEventListener('click', () => {
 
 /* ─── RECOMMENDATIONS FLOW ──────────────────────── */
 async function loadRecQueue() {
-  document.getElementById('recs-spinner').style.display = 'flex';
+  // Only show spinner if rec screen is already active
+  const recScreen = document.getElementById('screen-recs');
+  if (recScreen.classList.contains('active')) {
+    document.getElementById('recs-spinner').style.display = 'flex';
+  }
   try {
     const page = Math.floor(Math.random() * 5) + 1;
     const data = await fetchAniList(REC_QUERY, {
@@ -1064,10 +1376,14 @@ async function loadRecQueue() {
     recQueue = [];
   }
   document.getElementById('recs-spinner').style.display = 'none';
-  showNextRec();
+  // Only auto-show next rec if we're already on the rec screen
+  // (if celebration is still playing, dismissUnlockCelebration handles it)
+  if (recScreen.classList.contains('active')) {
+    showNextRec();
+  }
 }
 
-function showNextRec() {
+function showNextRec(firstCard = false) {
   const container = document.getElementById('rec-card-container');
   container.querySelectorAll('.anime-card').forEach(c => c.remove());
 
@@ -1097,6 +1413,12 @@ function showNextRec() {
   card.querySelector('.stamp-dislike').textContent = 'NOPE';
 
   container.appendChild(card);
+
+  // Slam the first card in dramatically after unlock
+  if (firstCard) {
+    card.classList.add('card-slam');
+    card.addEventListener('animationend', () => card.classList.remove('card-slam'), { once: true });
+  }
 
   // Let the engine track what's being shown (for anti-repetition)
   engine.trackShown(anime);
@@ -1210,11 +1532,14 @@ document.getElementById('btn-start-recs').addEventListener('click', () => {
   hideOverlay('overlay-recs');
   showScreen('screen-recs');
   if (recQueue.length === 0) {
-    // Still loading
     document.getElementById('recs-spinner').style.display = 'flex';
   } else {
     showNextRec();
   }
+});
+
+document.getElementById('unlock-btn').addEventListener('click', () => {
+  dismissUnlockCelebration();
 });
 
 // Register service worker
