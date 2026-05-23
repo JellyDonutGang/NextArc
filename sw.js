@@ -1,12 +1,12 @@
 /**
- * AniSwipe Service Worker
+ * Next Arc Service Worker
  * Strategy:
  *   - App shell (HTML, JS, manifest, icons): cache-first
  *   - AniList API (graphql.anilist.co): network-first, fallback to cache
  *   - Images (cover art): stale-while-revalidate
  */
 
-const CACHE_VERSION = 'aniswipe-v1';
+const CACHE_VERSION = 'nextarc-v1';
 const APP_SHELL = [
   '/',
   '/index.html',

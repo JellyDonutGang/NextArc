@@ -245,37 +245,49 @@ class NextArcEngine {
    * Record a swipe and update the taste profile.
    *
    * action:
-   *   'like'   — onboarding right-swipe  (positive, moderate weight)
-   *   'skip'   — any left-swipe          (weak negative)
-   *   'watch'  — discovery right-swipe   (strong positive — user wants to watch it)
+   *   'like'    — onboarding right-swipe / button (positive signal)
+   *   'watch'   — discovery right-swipe / button  (strong positive — real intent)
+   *   'dislike' — explicit Don't Like button       (strong negative — clear signal)
+   *   'skip'    — middle Skip button               (neutral — no taste update at all)
+   *
+   * Skip is intentionally a no-op on the taste profile. The user might be
+   * skipping because of mood, length, or a hundred other reasons unrelated
+   * to whether they'd actually enjoy that kind of anime.
    */
   update(anime, action) {
+    // Skip is completely neutral — just advance, learn nothing
+    if (action === 'skip') {
+      this.totalSwipes++;
+      return;
+    }
+
     const isPositive = action === 'like' || action === 'watch';
     const isWatch    = action === 'watch';
+    const isDislike  = action === 'dislike';
     const catKeys    = extractCategorical(anime);
     const scalars    = extractScalars(anime);
     const id         = anime.id;
 
-    /* Categorical vector update */
-    const catDelta = isWatch   ? 3.5
-                   : isPositive ? (this.onboarded ? 2.0 : 3.0)
-                   : (this.onboarded ? -0.5 : -2.0); // skips punished less post-onboarding
+    /* ── Categorical vector update ── */
+    const catDelta = isWatch   ?  3.5
+                   : isPositive ? (this.onboarded ?  2.0 :  3.0)
+                   :              (this.onboarded ? -2.0 : -3.0); // dislike = mirror of like
 
     for (const key of catKeys) {
       this.catVector[key] = (this.catVector[key] || 0) + catDelta;
     }
 
-    /* Scalar dimension update */
+    /* ── Scalar dimension update ── */
     if (isPositive) {
       this._absorbPositive(scalars, isWatch);
     } else {
-      this._absorbNegative(scalars);
+      this._absorbNegative(scalars, isDislike);
     }
 
-    /* Boundary test feedback */
+    /* ── Boundary test feedback ── */
     if (this.pendingTests.has(id)) {
       const { dimension, testLevel } = this.pendingTests.get(id);
-      this._processBoundaryResult(dimension, testLevel, isPositive);
+      this._processBoundaryResult(dimension, testLevel, isPositive, isDislike);
       this.pendingTests.delete(id);
     }
 
@@ -538,15 +550,21 @@ class NextArcEngine {
    *   Liked  → tolerance expands to testLevel + 0.5, preferred nudges up slightly
    *   Skipped → tolerance contracts by 0.5 (floor = current preferred)
    */
-  _processBoundaryResult(dimension, testLevel, liked) {
+  _processBoundaryResult(dimension, testLevel, liked, isDislike = false) {
     const p = this.dims[dimension];
     this.dimTestCounts[dimension]++;
 
     if (liked) {
-      p.tolerance  = Math.min(10, testLevel + 0.5);
-      p.preferred  = p.preferred * 0.88 + testLevel * 0.12;
+      // User accepted the push — expand tolerance
+      p.tolerance = Math.min(10, testLevel + 0.5);
+      p.preferred = p.preferred * 0.88 + testLevel * 0.12;
+    } else if (isDislike) {
+      // Explicit dislike — hard contraction, don't test this direction again soon
+      p.tolerance = Math.max(p.preferred - 0.5, p.tolerance - 1.5);
+      p.preferred = Math.max(0, p.preferred - 0.5);
     } else {
-      p.tolerance  = Math.max(p.preferred, p.tolerance - 0.5);
+      // Passive skip on a boundary test — mild contraction
+      p.tolerance = Math.max(p.preferred, p.tolerance - 0.5);
     }
 
     p.confidence = Math.min(1, p.confidence + 0.12);
@@ -694,19 +712,34 @@ class NextArcEngine {
    * Only adjusts preferred if the anime was meaningfully above it (probably
    * the reason they skipped), so we don't over-penalise.
    */
-  _absorbNegative(scalars) {
-    const lr = this.onboarded ? 0.05 : 0.10;
+  _absorbNegative(scalars, isDislike = false) {
+    // Dislike = deliberate, strong signal. Use a proper learning rate.
+    // (Skip never reaches here anymore — it returns early in update().)
+    const lr = isDislike
+      ? (this.onboarded ? 0.18 : 0.25) // explicit: learn hard
+      : (this.onboarded ? 0.05 : 0.10); // legacy path (shouldn't fire for skip)
 
     for (const [dim, profile] of Object.entries(this.dims)) {
       const level = scalars[dim] ?? 5;
 
-      // Only nudge preferred down if this anime was significantly above it
-      if (level > profile.preferred + 2.5) {
-        profile.preferred = profile.preferred * (1 - lr) + (level - 1.5) * lr;
+      if (isDislike) {
+        // Dislike: push preferred away from this anime's level on every dimension
+        // where the anime was above the user's comfort zone
+        if (level > profile.preferred + 1.0) {
+          profile.preferred = profile.preferred * (1 - lr) + (level - 2.0) * lr;
+          // Also tighten tolerance if this was above it
+          if (level > profile.tolerance) {
+            profile.tolerance = Math.max(profile.preferred, profile.tolerance - 0.8);
+          }
+        }
+      } else {
+        // Legacy: only nudge if significantly above preferred
+        if (level > profile.preferred + 2.5) {
+          profile.preferred = profile.preferred * (1 - lr) + (level - 1.5) * lr;
+        }
       }
 
-      // Tiny confidence bump (we have more data, even if negative)
-      profile.confidence = Math.min(1, profile.confidence + 0.03);
+      profile.confidence = Math.min(1, profile.confidence + (isDislike ? 0.07 : 0.03));
     }
   }
 

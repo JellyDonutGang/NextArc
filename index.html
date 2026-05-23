@@ -6,9 +6,9 @@
   <meta name="theme-color" content="#0a0a0a" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="AniSwipe" />
+  <meta name="apple-mobile-web-app-title" content="Next Arc" />
   <link rel="manifest" href="manifest.json" />
-  <title>AniSwipe</title>
+  <title>Next Arc</title>
   <style>
     /* ── Reset & Base ─────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -286,7 +286,7 @@
       border-color: var(--green);
       transform: rotate(-15deg);
     }
-    .stamp-skip {
+    .stamp-dislike {
       right: 20px;
       color: var(--accent);
       border-color: var(--accent);
@@ -296,32 +296,47 @@
     /* Action buttons */
     .action-buttons {
       display: flex;
-      gap: 20px;
+      gap: 14px;
       margin-top: 16px;
       align-items: center;
       justify-content: center;
     }
     .action-btn {
-      width: 68px; height: 68px;
       border-radius: 50%;
       border: none;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 26px;
       transition: transform 0.15s, box-shadow 0.15s;
       box-shadow: 0 6px 20px rgba(0,0,0,0.4);
     }
     .action-btn:active { transform: scale(0.92); }
+
+    /* Don't Like — explicit red-tinted negative */
+    .btn-dislike {
+      width: 62px; height: 62px;
+      font-size: 22px;
+      background: var(--surface2);
+      border: 2px solid rgba(230, 57, 70, 0.45);
+      color: var(--accent);
+    }
+
+    /* Skip — neutral, smallest, middle */
     .btn-skip {
+      width: 52px; height: 52px;
+      font-size: 18px;
       background: var(--surface2);
       border: 2px solid var(--border);
+      color: var(--text-muted);
     }
+
+    /* Like / Watch — most prominent */
     .btn-like {
+      width: 72px; height: 72px;
+      font-size: 28px;
       background: var(--accent);
-      width: 76px; height: 76px;
-      font-size: 30px;
+      color: #fff;
     }
 
     /* ── Recommendations Screen ────────────────────── */
@@ -468,7 +483,7 @@
 <!-- ══════════════════════════════════════════════ -->
 <section id="screen-welcome" class="screen active">
   <div class="welcome-art">🎌</div>
-  <div class="logo">AniSwipe</div>
+  <div class="logo">Next Arc</div>
   <p class="tagline">Discover anime you'll actually love — one swipe at a time.</p>
   <button class="btn-primary" id="btn-start">Let's Go →</button>
 </section>
@@ -513,8 +528,9 @@
   </div>
 
   <div class="action-buttons">
-    <button class="action-btn btn-skip" id="btn-skip" title="Skip">✕</button>
-    <button class="action-btn btn-like" id="btn-like" title="Like">♥</button>
+    <button class="action-btn btn-dislike" id="btn-dislike" title="Don't Like">✕</button>
+    <button class="action-btn btn-skip"    id="btn-skip"    title="Skip">›</button>
+    <button class="action-btn btn-like"    id="btn-like"    title="Like">♥</button>
   </div>
 </section>
 
@@ -557,8 +573,9 @@
   </div>
 
   <div class="action-buttons">
-    <button class="action-btn btn-skip" id="btn-rec-skip" title="Skip">✕</button>
-    <button class="action-btn btn-like" id="btn-rec-watch" title="Watch">▶</button>
+    <button class="action-btn btn-dislike" id="btn-rec-dislike" title="Don't Like">✕</button>
+    <button class="action-btn btn-skip"    id="btn-rec-skip"    title="Skip">›</button>
+    <button class="action-btn btn-like"    id="btn-rec-watch"   title="Watch">▶</button>
   </div>
 </section>
 
@@ -849,7 +866,7 @@ function buildCard(anime, isTop = true) {
 
   card.innerHTML = `
     <div class="stamp stamp-like">LIKE</div>
-    <div class="stamp stamp-skip">SKIP</div>
+    <div class="stamp stamp-dislike">NOPE</div>
     ${imgSrc
       ? `<img class="card-img" src="${imgSrc}" alt="${title}" loading="lazy" />`
       : `<div class="card-img-placeholder">🎌</div>`}
@@ -864,10 +881,10 @@ function buildCard(anime, isTop = true) {
 }
 
 /* ─── Swipe gesture engine ─────────────────────── */
-function attachSwipe(card, onLike, onSkip) {
+function attachSwipe(card, onLike, onDislike) {
   let startX = 0, startY = 0, dx = 0, dragging = false;
-  const stampLike = card.querySelector('.stamp-like');
-  const stampSkip = card.querySelector('.stamp-skip');
+  const stampLike    = card.querySelector('.stamp-like');
+  const stampDislike = card.querySelector('.stamp-dislike');
 
   function onStart(x, y) {
     startX = x; startY = y; dragging = true;
@@ -881,22 +898,22 @@ function attachSwipe(card, onLike, onSkip) {
     card.style.transform = `translateX(${dx}px) translateY(${dy * 0.3}px) rotate(${rot}deg)`;
     const progress = Math.min(Math.abs(dx) / 80, 1);
     if (dx > 0) {
-      stampLike.style.opacity = progress;
-      stampSkip.style.opacity = 0;
+      stampLike.style.opacity    = progress;
+      stampDislike.style.opacity = 0;
     } else {
-      stampSkip.style.opacity = progress;
-      stampLike.style.opacity = 0;
+      stampDislike.style.opacity = progress;
+      stampLike.style.opacity    = 0;
     }
   }
   function onEnd() {
     if (!dragging) return;
     dragging = false;
     card.style.transition = 'transform 0.3s ease';
-    stampLike.style.opacity = 0;
-    stampSkip.style.opacity = 0;
-    if (dx > 80) { onLike(); }
-    else if (dx < -80) { onSkip(); }
-    else { card.style.transform = ''; }
+    stampLike.style.opacity    = 0;
+    stampDislike.style.opacity = 0;
+    if (dx > 80)       { onLike(); }
+    else if (dx < -80) { onDislike(); }
+    else               { card.style.transform = ''; }
     dx = 0;
   }
 
@@ -993,15 +1010,16 @@ function renderTasteCard(index) {
   engine.trackShown(tasteAnime[index]);
 
   attachSwipe(top,
-    () => { swipeTaste(top, index, true); },
-    () => { swipeTaste(top, index, false); }
+    () => { swipeTaste(top, index, 'like'); },
+    () => { swipeTaste(top, index, 'dislike'); }
   );
 }
 
-function swipeTaste(card, index, liked) {
+function swipeTaste(card, index, action) {
   const anime = tasteAnime[index];
-  flyCard(card, liked ? 'right' : 'left').then(() => {
-    engine.update(anime, liked ? 'like' : 'skip');
+  const dir   = action === 'like' ? 'right' : action === 'dislike' ? 'left' : 'right';
+  flyCard(card, dir).then(() => {
+    if (action !== 'skip') engine.update(anime, action);
     tasteIndex = index + 1;
     renderTasteCard(tasteIndex);
   });
@@ -1016,11 +1034,15 @@ function finishTaste() {
 /* ─── Button handlers for taste ────────────────── */
 document.getElementById('btn-like').addEventListener('click', () => {
   const card = document.querySelector('#card-stack .anime-card.top');
-  if (card) swipeTaste(card, tasteIndex, true);
+  if (card) swipeTaste(card, tasteIndex, 'like');
 });
 document.getElementById('btn-skip').addEventListener('click', () => {
   const card = document.querySelector('#card-stack .anime-card.top');
-  if (card) swipeTaste(card, tasteIndex, false);
+  if (card) swipeTaste(card, tasteIndex, 'skip');
+});
+document.getElementById('btn-dislike').addEventListener('click', () => {
+  const card = document.querySelector('#card-stack .anime-card.top');
+  if (card) swipeTaste(card, tasteIndex, 'dislike');
 });
 
 /* ─── RECOMMENDATIONS FLOW ──────────────────────── */
@@ -1070,9 +1092,9 @@ function showNextRec() {
 
   const card = buildCard(anime, true);
 
-  // Change stamps for rec mode
-  card.querySelector('.stamp-like').textContent = 'WATCH';
-  card.querySelector('.stamp-skip').textContent = 'SKIP';
+  // Update stamps for discovery mode
+  card.querySelector('.stamp-like').textContent    = 'WATCH';
+  card.querySelector('.stamp-dislike').textContent = 'NOPE';
 
   container.appendChild(card);
 
@@ -1080,30 +1102,35 @@ function showNextRec() {
   engine.trackShown(anime);
 
   attachSwipe(card,
-    () => { recSwipe(card, anime, true); },
-    () => { recSwipe(card, anime, false); }
+    () => { recSwipe(card, anime, 'watch'); },
+    () => { recSwipe(card, anime, 'dislike'); }
   );
 
   document.getElementById('recs-subtitle').textContent =
     `${recQueue.length - recPos} picks waiting`;
 }
 
-function recSwipe(card, anime, watch) {
-  flyCard(card, watch ? 'right' : 'left').then(() => {
-    engine.update(anime, watch ? 'watch' : 'skip');
+function recSwipe(card, anime, action) {
+  const dir = action === 'watch' ? 'right' : action === 'dislike' ? 'left' : 'right';
+  flyCard(card, dir).then(() => {
+    if (action !== 'skip') engine.update(anime, action);
     recPos++;
-    if (watch) openWatchSheet(anime);
+    if (action === 'watch') openWatchSheet(anime);
     else showNextRec();
   });
 }
 
+document.getElementById('btn-rec-dislike').addEventListener('click', () => {
+  const card = document.querySelector('#rec-card-container .anime-card');
+  if (card && currentRecAnime) recSwipe(card, currentRecAnime, 'dislike');
+});
 document.getElementById('btn-rec-skip').addEventListener('click', () => {
   const card = document.querySelector('#rec-card-container .anime-card');
-  if (card && currentRecAnime) recSwipe(card, currentRecAnime, false);
+  if (card && currentRecAnime) recSwipe(card, currentRecAnime, 'skip');
 });
 document.getElementById('btn-rec-watch').addEventListener('click', () => {
   const card = document.querySelector('#rec-card-container .anime-card');
-  if (card && currentRecAnime) recSwipe(card, currentRecAnime, true);
+  if (card && currentRecAnime) recSwipe(card, currentRecAnime, 'watch');
 });
 
 /* ─── Watch Bottom Sheet ────────────────────────── */
