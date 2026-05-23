@@ -1,0 +1,1204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0a0a0a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="AniSwipe" />
+  <link rel="manifest" href="manifest.json" />
+  <title>AniSwipe</title>
+  <style>
+    /* ── Reset & Base ─────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a0a;
+      --surface: #141414;
+      --surface2: #1e1e1e;
+      --border: #2a2a2a;
+      --text: #f0f0f0;
+      --text-muted: #888;
+      --accent: #e63946;
+      --green: #2ec4b6;
+      --yellow: #ffb703;
+      --radius: 20px;
+      --card-w: min(92vw, 420px);
+      --card-h: min(72vh, 580px);
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      overflow: hidden;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    /* ── Screens ───────────────────────────────────── */
+    .screen {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      padding-top: max(24px, env(safe-area-inset-top));
+      padding-bottom: max(24px, env(safe-area-inset-bottom));
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.35s ease;
+      z-index: 1;
+    }
+    .screen.active {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    /* ── Welcome Screen ────────────────────────────── */
+    #screen-welcome {
+      background: var(--bg);
+      gap: 20px;
+      text-align: center;
+    }
+    .logo {
+      font-size: 52px;
+      font-weight: 900;
+      letter-spacing: -2px;
+      background: linear-gradient(135deg, #e63946, #ff6b6b);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .tagline {
+      font-size: 17px;
+      color: var(--text-muted);
+      max-width: 280px;
+      line-height: 1.5;
+    }
+    .welcome-art {
+      font-size: 90px;
+      line-height: 1;
+      filter: drop-shadow(0 8px 24px rgba(230,57,70,0.3));
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 50px;
+      font-size: 17px;
+      font-weight: 700;
+      padding: 16px 48px;
+      cursor: pointer;
+      transition: transform 0.15s, opacity 0.15s;
+      margin-top: 8px;
+    }
+    .btn-primary:active { transform: scale(0.96); opacity: 0.9; }
+
+    /* ── Overlay (instruction panels) ─────────────── */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.85);
+      backdrop-filter: blur(6px);
+      display: flex;
+      align-items: flex-end;
+      z-index: 50;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    .overlay.visible {
+      opacity: 1;
+      pointer-events: all;
+    }
+    .overlay-card {
+      background: var(--surface);
+      border-radius: 28px 28px 0 0;
+      padding: 32px 28px max(28px, env(safe-area-inset-bottom));
+      width: 100%;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      align-items: center;
+    }
+    .overlay-card h2 { font-size: 24px; font-weight: 800; }
+    .overlay-card p { font-size: 15px; color: var(--text-muted); line-height: 1.6; max-width: 300px; }
+    .hint-row {
+      display: flex;
+      gap: 24px;
+      align-items: center;
+      justify-content: center;
+      margin: 4px 0;
+    }
+    .hint-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+    .hint-icon {
+      width: 52px; height: 52px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+    }
+    .hint-icon.skip { background: rgba(255,255,255,0.08); }
+    .hint-icon.watch { background: rgba(230,57,70,0.18); }
+
+    /* ── Swipe Screen ──────────────────────────────── */
+    #screen-swipe {
+      background: var(--bg);
+      justify-content: flex-start;
+      padding-top: max(16px, env(safe-area-inset-top));
+      gap: 0;
+    }
+    .swipe-header {
+      width: 100%;
+      max-width: 420px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 4px 12px;
+    }
+    .swipe-title { font-size: 13px; font-weight: 600; color: var(--text-muted); letter-spacing: 0.5px; text-transform: uppercase; }
+    .progress-pills {
+      display: flex;
+      gap: 4px;
+    }
+    .pill {
+      width: 10px; height: 4px;
+      border-radius: 2px;
+      background: var(--border);
+      transition: background 0.3s;
+    }
+    .pill.done { background: var(--accent); }
+    .pill.active { background: var(--text-muted); }
+
+    /* Card Stack */
+    .card-stack {
+      position: relative;
+      width: var(--card-w);
+      height: var(--card-h);
+      flex-shrink: 0;
+    }
+
+    .anime-card {
+      position: absolute;
+      inset: 0;
+      border-radius: var(--radius);
+      overflow: hidden;
+      cursor: grab;
+      touch-action: none;
+      will-change: transform;
+      box-shadow: 0 16px 48px rgba(0,0,0,0.6);
+      background: var(--surface2);
+    }
+    .anime-card:active { cursor: grabbing; }
+    .anime-card.behind {
+      transform: scale(0.95) translateY(8px);
+      z-index: 0;
+    }
+    .anime-card.top { z-index: 2; }
+
+    .card-img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      display: block;
+      pointer-events: none;
+    }
+    .card-img-placeholder {
+      width: 100%; height: 100%;
+      background: linear-gradient(135deg, #1e1e2e, #2a1a2e);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 64px;
+    }
+    .card-gradient {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 65%;
+      background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.5) 60%, transparent 100%);
+      pointer-events: none;
+    }
+    .card-info {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      padding: 20px;
+    }
+    .card-title {
+      font-size: 22px;
+      font-weight: 800;
+      line-height: 1.2;
+      margin-bottom: 8px;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+    }
+    .card-meta {
+      font-size: 13px;
+      color: rgba(255,255,255,0.7);
+      margin-bottom: 10px;
+    }
+    .genre-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .chip {
+      background: rgba(255,255,255,0.12);
+      backdrop-filter: blur(4px);
+      border-radius: 50px;
+      padding: 4px 10px;
+      font-size: 11px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.9);
+      border: 1px solid rgba(255,255,255,0.15);
+    }
+
+    /* Swipe stamps */
+    .stamp {
+      position: absolute;
+      top: 28px;
+      font-size: 26px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      border: 4px solid;
+      border-radius: 8px;
+      padding: 4px 12px;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 10;
+      transition: opacity 0.1s;
+      text-shadow: none;
+    }
+    .stamp-like {
+      left: 20px;
+      color: var(--green);
+      border-color: var(--green);
+      transform: rotate(-15deg);
+    }
+    .stamp-skip {
+      right: 20px;
+      color: var(--accent);
+      border-color: var(--accent);
+      transform: rotate(15deg);
+    }
+
+    /* Action buttons */
+    .action-buttons {
+      display: flex;
+      gap: 20px;
+      margin-top: 16px;
+      align-items: center;
+      justify-content: center;
+    }
+    .action-btn {
+      width: 68px; height: 68px;
+      border-radius: 50%;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+      transition: transform 0.15s, box-shadow 0.15s;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+    }
+    .action-btn:active { transform: scale(0.92); }
+    .btn-skip {
+      background: var(--surface2);
+      border: 2px solid var(--border);
+    }
+    .btn-like {
+      background: var(--accent);
+      width: 76px; height: 76px;
+      font-size: 30px;
+    }
+
+    /* ── Recommendations Screen ────────────────────── */
+    #screen-recs {
+      background: var(--bg);
+      justify-content: flex-start;
+      padding-top: max(16px, env(safe-area-inset-top));
+    }
+    .recs-header {
+      width: 100%;
+      max-width: 420px;
+      padding: 0 4px 14px;
+    }
+    .recs-header h1 { font-size: 28px; font-weight: 900; }
+    .recs-header p { font-size: 14px; color: var(--text-muted); margin-top: 4px; }
+
+    /* Rec card is same as swipe card but no stack */
+    #rec-card-container {
+      position: relative;
+      width: var(--card-w);
+      height: var(--card-h);
+    }
+
+    /* Loading spinner */
+    .spinner-wrap {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      background: var(--surface2);
+      border-radius: var(--radius);
+    }
+    .spinner {
+      width: 40px; height: 40px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Watch Bottom Sheet ────────────────────────── */
+    #watch-sheet {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: none;
+    }
+    #watch-sheet.open { display: flex; }
+    .sheet-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+    }
+    .sheet-content {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      background: var(--surface);
+      border-radius: 28px 28px 0 0;
+      padding: 20px 24px max(24px, env(safe-area-inset-bottom));
+      max-height: 70vh;
+      overflow-y: auto;
+    }
+    .sheet-handle {
+      width: 40px; height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      margin: 0 auto 20px;
+    }
+    .sheet-title {
+      font-size: 13px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+    .sheet-anime-name {
+      font-size: 20px;
+      font-weight: 800;
+      margin-bottom: 20px;
+    }
+    .stream-links {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .stream-btn {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px 18px;
+      cursor: pointer;
+      text-decoration: none;
+      color: var(--text);
+      transition: background 0.15s;
+    }
+    .stream-btn:active { background: var(--border); }
+    .stream-icon { font-size: 22px; width: 28px; text-align: center; }
+    .stream-name { font-size: 15px; font-weight: 600; flex: 1; }
+    .stream-arrow { color: var(--text-muted); font-size: 14px; }
+
+    /* ── Empty state ───────────────────────────────── */
+    .empty-state {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      text-align: center;
+      padding: 32px;
+    }
+    .empty-state .big-emoji { font-size: 64px; }
+    .empty-state h2 { font-size: 22px; font-weight: 800; }
+    .empty-state p { font-size: 15px; color: var(--text-muted); line-height: 1.5; }
+
+    /* ── Utilities ─────────────────────────────────── */
+    .hidden { display: none !important; }
+    .fly-out-left {
+      animation: flyLeft 0.38s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+    .fly-out-right {
+      animation: flyRight 0.38s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+    @keyframes flyLeft {
+      to { transform: translateX(-120vw) rotate(-25deg); opacity: 0; }
+    }
+    @keyframes flyRight {
+      to { transform: translateX(120vw) rotate(25deg); opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════ -->
+<!--  WELCOME SCREEN                               -->
+<!-- ══════════════════════════════════════════════ -->
+<section id="screen-welcome" class="screen active">
+  <div class="welcome-art">🎌</div>
+  <div class="logo">AniSwipe</div>
+  <p class="tagline">Discover anime you'll actually love — one swipe at a time.</p>
+  <button class="btn-primary" id="btn-start">Let's Go →</button>
+</section>
+
+<!-- ══════════════════════════════════════════════ -->
+<!--  TASTE CHECK OVERLAY                          -->
+<!-- ══════════════════════════════════════════════ -->
+<div id="overlay-taste" class="overlay">
+  <div class="overlay-card">
+    <div style="font-size:42px">✨</div>
+    <h2>Quick Taste Check</h2>
+    <p>Swipe through 15 anime so we can learn what you like. No pressure — just your gut reaction!</p>
+    <div class="hint-row">
+      <div class="hint-item">
+        <div class="hint-icon skip">👈</div>
+        <span>Skip it</span>
+      </div>
+      <div class="hint-item">
+        <div class="hint-icon watch">👉</div>
+        <span>Love it</span>
+      </div>
+    </div>
+    <button class="btn-primary" id="btn-start-taste">Start Swiping</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════ -->
+<!--  SWIPE SCREEN                                 -->
+<!-- ══════════════════════════════════════════════ -->
+<section id="screen-swipe" class="screen">
+  <div class="swipe-header">
+    <span class="swipe-title">Taste Check</span>
+    <div class="progress-pills" id="progress-pills"></div>
+  </div>
+
+  <div class="card-stack" id="card-stack">
+    <!-- Cards injected by JS -->
+    <div class="spinner-wrap" id="swipe-spinner">
+      <div class="spinner"></div>
+      <span style="font-size:14px;color:var(--text-muted)">Loading anime…</span>
+    </div>
+  </div>
+
+  <div class="action-buttons">
+    <button class="action-btn btn-skip" id="btn-skip" title="Skip">✕</button>
+    <button class="action-btn btn-like" id="btn-like" title="Like">♥</button>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════ -->
+<!--  RECS INTRO OVERLAY                           -->
+<!-- ══════════════════════════════════════════════ -->
+<div id="overlay-recs" class="overlay">
+  <div class="overlay-card">
+    <div style="font-size:42px">🎯</div>
+    <h2>Your Feed is Ready</h2>
+    <p>Based on your taste, we've lined up anime you should love. Swipe right to get watch links, left to skip.</p>
+    <div class="hint-row">
+      <div class="hint-item">
+        <div class="hint-icon skip">👈</div>
+        <span>Skip</span>
+      </div>
+      <div class="hint-item">
+        <div class="hint-icon watch">👉</div>
+        <span>Watch</span>
+      </div>
+    </div>
+    <button class="btn-primary" id="btn-start-recs">See My Picks</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════ -->
+<!--  RECOMMENDATIONS SCREEN                       -->
+<!-- ══════════════════════════════════════════════ -->
+<section id="screen-recs" class="screen">
+  <div class="recs-header">
+    <h1>For You</h1>
+    <p id="recs-subtitle">Personalised picks based on your taste</p>
+  </div>
+
+  <div id="rec-card-container">
+    <div class="spinner-wrap" id="recs-spinner">
+      <div class="spinner"></div>
+      <span style="font-size:14px;color:var(--text-muted)">Finding your picks…</span>
+    </div>
+  </div>
+
+  <div class="action-buttons">
+    <button class="action-btn btn-skip" id="btn-rec-skip" title="Skip">✕</button>
+    <button class="action-btn btn-like" id="btn-rec-watch" title="Watch">▶</button>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════ -->
+<!--  WATCH BOTTOM SHEET                           -->
+<!-- ══════════════════════════════════════════════ -->
+<div id="watch-sheet">
+  <div class="sheet-backdrop" id="sheet-backdrop"></div>
+  <div class="sheet-content">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Now Watching</div>
+    <div class="sheet-anime-name" id="sheet-anime-name">—</div>
+    <div class="stream-links" id="stream-links"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════ -->
+<!--  SCRIPTS                                      -->
+<!-- ══════════════════════════════════════════════ -->
+<script src="animeTasteEngine.js"></script>
+<script>
+'use strict';
+
+/* ─── AniList API ─────────────────────────────── */
+const ANILIST = 'https://graphql.anilist.co';
+
+async function fetchAniList(query, variables = {}) {
+  const res = await fetch(ANILIST, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify({ query, variables }),
+  });
+  if (!res.ok) throw new Error('AniList request failed: ' + res.status);
+  const { data } = await res.json();
+  return data;
+}
+
+const SEED_QUERY = `
+query ($page: Int, $perPage: Int, $sort: [MediaSort]) {
+  Page(page: $page, perPage: $perPage) {
+    media(type: ANIME, status: FINISHED, sort: $sort, isAdult: false, episodes_greater: 1) {
+      id title { romaji english } coverImage { extraLarge large } genres
+      tags { name rank } averageScore popularity episodes
+      externalLinks { site url }
+      studios(isMain: true) { nodes { name } }
+    }
+  }
+}`;
+
+const REC_QUERY = `
+query ($ids: [Int], $page: Int, $perPage: Int) {
+  Page(page: $page, perPage: $perPage) {
+    media(type: ANIME, id_not_in: $ids, isAdult: false, episodes_greater: 1,
+          averageScore_greater: 60, sort: POPULARITY_DESC) {
+      id title { romaji english } coverImage { extraLarge large } genres
+      tags { name rank } averageScore popularity episodes
+      externalLinks { site url }
+      studios(isMain: true) { nodes { name } }
+    }
+  }
+}`;
+
+/* ─── Onboarding seed pool ──────────────────────
+   Hand-picked AniList IDs covering the full spread
+   of all 8 taste dimensions. The diversity algorithm
+   selects the most spread-out 20 from whatever loads.
+
+   Dimension coverage guide:
+     fanService  : 0 (Mushishi) → 7 (Kill la Kill)
+     violence    : 0 (K-On!) → 8 (Vinland Saga, AoT)
+     darkness    : 0 (Non Non Biyori) → 9 (NGE, Made in Abyss)
+     romance     : 0 (One Punch Man) → 9 (Clannad AS, Your Lie)
+     humor       : 0 (Vinland Saga) → 10 (Gintama, Konosuba)
+     emotion     : 0 (SAO) → 10 (Clannad AS, AnoHana)
+     pacing      : 0 (OPM, Gurren) → 9 (Mushishi, Non Non)
+     niche       : 0 (AoT, Death Note) → 8 (Tatami, Ping Pong)
+─────────────────────────────────────────────────── */
+const SEED_POOL_QUERY = `
+query ($ids: [Int]) {
+  Page(perPage: 50) {
+    media(id_in: $ids, type: ANIME, isAdult: false) {
+      id title { romaji english } coverImage { extraLarge large } genres
+      tags { name rank } averageScore popularity episodes
+      externalLinks { site url }
+      studios(isMain: true) { nodes { name } }
+    }
+  }
+}`;
+
+const SEED_POOL_IDS = [
+  1,      // Cowboy Bebop       — noir, episodic, mature, low emotion
+  5,      // Trigun             — action, comedy, western, bittersweet
+  30,     // Neon Genesis Eva.  — dark, psychological, iconic, slow
+  457,    // Mushishi           — slow, atmospheric, no conflict, niche
+  918,    // Gintama            — heavy comedy, action, long
+  1535,   // Death Note         — thriller, dark, no romance, fast
+  2001,   // Gurren Lagann      — hype, action, emotional, fast
+  2167,   // Clannad            — romance, slice of life, emotional
+  4181,   // Clannad After Story— max emotional, heavy romance
+  4224,   // Toradora           — romance, comedy, emotional
+  5114,   // FMA Brotherhood    — action, dark, emotional, mainstream
+  5680,   // K-On!              — music, cute, cozy, low stakes
+  6547,   // Bakemonogatari     — unique style, mystery, romance, niche
+  7088,   // Tatami Galaxy      — surreal, fast dialogue, niche, smart
+  9253,   // Steins;Gate        — sci-fi, dark, emotional, slow burn
+  9989,   // AnoHana            — emotional, grief, light romance
+  11061,  // Hunter x Hunter    — long action, dark arcs, emotional
+  11757,  // Sword Art Online   — mainstream action, romance, low darkness
+  13601,  // Psycho-Pass        — dark sci-fi, dystopia, action
+  16498,  // Attack on Titan    — dark, violent, action, mainstream
+  17205,  // Non Non Biyori     — cozy, zero conflict, slow, rural
+  19815,  // Kill la Kill       — fan service, action, over-the-top
+  20517,  // Barakamon          — heartwarming, slice of life, cozy
+  20583,  // Haikyuu!!          — sports, teamwork, feel-good, low darkness
+  20665,  // Your Lie in April  — emotional, romance, music, tragedy
+  21185,  // Ping Pong Anim.    — unique art, sports, emotional, niche
+  21202,  // KonoSuba           — comedy, fantasy, parody, light fan service
+  21355,  // Re:Zero            — dark isekai, thriller, emotional
+  21827,  // Violet Evergarden  — emotional, beautiful, slow, low humor
+  30276,  // One Punch Man      — comedy, action, zero romance
+  32182,  // Mob Psycho 100     — comedy, action, emotional growth
+  97986,  // Made in Abyss      — dark, adventure, beautiful, emotional
+  101348, // Vinland Saga       — dark, violent, historical, no humor
+  101922, // Demon Slayer       — action, emotional, mainstream, medium dark
+];
+
+const ONBOARDING_SIZE = 20;
+
+/**
+ * Farthest-point sampling: picks the N most dimensionally diverse anime
+ * from a pool. Guarantees maximum coverage across all 8 taste axes.
+ *
+ * @param {object[]} pool   AniList anime objects (already have extractScalars available)
+ * @param {number}   n      How many to pick
+ * @returns {object[]}      Shuffled selection of n anime
+ */
+function selectDiverseSeed(pool, n) {
+  if (pool.length <= n) return [...pool].sort(() => Math.random() - 0.5);
+
+  const DIMS = [
+    'fanService','violence','darkness','romance',
+    'humor','emotionalIntensity','pacing','niche',
+  ];
+
+  // Pre-compute scalar profiles once
+  const profiles = pool.map(a => ({ anime: a, s: extractScalars(a) }));
+
+  // Squared Euclidean distance in 8D scalar space
+  function dist2(a, b) {
+    return DIMS.reduce((sum, d) => sum + (a.s[d] - b.s[d]) ** 2, 0);
+  }
+
+  // Start with a random anime
+  const selected = [profiles[Math.floor(Math.random() * profiles.length)]];
+  const remaining = profiles.filter(p => p !== selected[0]);
+
+  // Greedy: always add the point furthest from all already-selected points
+  while (selected.length < n && remaining.length > 0) {
+    let bestIdx = 0, bestMinDist = -1;
+    for (let i = 0; i < remaining.length; i++) {
+      const minDist = Math.min(...selected.map(s => dist2(remaining[i], s)));
+      if (minDist > bestMinDist) { bestMinDist = minDist; bestIdx = i; }
+    }
+    selected.push(remaining.splice(bestIdx, 1)[0]);
+  }
+
+  // Shuffle so the card order feels random, not algorithmic
+  return selected.map(p => p.anime).sort(() => Math.random() - 0.5);
+}
+
+/* ─── Franchise deduplication ───────────────────
+   Prevents multiple seasons of the same show from
+   ever appearing in onboarding or recommendations.
+─────────────────────────────────────────────────── */
+
+/**
+ * Strip season/part/cour indicators from a title so
+ * "Attack on Titan", "Attack on Titan Season 2", and
+ * "Attack on Titan: The Final Season" all normalise
+ * to the same key: "attack on titan".
+ *
+ * Deliberately does NOT strip distinctive subtitles
+ * like "Brotherhood", "Zero", ": War on Geminar" etc.
+ * so remakes/spinoffs are treated as separate shows.
+ */
+function normalizeTitle(title) {
+  if (!title) return '';
+  return title
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    // ": Season 2", "Season 2", "Part 2", "Cour 2"
+    .replace(/\s*:?\s*(season|part|cour)\s*\d+/gi, '')
+    // "2nd Season", "3rd Cour", etc.
+    .replace(/\s*:?\s*\d+(st|nd|rd|th)\s+(season|cour|part)/gi, '')
+    // "Final Season", ": The Final Arc", "Final Chapter"
+    .replace(/\s*:?\s*(the\s+)?final(\s+(season|arc|chapter|part))?/gi, '')
+    // Trailing roman numerals (II, III, IV, V …) — only at end of string
+    .replace(/\s+(ii|iii|iv|vi|vii|viii|ix|xi|xii)\s*$/gi, '')
+    // Trailing standalone digit ("Overlord 3", "SAO 2")
+    .replace(/\s+\d+\s*$/, '')
+    // Clean up any leftover trailing punctuation/whitespace
+    .replace(/[\s:–\-]+$/, '')
+    .trim();
+}
+
+/**
+ * From a raw AniList batch:
+ *   1. Group entries by normalised franchise name
+ *   2. Keep only the earliest entry per franchise (lowest AniList ID = first season)
+ *   3. Filter out franchises the user has already seen
+ *
+ * @param {object[]} animeList
+ * @returns {object[]}
+ */
+function deduplicateByFranchise(animeList) {
+  const franchiseMap = new Map(); // normalisedKey → anime
+
+  for (const anime of animeList) {
+    const key = normalizeTitle(anime.title?.english || anime.title?.romaji || '');
+    if (!key) continue;
+    // Lowest ID wins (first season / original airing)
+    if (!franchiseMap.has(key) || anime.id < franchiseMap.get(key).id) {
+      franchiseMap.set(key, anime);
+    }
+  }
+
+  // Drop anything from a franchise the user has already encountered
+  return [...franchiseMap.values()].filter(a => {
+    const key = normalizeTitle(a.title?.english || a.title?.romaji || '');
+    return key && !seenFranchises.has(key);
+  });
+}
+
+/**
+ * Record an anime as seen — blocks both its ID and its entire franchise
+ * from appearing again in onboarding or recommendations.
+ */
+function trackSeen(anime) {
+  seenIds.add(anime.id);
+  const key = normalizeTitle(anime.title?.english || anime.title?.romaji || '');
+  if (key) seenFranchises.add(key);
+}
+
+/* ─── State ────────────────────────────────────── */
+let engine = null;
+let tasteAnime = [];
+let tasteIndex = 0;
+let recQueue = [];
+let recPos = 0;
+let seenIds = new Set();
+let seenFranchises = new Set(); // normalized franchise names — blocks all seasons of a seen show
+let currentRecAnime = null;
+
+/* ─── Screen navigation ─────────────────────────── */
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+function showOverlay(id) {
+  document.getElementById(id).classList.add('visible');
+}
+function hideOverlay(id) {
+  document.getElementById(id).classList.remove('visible');
+}
+
+/* ─── Progress pills ────────────────────────────── */
+function renderPills(total, current) {
+  const container = document.getElementById('progress-pills');
+  container.innerHTML = '';
+  for (let i = 0; i < total; i++) {
+    const p = document.createElement('div');
+    p.className = 'pill' + (i < current ? ' done' : i === current ? ' active' : '');
+    container.appendChild(p);
+  }
+}
+
+/* ─── Build a card element ─────────────────────── */
+function buildCard(anime, isTop = true) {
+  const card = document.createElement('div');
+  card.className = 'anime-card ' + (isTop ? 'top' : 'behind');
+  card.dataset.id = anime.id;
+
+  const imgSrc = anime.coverImage?.extraLarge || anime.coverImage?.large || '';
+  const title = anime.title?.english || anime.title?.romaji || 'Unknown';
+  const score = anime.averageScore ? `⭐ ${(anime.averageScore / 10).toFixed(1)}` : '';
+  const eps = anime.episodes ? `· ${anime.episodes} eps` : '';
+  const genres = (anime.genres || []).slice(0, 4);
+
+  card.innerHTML = `
+    <div class="stamp stamp-like">LIKE</div>
+    <div class="stamp stamp-skip">SKIP</div>
+    ${imgSrc
+      ? `<img class="card-img" src="${imgSrc}" alt="${title}" loading="lazy" />`
+      : `<div class="card-img-placeholder">🎌</div>`}
+    <div class="card-gradient"></div>
+    <div class="card-info">
+      <div class="card-title">${title}</div>
+      <div class="card-meta">${score} ${eps}</div>
+      <div class="genre-chips">${genres.map(g => `<span class="chip">${g}</span>`).join('')}</div>
+    </div>`;
+
+  return card;
+}
+
+/* ─── Swipe gesture engine ─────────────────────── */
+function attachSwipe(card, onLike, onSkip) {
+  let startX = 0, startY = 0, dx = 0, dragging = false;
+  const stampLike = card.querySelector('.stamp-like');
+  const stampSkip = card.querySelector('.stamp-skip');
+
+  function onStart(x, y) {
+    startX = x; startY = y; dragging = true;
+    card.style.transition = 'none';
+  }
+  function onMove(x, y) {
+    if (!dragging) return;
+    dx = x - startX;
+    const dy = y - startY;
+    const rot = dx * 0.08;
+    card.style.transform = `translateX(${dx}px) translateY(${dy * 0.3}px) rotate(${rot}deg)`;
+    const progress = Math.min(Math.abs(dx) / 80, 1);
+    if (dx > 0) {
+      stampLike.style.opacity = progress;
+      stampSkip.style.opacity = 0;
+    } else {
+      stampSkip.style.opacity = progress;
+      stampLike.style.opacity = 0;
+    }
+  }
+  function onEnd() {
+    if (!dragging) return;
+    dragging = false;
+    card.style.transition = 'transform 0.3s ease';
+    stampLike.style.opacity = 0;
+    stampSkip.style.opacity = 0;
+    if (dx > 80) { onLike(); }
+    else if (dx < -80) { onSkip(); }
+    else { card.style.transform = ''; }
+    dx = 0;
+  }
+
+  // Touch
+  card.addEventListener('touchstart', e => onStart(e.touches[0].clientX, e.touches[0].clientY), { passive: true });
+  card.addEventListener('touchmove', e => onMove(e.touches[0].clientX, e.touches[0].clientY), { passive: true });
+  card.addEventListener('touchend', onEnd);
+  // Mouse
+  card.addEventListener('mousedown', e => onStart(e.clientX, e.clientY));
+  window.addEventListener('mousemove', e => { if (dragging) onMove(e.clientX, e.clientY); });
+  window.addEventListener('mouseup', onEnd);
+}
+
+/* ─── Fly-out animation helper ──────────────────── */
+function flyCard(card, direction) {
+  return new Promise(resolve => {
+    card.classList.add(direction === 'right' ? 'fly-out-right' : 'fly-out-left');
+    card.addEventListener('animationend', () => { card.remove(); resolve(); }, { once: true });
+  });
+}
+
+/* ─── TASTE CHECK FLOW ──────────────────────────── */
+async function loadTasteAnime() {
+  try {
+    // Fetch the full curated seed pool in one request
+    const data = await fetchAniList(SEED_POOL_QUERY, { ids: SEED_POOL_IDS });
+    const raw  = (data.Page?.media || []).filter(a => a.coverImage?.large);
+
+    // Deduplicate: one entry per franchise, no sequel contamination
+    const pool = deduplicateByFranchise(raw);
+
+    if (pool.length < 8) throw new Error('Seed pool too small, falling back');
+
+    // Pick the most dimensionally diverse ONBOARDING_SIZE anime from the pool
+    tasteAnime = selectDiverseSeed(pool, ONBOARDING_SIZE);
+    tasteAnime.forEach(a => trackSeen(a));
+
+  } catch (e) {
+    console.warn('Curated seed fetch failed, using popularity fallback:', e);
+    try {
+      // Fallback: grab popular anime and do basic genre-diversity pass
+      const [p1, p2] = await Promise.all([
+        fetchAniList(SEED_QUERY, { page: 1, perPage: 30, sort: ['POPULARITY_DESC'] }),
+        fetchAniList(SEED_QUERY, { page: 2, perPage: 20, sort: ['SCORE_DESC'] }),
+      ]);
+      const all = [...(p1.Page?.media || []), ...(p2.Page?.media || [])];
+      const deduped = deduplicateByFranchise(all);
+      const shuffled = deduped.sort(() => Math.random() - 0.5);
+      const genreSeen = new Set();
+      const picked = [];
+      for (const a of shuffled) {
+        if (picked.length >= ONBOARDING_SIZE) break;
+        const newGenres = (a.genres || []).filter(g => !genreSeen.has(g));
+        if (newGenres.length > 0 || picked.length < 5) {
+          picked.push(a);
+          (a.genres || []).forEach(g => genreSeen.add(g));
+        }
+      }
+      for (const a of shuffled) {
+        if (picked.length >= ONBOARDING_SIZE) break;
+        if (!picked.includes(a)) picked.push(a);
+      }
+      tasteAnime = picked.slice(0, ONBOARDING_SIZE);
+      tasteAnime.forEach(a => trackSeen(a));
+    } catch (e2) {
+      console.error(e2);
+      tasteAnime = [];
+    }
+  }
+}
+
+function renderTasteCard(index) {
+  const stack = document.getElementById('card-stack');
+  // Remove existing cards
+  stack.querySelectorAll('.anime-card').forEach(c => c.remove());
+
+  if (index >= tasteAnime.length) {
+    finishTaste();
+    return;
+  }
+
+  // Show next card (peek) if exists
+  if (index + 1 < tasteAnime.length) {
+    const behind = buildCard(tasteAnime[index + 1], false);
+    stack.appendChild(behind);
+  }
+
+  const top = buildCard(tasteAnime[index], true);
+  stack.appendChild(top);
+
+  renderPills(tasteAnime.length, index);
+
+  // Let the engine track what's being shown (for anti-repetition)
+  engine.trackShown(tasteAnime[index]);
+
+  attachSwipe(top,
+    () => { swipeTaste(top, index, true); },
+    () => { swipeTaste(top, index, false); }
+  );
+}
+
+function swipeTaste(card, index, liked) {
+  const anime = tasteAnime[index];
+  flyCard(card, liked ? 'right' : 'left').then(() => {
+    engine.update(anime, liked ? 'like' : 'skip');
+    tasteIndex = index + 1;
+    renderTasteCard(tasteIndex);
+  });
+}
+
+function finishTaste() {
+  engine.finishOnboarding();
+  showOverlay('overlay-recs');
+  loadRecQueue(); // preload in background
+}
+
+/* ─── Button handlers for taste ────────────────── */
+document.getElementById('btn-like').addEventListener('click', () => {
+  const card = document.querySelector('#card-stack .anime-card.top');
+  if (card) swipeTaste(card, tasteIndex, true);
+});
+document.getElementById('btn-skip').addEventListener('click', () => {
+  const card = document.querySelector('#card-stack .anime-card.top');
+  if (card) swipeTaste(card, tasteIndex, false);
+});
+
+/* ─── RECOMMENDATIONS FLOW ──────────────────────── */
+async function loadRecQueue() {
+  document.getElementById('recs-spinner').style.display = 'flex';
+  try {
+    const page = Math.floor(Math.random() * 5) + 1;
+    const data = await fetchAniList(REC_QUERY, {
+      ids: [...seenIds],
+      page,
+      perPage: 50,
+    });
+    // Deduplicate: drop all seasons of shows already seen, keep earliest season of each new franchise
+    const candidates = deduplicateByFranchise(data.Page?.media || []);
+    recQueue = engine.rankRecommendations(candidates, [...seenIds]);
+    recPos = 0;
+  } catch (e) {
+    console.error(e);
+    recQueue = [];
+  }
+  document.getElementById('recs-spinner').style.display = 'none';
+  showNextRec();
+}
+
+function showNextRec() {
+  const container = document.getElementById('rec-card-container');
+  container.querySelectorAll('.anime-card').forEach(c => c.remove());
+
+  // Reload if queue exhausted
+  if (recPos >= recQueue.length) {
+    if (recQueue.length > 0) loadRecQueue();
+    else {
+      container.innerHTML = `
+        <div class="empty-state">
+          <div class="big-emoji">🌸</div>
+          <h2>You've seen it all!</h2>
+          <p>We're fetching more picks for you…</p>
+        </div>`;
+      setTimeout(loadRecQueue, 1500);
+    }
+    return;
+  }
+
+  const anime = recQueue[recPos];
+  currentRecAnime = anime;
+  trackSeen(anime); // records both ID and franchise name
+
+  const card = buildCard(anime, true);
+
+  // Change stamps for rec mode
+  card.querySelector('.stamp-like').textContent = 'WATCH';
+  card.querySelector('.stamp-skip').textContent = 'SKIP';
+
+  container.appendChild(card);
+
+  // Let the engine track what's being shown (for anti-repetition)
+  engine.trackShown(anime);
+
+  attachSwipe(card,
+    () => { recSwipe(card, anime, true); },
+    () => { recSwipe(card, anime, false); }
+  );
+
+  document.getElementById('recs-subtitle').textContent =
+    `${recQueue.length - recPos} picks waiting`;
+}
+
+function recSwipe(card, anime, watch) {
+  flyCard(card, watch ? 'right' : 'left').then(() => {
+    engine.update(anime, watch ? 'watch' : 'skip');
+    recPos++;
+    if (watch) openWatchSheet(anime);
+    else showNextRec();
+  });
+}
+
+document.getElementById('btn-rec-skip').addEventListener('click', () => {
+  const card = document.querySelector('#rec-card-container .anime-card');
+  if (card && currentRecAnime) recSwipe(card, currentRecAnime, false);
+});
+document.getElementById('btn-rec-watch').addEventListener('click', () => {
+  const card = document.querySelector('#rec-card-container .anime-card');
+  if (card && currentRecAnime) recSwipe(card, currentRecAnime, true);
+});
+
+/* ─── Watch Bottom Sheet ────────────────────────── */
+const STREAMING_SITES = [
+  { name: 'Crunchyroll', icon: '🟠', domains: ['crunchyroll'] },
+  { name: 'Netflix',     icon: '🔴', domains: ['netflix'] },
+  { name: 'Hulu',        icon: '🟢', domains: ['hulu'] },
+  { name: 'Prime Video', icon: '🔵', domains: ['amazon', 'primevideo'] },
+  { name: 'YouTube',     icon: '▶️',  domains: ['youtube'] },
+  { name: 'HIDIVE',      icon: '⚡',  domains: ['hidive'] },
+  { name: 'Funimation',  icon: '🌀',  domains: ['funimation'] },
+];
+
+function openWatchSheet(anime) {
+  document.getElementById('sheet-anime-name').textContent =
+    anime.title?.english || anime.title?.romaji || 'Unknown';
+
+  const links = document.getElementById('stream-links');
+  links.innerHTML = '';
+
+  const externalLinks = anime.externalLinks || [];
+  const matched = [];
+
+  for (const site of STREAMING_SITES) {
+    const link = externalLinks.find(l =>
+      site.domains.some(d => (l.url || '').toLowerCase().includes(d))
+    );
+    if (link) {
+      matched.push({ ...site, url: link.url });
+    }
+  }
+
+  // Fallback: search link
+  if (matched.length === 0) {
+    const title = encodeURIComponent(anime.title?.english || anime.title?.romaji || '');
+    matched.push({ name: 'Search on Google', icon: '🔍', url: `https://google.com/search?q=${title}+watch+anime+online` });
+  }
+
+  matched.forEach(site => {
+    const a = document.createElement('a');
+    a.className = 'stream-btn';
+    a.href = site.url;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    a.innerHTML = `
+      <span class="stream-icon">${site.icon}</span>
+      <span class="stream-name">${site.name}</span>
+      <span class="stream-arrow">→</span>`;
+    links.appendChild(a);
+  });
+
+  document.getElementById('watch-sheet').classList.add('open');
+
+  // After sheet closes, show next rec
+  document.getElementById('sheet-backdrop').onclick = () => {
+    document.getElementById('watch-sheet').classList.remove('open');
+    showNextRec();
+  };
+}
+
+/* ─── App boot ──────────────────────────────────── */
+document.getElementById('btn-start').addEventListener('click', () => {
+  showScreen('screen-swipe');
+  showOverlay('overlay-taste');
+  // Preload taste anime
+  loadTasteAnime().then(() => {
+    document.getElementById('swipe-spinner').style.display = 'none';
+    renderTasteCard(0);
+  });
+});
+
+document.getElementById('btn-start-taste').addEventListener('click', () => {
+  hideOverlay('overlay-taste');
+});
+
+document.getElementById('btn-start-recs').addEventListener('click', () => {
+  hideOverlay('overlay-recs');
+  showScreen('screen-recs');
+  if (recQueue.length === 0) {
+    // Still loading
+    document.getElementById('recs-spinner').style.display = 'flex';
+  } else {
+    showNextRec();
+  }
+});
+
+// Register service worker
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(console.warn);
+  });
+}
+
+// Init taste engine
+engine = new NextArcEngine();
+</script>
+</body>
+</html>
