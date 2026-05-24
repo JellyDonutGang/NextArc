@@ -618,6 +618,8 @@
       height: 28px;
       object-fit: contain;
       border-radius: 6px;
+      background: #fff;
+      padding: 4px;
       flex-shrink: 0;
     }
     .stream-logo-fallback {
@@ -1688,15 +1690,15 @@ document.getElementById('btn-rec-watch').addEventListener('click', () => {
 
 /* ─── Watch Bottom Sheet ────────────────────────── */
 const STREAMING_SITES = [
-  { name: 'Crunchyroll', logo: 'https://logo.clearbit.com/crunchyroll.com',  domains: ['crunchyroll'] },
-  { name: 'Netflix',     logo: 'https://logo.clearbit.com/netflix.com',      domains: ['netflix'] },
-  { name: 'Hulu',        logo: 'https://logo.clearbit.com/hulu.com',         domains: ['hulu'] },
-  { name: 'Prime Video', logo: 'https://logo.clearbit.com/primevideo.com',   domains: ['amazon', 'primevideo'] },
-  { name: 'YouTube',     logo: 'https://logo.clearbit.com/youtube.com',      domains: ['youtube'] },
-  { name: 'HIDIVE',      logo: 'https://logo.clearbit.com/hidive.com',       domains: ['hidive'] },
-  { name: 'Funimation',  logo: 'https://logo.clearbit.com/funimation.com',   domains: ['funimation'] },
-  { name: 'Disney+',     logo: 'https://logo.clearbit.com/disneyplus.com',   domains: ['disney'] },
-  { name: 'Max',         logo: 'https://logo.clearbit.com/max.com',          domains: ['hbomax', 'max.com'] },
+  { name: 'Crunchyroll', logo: 'https://cdn.simpleicons.org/crunchyroll/F47521', domains: ['crunchyroll'] },
+  { name: 'Netflix',     logo: 'https://cdn.simpleicons.org/netflix/E50914',     domains: ['netflix'] },
+  { name: 'Hulu',        logo: 'https://cdn.simpleicons.org/hulu/1CE783',        domains: ['hulu'] },
+  { name: 'Prime Video', logo: 'https://cdn.simpleicons.org/primevideo/00A8E0',  domains: ['amazon', 'primevideo'] },
+  { name: 'YouTube',     logo: 'https://cdn.simpleicons.org/youtube/FF0000',     domains: ['youtube'] },
+  { name: 'HIDIVE',      logo: 'https://cdn.simpleicons.org/hidive/00BAFF',      domains: ['hidive'] },
+  { name: 'Funimation',  logo: 'https://cdn.simpleicons.org/funimation/5B4BE1',  domains: ['funimation'] },
+  { name: 'Disney+',     logo: 'https://cdn.simpleicons.org/disneyplus/113CCF',  domains: ['disney'] },
+  { name: 'Max',         logo: 'https://cdn.simpleicons.org/hbomax/8000FF',      domains: ['hbomax', 'max.com'] },
 ];
 
 function openWatchSheet(anime) {
