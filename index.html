@@ -171,18 +171,24 @@
       padding: 0 4px 12px;
     }
     .swipe-title { font-size: 13px; font-weight: 600; color: var(--text-muted); letter-spacing: 0.5px; text-transform: uppercase; }
-    .progress-pills {
+    .signal-tracker {
       display: flex;
-      gap: 4px;
+      gap: 8px;
+      align-items: center;
     }
-    .pill {
-      width: 10px; height: 4px;
-      border-radius: 2px;
-      background: var(--border);
-      transition: background 0.3s;
+    .signal-badge {
+      font-size: 12px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 20px;
+      background: var(--surface2);
+      border: 1.5px solid var(--border);
+      transition: background 0.3s, color 0.3s, border-color 0.3s;
+      letter-spacing: 0.2px;
     }
-    .pill.done { background: var(--accent); }
-    .pill.active { background: var(--text-muted); }
+    .signal-badge.likes   { color: var(--accent);     border-color: rgba(230,57,70,0.4); }
+    .signal-badge.dislikes{ color: var(--text-muted); }
+    .signal-badge.met     { background: rgba(46,196,182,0.2); border-color: var(--green); color: var(--green); }
 
     /* Card Stack */
     .card-stack {
@@ -787,7 +793,10 @@
 <section id="screen-swipe" class="screen">
   <div class="swipe-header">
     <span class="swipe-title">Taste Check</span>
-    <div class="progress-pills" id="progress-pills"></div>
+    <div class="signal-tracker" id="signal-tracker">
+      <div class="signal-badge likes" id="signal-likes">♥ 0/6</div>
+      <div class="signal-badge dislikes" id="signal-dislikes">✕ 0/4</div>
+    </div>
   </div>
 
   <div class="card-stack" id="card-stack">
@@ -973,14 +982,17 @@ query ($ids: [Int]) {
 }`;
 
 const SEED_POOL_IDS = [
+  // ── Originals ─────────────────────────────────────
   1,      // Cowboy Bebop       — noir, episodic, mature, low emotion
   5,      // Trigun             — action, comedy, western, bittersweet
   30,     // Neon Genesis Eva.  — dark, psychological, iconic, slow
   457,    // Mushishi           — slow, atmospheric, no conflict, niche
   918,    // Gintama            — heavy comedy, action, long
   1535,   // Death Note         — thriller, dark, no romance, fast
+  1706,   // Code Geass         — mecha, political strategy, dark
   2001,   // Gurren Lagann      — hype, action, emotional, fast
   2167,   // Clannad            — romance, slice of life, emotional
+  2593,   // Spice and Wolf     — romance, economics, adult, slow
   4181,   // Clannad After Story— max emotional, heavy romance
   4224,   // Toradora           — romance, comedy, emotional
   5114,   // FMA Brotherhood    — action, dark, emotional, mainstream
@@ -988,10 +1000,14 @@ const SEED_POOL_IDS = [
   6547,   // Bakemonogatari     — unique style, mystery, romance, niche
   7088,   // Tatami Galaxy      — surreal, fast dialogue, niche, smart
   9253,   // Steins;Gate        — sci-fi, dark, emotional, slow burn
+  9756,   // Nichijou           — absurdist comedy, cute, surreal
   9989,   // AnoHana            — emotional, grief, light romance
   11061,  // Hunter x Hunter    — long action, dark arcs, emotional
+  11617,  // Another            — horror, mystery, dark, short
   11757,  // Sword Art Online   — mainstream action, romance, low darkness
+  11981,  // Hyouka             — mystery, slice of life, beautiful
   13601,  // Psycho-Pass        — dark sci-fi, dystopia, action
+  15125,  // Madoka Magica      — dark magical girl, tragedy, short
   16498,  // Attack on Titan    — dark, violent, action, mainstream
   17205,  // Non Non Biyori     — cozy, zero conflict, slow, rural
   19815,  // Kill la Kill       — fan service, action, over-the-top
@@ -1001,15 +1017,34 @@ const SEED_POOL_IDS = [
   21185,  // Ping Pong Anim.    — unique art, sports, emotional, niche
   21202,  // KonoSuba           — comedy, fantasy, parody, light fan service
   21355,  // Re:Zero            — dark isekai, thriller, emotional
+  21519,  // My Hero Academia   — mainstream action, heroics, feel-good
   21827,  // Violet Evergarden  — emotional, beautiful, slow, low humor
+  22319,  // Tokyo Ghoul        — dark, horror, action, identity
+  22535,  // Parasyte           — dark sci-fi, body horror, thriller
+  24765,  // Baccano!           — dark comedy, non-linear, gangster
   30276,  // One Punch Man      — comedy, action, zero romance
   32182,  // Mob Psycho 100     — comedy, action, emotional growth
+  40748,  // Jujutsu Kaisen     — dark action, modern, hype
   97986,  // Made in Abyss      — dark, adventure, beautiful, emotional
+  99426,  // Overlord           — dark isekai, power fantasy, no romance
+  100922, // Fruits Basket 2019 — romance, family, healing, emotional
   101348, // Vinland Saga       — dark, violent, historical, no humor
   101922, // Demon Slayer       — action, emotional, mainstream, medium dark
+  104578, // Spy x Family       — comedy, family, action, light, cozy
+  105333, // Bocchi the Rock    — music, comedy, social anxiety, healing
+  108725, // Dr. Stone          — science, adventure, optimistic, action
+  112641, // Ranking of Kings   — fantasy, emotional, underdog, beautiful
+  113415, // Oshi no Ko         — idol world, dark, drama, meta
+  130003, // Chainsaw Man       — dark action, mature, ultra-violent, hype
+  152634, // Frieren            — fantasy, slow burn, adult, emotional
 ];
 
-const ONBOARDING_SIZE = 20;
+// ── Onboarding signal thresholds ──────────────────
+const MIN_LIKES             = 6;   // real likes required before recs unlock
+const MIN_DISLIKES          = 4;   // real dislikes required before recs unlock
+const MAX_ONBOARDING_SHOWN  = 30;  // hard cap — never show more than this
+const INITIAL_QUEUE_SIZE    = 12;  // diverse anime shown first before reserve kicks in
+const RESERVE_LOW_THRESHOLD = 6;   // refetch reserve when it drops below this
 
 /**
  * Farthest-point sampling: picks the N most dimensionally diverse anime
@@ -1149,12 +1184,17 @@ function trackSeen(anime) {
 
 /* ─── State ────────────────────────────────────── */
 let engine = null;
-let tasteAnime = [];
-let tasteIndex = 0;
+let tasteAnime     = [];   // active onboarding queue (cards to show)
+let reservePool    = [];   // loaded but not yet shown — used for skip replacement
+let tasteIndex     = 0;
+let likeCount      = 0;    // real "good" signals collected
+let dislikeCount   = 0;    // real "bad" signals collected
+let totalShown     = 0;    // total onboarding cards shown (for hard cap)
+let isLoadingReserve = false;
 let recQueue = [];
 let recPos = 0;
 let seenIds = new Set();
-let seenFranchises = new Set(); // normalized franchise names — blocks all seasons of a seen show
+let seenFranchises = new Set();
 let currentRecAnime = null;
 
 /* ─── Screen navigation ─────────────────────────── */
@@ -1169,15 +1209,38 @@ function hideOverlay(id) {
   document.getElementById(id).classList.remove('visible');
 }
 
-/* ─── Progress pills ────────────────────────────── */
-function renderPills(total, current) {
-  const container = document.getElementById('progress-pills');
-  container.innerHTML = '';
-  for (let i = 0; i < total; i++) {
-    const p = document.createElement('div');
-    p.className = 'pill' + (i < current ? ' done' : i === current ? ' active' : '');
-    container.appendChild(p);
+/* ─── Signal progress display ───────────────────── */
+function updateSignalProgress() {
+  const likesEl    = document.getElementById('signal-likes');
+  const dislikesEl = document.getElementById('signal-dislikes');
+  likesEl.textContent    = `♥ ${likeCount}/${MIN_LIKES}`;
+  dislikesEl.textContent = `✕ ${dislikeCount}/${MIN_DISLIKES}`;
+  likesEl.classList.toggle('met',    likeCount    >= MIN_LIKES);
+  dislikesEl.classList.toggle('met', dislikeCount >= MIN_DISLIKES);
+}
+
+function shouldFinishOnboarding() {
+  return (likeCount >= MIN_LIKES && dislikeCount >= MIN_DISLIKES)
+      || totalShown >= MAX_ONBOARDING_SHOWN;
+}
+
+/* ─── Dynamic reserve refetch ───────────────────── */
+async function fetchMoreForReserve() {
+  if (isLoadingReserve) return;
+  isLoadingReserve = true;
+  try {
+    const page = Math.floor(Math.random() * 5) + 1;
+    const data = await fetchAniList(SEED_QUERY, {
+      page, perPage: 30, sort: ['SCORE_DESC'],
+    });
+    const fresh = deduplicateByFranchise(data.Page?.media || [])
+      .filter(a => !seenIds.has(a.id) && a.coverImage?.large);
+    fresh.forEach(a => trackSeen(a));
+    reservePool.push(...fresh.sort(() => Math.random() - 0.5));
+  } catch (e) {
+    console.warn('Reserve refetch failed:', e);
   }
+  isLoadingReserve = false;
 }
 
 /* ─── Build a card element ─────────────────────── */
@@ -1266,73 +1329,91 @@ function flyCard(card, direction) {
 /* ─── TASTE CHECK FLOW ──────────────────────────── */
 async function loadTasteAnime() {
   try {
-    // Fetch the full curated seed pool in one request
-    const data = await fetchAniList(SEED_POOL_QUERY, { ids: SEED_POOL_IDS });
-    const raw  = (data.Page?.media || []).filter(a => a.coverImage?.large);
+    // Fetch 60-anime curated pool in two parallel requests (AniList caps at 50/page)
+    const half = Math.ceil(SEED_POOL_IDS.length / 2);
+    const [d1, d2] = await Promise.all([
+      fetchAniList(SEED_POOL_QUERY, { ids: SEED_POOL_IDS.slice(0, half) }),
+      fetchAniList(SEED_POOL_QUERY, { ids: SEED_POOL_IDS.slice(half) }),
+    ]);
+    const raw = [
+      ...(d1.Page?.media || []),
+      ...(d2.Page?.media || []),
+    ].filter(a => a.coverImage?.large);
 
-    // Deduplicate: one entry per franchise, no sequel contamination
     const pool = deduplicateByFranchise(raw);
-
     if (pool.length < 8) throw new Error('Seed pool too small, falling back');
 
-    // Pick the most dimensionally diverse ONBOARDING_SIZE anime from the pool
-    tasteAnime = selectDiverseSeed(pool, ONBOARDING_SIZE);
-    tasteAnime.forEach(a => trackSeen(a));
+    // Mark all pool items as seen so they never appear in recommendations
+    pool.forEach(a => trackSeen(a));
+
+    // Diversity-select the initial active queue (what the user sees first)
+    const initial = selectDiverseSeed(pool, Math.min(INITIAL_QUEUE_SIZE, pool.length));
+    tasteAnime = [...initial];
+
+    // Everything else goes into the reserve for skip replacements & overflow
+    const initialSet = new Set(initial.map(a => a.id));
+    reservePool = pool
+      .filter(a => !initialSet.has(a.id))
+      .sort(() => Math.random() - 0.5);
 
   } catch (e) {
     console.warn('Curated seed fetch failed, using popularity fallback:', e);
     try {
-      // Fallback: grab popular anime and do basic genre-diversity pass
       const [p1, p2] = await Promise.all([
         fetchAniList(SEED_QUERY, { page: 1, perPage: 30, sort: ['POPULARITY_DESC'] }),
-        fetchAniList(SEED_QUERY, { page: 2, perPage: 20, sort: ['SCORE_DESC'] }),
+        fetchAniList(SEED_QUERY, { page: 2, perPage: 30, sort: ['SCORE_DESC'] }),
       ]);
-      const all = [...(p1.Page?.media || []), ...(p2.Page?.media || [])];
-      const deduped = deduplicateByFranchise(all);
-      const shuffled = deduped.sort(() => Math.random() - 0.5);
-      const genreSeen = new Set();
-      const picked = [];
-      for (const a of shuffled) {
-        if (picked.length >= ONBOARDING_SIZE) break;
-        const newGenres = (a.genres || []).filter(g => !genreSeen.has(g));
-        if (newGenres.length > 0 || picked.length < 5) {
-          picked.push(a);
-          (a.genres || []).forEach(g => genreSeen.add(g));
-        }
-      }
-      for (const a of shuffled) {
-        if (picked.length >= ONBOARDING_SIZE) break;
-        if (!picked.includes(a)) picked.push(a);
-      }
-      tasteAnime = picked.slice(0, ONBOARDING_SIZE);
-      tasteAnime.forEach(a => trackSeen(a));
+      const all = deduplicateByFranchise([
+        ...(p1.Page?.media || []),
+        ...(p2.Page?.media || []),
+      ]).filter(a => a.coverImage?.large);
+      all.forEach(a => trackSeen(a));
+      const initial = selectDiverseSeed(all, Math.min(INITIAL_QUEUE_SIZE, all.length));
+      tasteAnime = [...initial];
+      const initialSet = new Set(initial.map(a => a.id));
+      reservePool = all.filter(a => !initialSet.has(a.id)).sort(() => Math.random() - 0.5);
     } catch (e2) {
       console.error(e2);
       tasteAnime = [];
+      reservePool = [];
     }
   }
 }
 
 function renderTasteCard(index, isReplacement = false) {
   const stack = document.getElementById('card-stack');
-  // Remove existing cards
   stack.querySelectorAll('.anime-card').forEach(c => c.remove());
 
+  // If we've used up the active queue, pull the next card from the reserve
   if (index >= tasteAnime.length) {
+    if (reservePool.length > 0) {
+      tasteAnime.push(reservePool.shift());
+    } else if (!shouldFinishOnboarding()) {
+      // Reserve empty and minimum not met — fetch more, then retry
+      fetchMoreForReserve().then(() => {
+        if (reservePool.length > 0) tasteAnime.push(reservePool.shift());
+        renderTasteCard(index);
+      });
+      return;
+    }
+  }
+
+  // Completion check
+  if (shouldFinishOnboarding() || index >= tasteAnime.length) {
     finishTaste();
     return;
   }
 
-  // Show next card (peek) if exists
+  // Peek card behind
   if (index + 1 < tasteAnime.length) {
-    const behind = buildCard(tasteAnime[index + 1], false);
-    stack.appendChild(behind);
+    stack.appendChild(buildCard(tasteAnime[index + 1], false));
+  } else if (reservePool.length > 0) {
+    stack.appendChild(buildCard(reservePool[0], false)); // preview next reserve
   }
 
   const top = buildCard(tasteAnime[index], true);
   stack.appendChild(top);
 
-  // When a skip was replaced, show a brief badge so the user knows why the card changed
   if (isReplacement) {
     const badge = document.createElement('div');
     badge.className = 'similar-badge';
@@ -1342,12 +1423,13 @@ function renderTasteCard(index, isReplacement = false) {
     setTimeout(() => badge.remove(), 2300);
   }
 
-  // Progress pills — always use ONBOARDING_SIZE as denominator so the
-  // bar never shrinks when skipped items are removed from the array
-  renderPills(ONBOARDING_SIZE, index);
-
-  // Let the engine track what's being shown (for anti-repetition)
+  updateSignalProgress();
   engine.trackShown(tasteAnime[index]);
+
+  // Refill reserve proactively when running low
+  if (reservePool.length < RESERVE_LOW_THRESHOLD && !isLoadingReserve) {
+    fetchMoreForReserve();
+  }
 
   attachSwipe(top,
     () => { swipeTaste(top, index, 'like'); },
@@ -1360,8 +1442,11 @@ function swipeTaste(card, index, action) {
   const dir   = action === 'like' ? 'right' : action === 'dislike' ? 'left' : 'right';
   flyCard(card, dir).then(() => {
     if (action === 'skip') {
-      replaceSkippedCard(anime, index); // swap in similar, don't advance
+      replaceSkippedCard(anime, index);
     } else {
+      if (action === 'like')    likeCount++;
+      if (action === 'dislike') dislikeCount++;
+      totalShown++;
       engine.update(anime, action);
       tasteIndex = index + 1;
       renderTasteCard(tasteIndex);
@@ -1392,31 +1477,46 @@ function onboardingSimilarity(a, b) {
  * progress advances.
  */
 function replaceSkippedCard(skipped, index) {
-  // Drop skipped from array (already marked seenIds at load time)
   tasteAnime.splice(index, 1);
 
-  if (index >= tasteAnime.length) {
-    // Exhausted the pool — wrap up
-    finishTaste();
+  // Build a combined search pool: reserve first (fresh anime), then remaining queue
+  const searchPool = [...reservePool, ...tasteAnime.slice(index)];
+
+  if (searchPool.length === 0) {
+    // Nowhere to pull from — finish if we can, otherwise fetch more
+    if (shouldFinishOnboarding()) { finishTaste(); return; }
+    fetchMoreForReserve().then(() => {
+      if (reservePool.length > 0) tasteAnime.splice(index, 0, reservePool.shift());
+      renderTasteCard(index, true);
+    });
     return;
   }
 
-  // Find the best match from tasteAnime[index..]
-  let bestIdx = index;
-  let bestScore = -1;
-  for (let i = index; i < tasteAnime.length; i++) {
-    const s = onboardingSimilarity(skipped, tasteAnime[i]);
+  // Find most genre/tag-similar anime to the one they skipped
+  let bestIdx = 0, bestScore = -1;
+  for (let i = 0; i < searchPool.length; i++) {
+    const s = onboardingSimilarity(skipped, searchPool[i]);
     if (s > bestScore) { bestScore = s; bestIdx = i; }
   }
 
-  // Promote best match to the current slot
-  if (bestIdx !== index) {
-    const best = tasteAnime.splice(bestIdx, 1)[0];
-    tasteAnime.splice(index, 0, best);
+  const best = searchPool[bestIdx];
+
+  // Remove it from wherever it lived
+  if (bestIdx < reservePool.length) {
+    reservePool.splice(bestIdx, 1);
+  } else {
+    const queueIdx = index + (bestIdx - reservePool.length);
+    tasteAnime.splice(queueIdx, 1);
   }
 
-  // Re-render at the same index — no progress advance
-  // Pass flag so the card gets a subtle "similar pick" badge
+  // Insert into the active slot
+  tasteAnime.splice(index, 0, best);
+
+  // Proactively refill reserve if it's running low
+  if (reservePool.length < RESERVE_LOW_THRESHOLD && !isLoadingReserve) {
+    fetchMoreForReserve();
+  }
+
   renderTasteCard(index, true);
 }
 
