@@ -616,10 +616,7 @@
     .stream-logo {
       width: 28px;
       height: 28px;
-      object-fit: contain;
       border-radius: 6px;
-      background: #fff;
-      padding: 4px;
       flex-shrink: 0;
     }
     .stream-logo-fallback {
@@ -1689,16 +1686,56 @@ document.getElementById('btn-rec-watch').addEventListener('click', () => {
 });
 
 /* ─── Watch Bottom Sheet ────────────────────────── */
+function _logo(svg) {
+  return 'data:image/svg+xml,' + encodeURIComponent(svg);
+}
+
 const STREAMING_SITES = [
-  { name: 'Crunchyroll', logo: 'https://cdn.simpleicons.org/crunchyroll/F47521', domains: ['crunchyroll'] },
-  { name: 'Netflix',     logo: 'https://cdn.simpleicons.org/netflix/E50914',     domains: ['netflix'] },
-  { name: 'Hulu',        logo: 'https://cdn.simpleicons.org/hulu/1CE783',        domains: ['hulu'] },
-  { name: 'Prime Video', logo: 'https://cdn.simpleicons.org/primevideo/00A8E0',  domains: ['amazon', 'primevideo'] },
-  { name: 'YouTube',     logo: 'https://cdn.simpleicons.org/youtube/FF0000',     domains: ['youtube'] },
-  { name: 'HIDIVE',      logo: 'https://cdn.simpleicons.org/hidive/00BAFF',      domains: ['hidive'] },
-  { name: 'Funimation',  logo: 'https://cdn.simpleicons.org/funimation/5B4BE1',  domains: ['funimation'] },
-  { name: 'Disney+',     logo: 'https://cdn.simpleicons.org/disneyplus/113CCF',  domains: ['disney'] },
-  { name: 'Max',         logo: 'https://cdn.simpleicons.org/hbomax/8000FF',      domains: ['hbomax', 'max.com'] },
+  {
+    name: 'Crunchyroll',
+    logo: _logo('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><circle cx="16" cy="16" r="16" fill="#F47521"/><circle cx="16" cy="16" r="8" fill="none" stroke="white" stroke-width="5" stroke-dasharray="35 15" stroke-dashoffset="2"/></svg>'),
+    domains: ['crunchyroll']
+  },
+  {
+    name: 'Netflix',
+    logo: _logo('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="4" fill="#E50914"/><rect x="8" y="6" width="3.5" height="20" fill="white"/><rect x="20.5" y="6" width="3.5" height="20" fill="white"/><polygon points="11.5,6 14.5,6 20.5,26 17.5,26" fill="white"/></svg>'),
+    domains: ['netflix']
+  },
+  {
+    name: 'Hulu',
+    logo: _logo('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="4" fill="#1CE783"/><rect x="8" y="6" width="3.5" height="20" fill="#0B2C1D"/><rect x="20.5" y="6" width="3.5" height="20" fill="#0B2C1D"/><rect x="8" y="14" width="16" height="4" fill="#0B2C1D"/></svg>'),
+    domains: ['hulu']
+  },
+  {
+    name: 'Prime Video',
+    logo: _logo('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="4" fill="#232F3E"/><text x="16" y="15" text-anchor="middle" font-size="6.5" font-weight="bold" fill="white" font-family="Arial,sans-serif">prime</text><text x="16" y="22" text-anchor="middle" font-size="5.5" fill="#00A8E0" font-family="Arial,sans-serif">video</text><path d="M9,26 Q16,31 23,26" stroke="#00A8E0" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>'),
+    domains: ['amazon', 'primevideo']
+  },
+  {
+    name: 'YouTube',
+    logo: _logo('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="4" fill="#FF0000"/><polygon points="12,9 12,23 24,16" fill="white"/></svg>'),
+    domains: ['youtube']
+  },
+  {
+    name: 'HIDIVE',
+    logo: _logo('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="4" fill="#00BAFF"/><text x="16" y="21" text-anchor="middle" font-size="10" font-weight="bold" fill="white" font-family="Arial,sans-serif">HI</text></svg>'),
+    domains: ['hidive']
+  },
+  {
+    name: 'Funimation',
+    logo: _logo('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><circle cx="16" cy="16" r="16" fill="#5B4BE1"/><text x="16" y="22" text-anchor="middle" font-size="16" font-weight="bold" fill="white" font-family="Arial,sans-serif">F</text></svg>'),
+    domains: ['funimation']
+  },
+  {
+    name: 'Disney+',
+    logo: _logo('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="4" fill="#113CCF"/><text x="16" y="21" text-anchor="middle" font-size="12" font-weight="bold" fill="white" font-family="Arial,sans-serif">D+</text></svg>'),
+    domains: ['disney']
+  },
+  {
+    name: 'Max',
+    logo: _logo('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="4" fill="#002BE7"/><text x="16" y="21" text-anchor="middle" font-size="11" font-weight="bold" fill="white" font-family="Arial,sans-serif">MAX</text></svg>'),
+    domains: ['hbomax', 'max.com']
+  },
 ];
 
 function openWatchSheet(anime) {
