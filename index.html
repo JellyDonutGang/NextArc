@@ -573,6 +573,37 @@
       height: 100%;
       border: none;
     }
+    /* ── Anime Description ─────────────────────────── */
+    .desc-section {
+      margin-bottom: 18px;
+    }
+    .desc-text {
+      font-size: 13.5px;
+      line-height: 1.55;
+      color: var(--text-muted);
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
+    .desc-text.expanded {
+      display: block;
+      -webkit-line-clamp: unset;
+    }
+    .desc-toggle {
+      display: inline-block;
+      margin-top: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--accent);
+      cursor: pointer;
+      letter-spacing: 0.3px;
+      background: none;
+      border: none;
+      padding: 0;
+    }
+
     .trailer-section-label {
       font-size: 11px;
       font-weight: 700;
@@ -798,6 +829,10 @@
         <div class="trailer-label">Watch Trailer</div>
       </div>
     </div>
+    <div class="desc-section" id="desc-section" style="display:none">
+      <p class="desc-text" id="desc-text"></p>
+      <button class="desc-toggle" id="desc-toggle">More ▾</button>
+    </div>
     <div class="trailer-section-label" style="margin-bottom:10px" id="stream-label">Where to Watch</div>
     <div class="stream-links" id="stream-links"></div>
   </div>
@@ -848,6 +883,7 @@ query ($ids: [Int], $page: Int, $perPage: Int) {
       studios(isMain: true) { nodes { name } }
       relations { edges { relationType } }
       trailer { id site thumbnail }
+      description(asHtml: false)
     }
   }
 }`;
@@ -1683,6 +1719,26 @@ function openWatchSheet(anime) {
     trailerSection.style.display = 'none';
   }
 
+  // ── Description ────────────────────────────────
+  const descSection = document.getElementById('desc-section');
+  const descText    = document.getElementById('desc-text');
+  const descToggle  = document.getElementById('desc-toggle');
+
+  // Strip residual HTML entities AniList sometimes includes
+  const rawDesc = (anime.description || '').replace(/<[^>]*>/g, '').replace(/&[a-z]+;/gi, ' ').trim();
+  if (rawDesc) {
+    descSection.style.display = 'block';
+    descText.textContent = rawDesc;
+    descText.classList.remove('expanded');
+    descToggle.textContent = 'More ▾';
+    descToggle.onclick = () => {
+      const expanded = descText.classList.toggle('expanded');
+      descToggle.textContent = expanded ? 'Less ▴' : 'More ▾';
+    };
+  } else {
+    descSection.style.display = 'none';
+  }
+
   // ── Streaming links ────────────────────────────
   const links = document.getElementById('stream-links');
   links.innerHTML = '';
@@ -1723,6 +1779,9 @@ function openWatchSheet(anime) {
     // Kill iframe (stops video/audio immediately)
     const iframe = trailerWrap.querySelector('.trailer-iframe');
     if (iframe) iframe.src = '';
+    // Reset description collapse state
+    document.getElementById('desc-text').classList.remove('expanded');
+    document.getElementById('desc-toggle').textContent = 'More ▾';
     document.getElementById('watch-sheet').classList.remove('open');
     showNextRec();
   };
