@@ -662,6 +662,34 @@
     .stream-name { display: none; }
     .stream-arrow { display: none; }
 
+    /* ── Card play overlay button ─────────────────────── */
+    .card-play-overlay {
+      position: absolute;
+      bottom: 72px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.55);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 2px solid rgba(255,255,255,0.35);
+      color: #fff;
+      font-size: 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 5;
+      transition: transform 0.15s, background 0.15s;
+      padding-left: 3px; /* optical center for ▶ */
+    }
+    .card-play-overlay:active {
+      transform: translateX(-50%) scale(0.9);
+      background: rgba(0,0,0,0.75);
+    }
+
     /* ── Similar-pick badge (skip replacement) ───────── */
     .similar-badge {
       position: absolute;
@@ -828,9 +856,8 @@
   </div>
 
   <div class="action-buttons">
-    <button class="action-btn btn-dislike" id="btn-rec-dislike">✕</button>
-    <button class="action-btn btn-skip"    id="btn-rec-watch">▶</button>
-    <button class="action-btn btn-like"    id="btn-rec-like">✓</button>
+    <button class="action-btn btn-dislike btn-text" id="btn-rec-dislike">Bad</button>
+    <button class="action-btn btn-like    btn-text" id="btn-rec-like">Good</button>
   </div>
 </section>
 
@@ -1656,6 +1683,16 @@ function showNextRec(firstCard = false) {
   card.querySelector('.stamp-like').textContent    = 'WATCH';
   card.querySelector('.stamp-dislike').textContent = 'NOPE';
 
+  // Play overlay — opens watch sheet without swiping
+  const playBtn = document.createElement('button');
+  playBtn.className = 'card-play-overlay';
+  playBtn.innerHTML = '▶';
+  playBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    openWatchSheet(anime);
+  });
+  card.appendChild(playBtn);
+
   container.appendChild(card);
 
   // Slam the first card in dramatically after unlock
@@ -1680,10 +1717,8 @@ function recSwipe(card, anime, action) {
   const dir = action === 'dislike' ? 'left' : 'right';
   flyCard(card, dir).then(() => {
     engine.update(anime, action);
-    trackSeen(anime);
     recPos++;
-    if (action === 'watch') openWatchSheet(anime);
-    else showNextRec();
+    showNextRec();
   });
 }
 
@@ -1695,10 +1730,7 @@ document.getElementById('btn-rec-like').addEventListener('click', () => {
   const card = document.querySelector('#rec-card-container .anime-card');
   if (card && currentRecAnime) recSwipe(card, currentRecAnime, 'like');
 });
-document.getElementById('btn-rec-watch').addEventListener('click', () => {
-  const card = document.querySelector('#rec-card-container .anime-card');
-  if (card && currentRecAnime) recSwipe(card, currentRecAnime, 'watch');
-});
+// btn-rec-watch removed from DOM — play button is now a card overlay
 
 /* ─── Watch Bottom Sheet ────────────────────────── */
 function _logo(svg) {
@@ -1707,48 +1739,57 @@ function _logo(svg) {
 
 const STREAMING_SITES = [
   {
+    // Orange circle, white C-ring open at top-right
     name: 'Crunchyroll',
-    logo: _logo('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><circle cx="16" cy="16" r="16" fill="#F47521"/><circle cx="16" cy="16" r="8" fill="none" stroke="white" stroke-width="5" stroke-dasharray="35 15" stroke-dashoffset="2"/></svg>'),
+    logo: _logo('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><circle cx="16" cy="16" r="16" fill="#F47521"/><circle cx="16" cy="16" r="9.5" fill="none" stroke="white" stroke-width="5.5" stroke-dasharray="44 15" stroke-linecap="round"/></svg>'),
     domains: ['crunchyroll']
   },
   {
+    // Red background, bold white N (two bars + diagonal)
     name: 'Netflix',
-    logo: _logo('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="4" fill="#E50914"/><rect x="8" y="6" width="3.5" height="20" fill="white"/><rect x="20.5" y="6" width="3.5" height="20" fill="white"/><polygon points="11.5,6 14.5,6 20.5,26 17.5,26" fill="white"/></svg>'),
+    logo: _logo('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="3" fill="#E50914"/><rect x="7" y="5" width="4" height="22" fill="white"/><rect x="21" y="5" width="4" height="22" fill="white"/><polygon points="11,5 15,5 21,27 17,27" fill="white"/></svg>'),
     domains: ['netflix']
   },
   {
+    // Green background, dark lowercase h (Hulu brand shape)
     name: 'Hulu',
-    logo: _logo('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="4" fill="#1CE783"/><rect x="8" y="6" width="3.5" height="20" fill="#0B2C1D"/><rect x="20.5" y="6" width="3.5" height="20" fill="#0B2C1D"/><rect x="8" y="14" width="16" height="4" fill="#0B2C1D"/></svg>'),
+    logo: _logo('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="4" fill="#1CE783"/><rect x="8" y="5" width="4" height="22" fill="#0A2E1F"/><rect x="20" y="14" width="4" height="13" fill="#0A2E1F"/><path d="M12,14 Q16,9 20,14" fill="none" stroke="#0A2E1F" stroke-width="4" stroke-linecap="round"/></svg>'),
     domains: ['hulu']
   },
   {
+    // Dark navy, white "prime" + blue smile arc
     name: 'Prime Video',
-    logo: _logo('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="4" fill="#232F3E"/><text x="16" y="15" text-anchor="middle" font-size="6.5" font-weight="bold" fill="white" font-family="Arial,sans-serif">prime</text><text x="16" y="22" text-anchor="middle" font-size="5.5" fill="#00A8E0" font-family="Arial,sans-serif">video</text><path d="M9,26 Q16,31 23,26" stroke="#00A8E0" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>'),
+    logo: _logo('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="4" fill="#1A1A2E"/><text x="16" y="17" text-anchor="middle" font-size="7.5" font-weight="bold" fill="white" font-family="Arial,sans-serif">prime</text><path d="M8,23 Q16,29 24,23" stroke="#00A8E0" stroke-width="2.5" fill="none" stroke-linecap="round"/></svg>'),
     domains: ['amazon', 'primevideo']
   },
   {
+    // Red background, white rounded-rect frame + red play triangle
     name: 'YouTube',
-    logo: _logo('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="4" fill="#FF0000"/><polygon points="12,9 12,23 24,16" fill="white"/></svg>'),
+    logo: _logo('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="4" fill="#FF0000"/><rect x="4" y="9" width="24" height="14" rx="4" fill="white"/><polygon points="13,13 13,19 21,16" fill="#FF0000"/></svg>'),
     domains: ['youtube']
   },
   {
+    // Blue background, white H letterform
     name: 'HIDIVE',
-    logo: _logo('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="4" fill="#00BAFF"/><text x="16" y="21" text-anchor="middle" font-size="10" font-weight="bold" fill="white" font-family="Arial,sans-serif">HI</text></svg>'),
+    logo: _logo('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="4" fill="#00BAFF"/><rect x="7" y="9" width="4" height="14" fill="white"/><rect x="21" y="9" width="4" height="14" fill="white"/><rect x="11" y="14" width="10" height="4" fill="white"/></svg>'),
     domains: ['hidive']
   },
   {
+    // Purple circle, white F letterform
     name: 'Funimation',
-    logo: _logo('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><circle cx="16" cy="16" r="16" fill="#5B4BE1"/><text x="16" y="22" text-anchor="middle" font-size="16" font-weight="bold" fill="white" font-family="Arial,sans-serif">F</text></svg>'),
+    logo: _logo('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><circle cx="16" cy="16" r="16" fill="#5B4BE1"/><rect x="10" y="8" width="3.5" height="16" fill="white"/><rect x="10" y="8" width="12" height="3.5" fill="white"/><rect x="10" y="15" width="9" height="3" fill="white"/></svg>'),
     domains: ['funimation']
   },
   {
+    // Dark blue, white D letterform (bar + arc)
     name: 'Disney+',
-    logo: _logo('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="4" fill="#113CCF"/><text x="16" y="21" text-anchor="middle" font-size="12" font-weight="bold" fill="white" font-family="Arial,sans-serif">D+</text></svg>'),
+    logo: _logo('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="4" fill="#1434CB"/><rect x="9" y="7" width="4" height="18" fill="white"/><path d="M13,7 Q22,7 22,16 Q22,25 13,25" fill="none" stroke="white" stroke-width="4" stroke-linecap="round"/></svg>'),
     domains: ['disney']
   },
   {
+    // Dark blue, white M letterform
     name: 'Max',
-    logo: _logo('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="4" fill="#002BE7"/><text x="16" y="21" text-anchor="middle" font-size="11" font-weight="bold" fill="white" font-family="Arial,sans-serif">MAX</text></svg>'),
+    logo: _logo('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="4" fill="#002BE7"/><polyline points="7,25 7,8 16,19 25,8 25,25" fill="none" stroke="white" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/></svg>'),
     domains: ['hbomax', 'max.com']
   },
 ];
@@ -1857,7 +1898,7 @@ function openWatchSheet(anime) {
     document.getElementById('desc-text').classList.remove('expanded');
     document.getElementById('desc-toggle').textContent = 'More ▾';
     document.getElementById('watch-sheet').classList.remove('open');
-    showNextRec();
+    // Stay on current rec — user decides with Good/Bad buttons
   };
 }
 
