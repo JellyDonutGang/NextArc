@@ -665,29 +665,30 @@
     /* ── Card play overlay button ─────────────────────── */
     .card-play-overlay {
       position: absolute;
-      bottom: 72px;
+      top: 50%;
       left: 50%;
-      transform: translateX(-50%);
-      width: 54px;
-      height: 54px;
+      transform: translate(-50%, -50%);
+      width: 72px;
+      height: 72px;
       border-radius: 50%;
-      background: rgba(0,0,0,0.55);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      border: 2px solid rgba(255,255,255,0.35);
+      background: rgba(30, 100, 255, 0.85);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 2.5px solid rgba(255,255,255,0.5);
       color: #fff;
-      font-size: 20px;
+      font-size: 26px;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
       z-index: 5;
       transition: transform 0.15s, background 0.15s;
-      padding-left: 3px; /* optical center for ▶ */
+      padding-left: 4px;
+      box-shadow: 0 4px 24px rgba(30,100,255,0.5);
     }
     .card-play-overlay:active {
-      transform: translateX(-50%) scale(0.9);
-      background: rgba(0,0,0,0.75);
+      transform: translate(-50%, -50%) scale(0.9);
+      background: rgba(10, 70, 220, 0.95);
     }
 
     /* ── Similar-pick badge (skip replacement) ───────── */
@@ -857,6 +858,7 @@
 
   <div class="action-buttons">
     <button class="action-btn btn-dislike btn-text" id="btn-rec-dislike">Bad</button>
+    <button class="action-btn btn-skip    btn-text" id="btn-rec-skip">Skip</button>
     <button class="action-btn btn-like    btn-text" id="btn-rec-like">Good</button>
   </div>
 </section>
@@ -1716,7 +1718,7 @@ function showNextRec(firstCard = false) {
 function recSwipe(card, anime, action) {
   const dir = action === 'dislike' ? 'left' : 'right';
   flyCard(card, dir).then(() => {
-    engine.update(anime, action);
+    if (action !== 'skip') engine.update(anime, action);
     recPos++;
     showNextRec();
   });
@@ -1725,6 +1727,10 @@ function recSwipe(card, anime, action) {
 document.getElementById('btn-rec-dislike').addEventListener('click', () => {
   const card = document.querySelector('#rec-card-container .anime-card');
   if (card && currentRecAnime) recSwipe(card, currentRecAnime, 'dislike');
+});
+document.getElementById('btn-rec-skip').addEventListener('click', () => {
+  const card = document.querySelector('#rec-card-container .anime-card');
+  if (card && currentRecAnime) recSwipe(card, currentRecAnime, 'skip');
 });
 document.getElementById('btn-rec-like').addEventListener('click', () => {
   const card = document.querySelector('#rec-card-container .anime-card');
