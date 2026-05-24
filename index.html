@@ -339,6 +339,17 @@
       color: #fff;
     }
 
+    /* Text label override for taste-check buttons */
+    .btn-text {
+      border-radius: 30px;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+    .btn-text.btn-dislike { width: 80px; height: 44px; }
+    .btn-text.btn-skip    { width: 68px; height: 38px; }
+    .btn-text.btn-like    { width: 80px; height: 44px; font-size: 14px; }
+
     /* ── Recommendations Screen ────────────────────── */
     #screen-recs {
       background: var(--bg);
@@ -614,9 +625,9 @@
     }
 
     .stream-logo {
-      width: 28px;
-      height: 28px;
-      border-radius: 6px;
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
       flex-shrink: 0;
     }
     .stream-logo-fallback {
@@ -628,26 +639,28 @@
 
     .stream-links {
       display: flex;
-      flex-direction: column;
-      gap: 10px;
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: 12px;
     }
     .stream-btn {
       display: flex;
       align-items: center;
-      gap: 14px;
+      justify-content: center;
       background: var(--surface2);
       border: 1px solid var(--border);
       border-radius: 14px;
-      padding: 14px 18px;
+      width: 56px;
+      height: 56px;
       cursor: pointer;
       text-decoration: none;
       color: var(--text);
-      transition: background 0.15s;
+      transition: background 0.15s, transform 0.1s;
+      flex-shrink: 0;
     }
-    .stream-btn:active { background: var(--border); }
-    .stream-icon { font-size: 22px; width: 28px; text-align: center; }
-    .stream-name { font-size: 15px; font-weight: 600; flex: 1; }
-    .stream-arrow { color: var(--text-muted); font-size: 14px; }
+    .stream-btn:active { background: var(--border); transform: scale(0.92); }
+    .stream-name { display: none; }
+    .stream-arrow { display: none; }
 
     /* ── Similar-pick badge (skip replacement) ───────── */
     .similar-badge {
@@ -757,9 +770,9 @@
   </div>
 
   <div class="action-buttons">
-    <button class="action-btn btn-dislike" id="btn-dislike" title="Don't Like">✕</button>
-    <button class="action-btn btn-skip"    id="btn-skip"    title="Skip">›</button>
-    <button class="action-btn btn-like"    id="btn-like"    title="Like">♥</button>
+    <button class="action-btn btn-dislike btn-text" id="btn-dislike">Bad</button>
+    <button class="action-btn btn-skip    btn-text" id="btn-skip">Skip</button>
+    <button class="action-btn btn-like    btn-text" id="btn-like">Good</button>
   </div>
 </section>
 
@@ -815,9 +828,9 @@
   </div>
 
   <div class="action-buttons">
-    <button class="action-btn btn-dislike" id="btn-rec-dislike" title="Don't Like">✕</button>
-    <button class="action-btn btn-skip"    id="btn-rec-skip"    title="Skip">›</button>
-    <button class="action-btn btn-like"    id="btn-rec-watch"   title="Watch">▶</button>
+    <button class="action-btn btn-dislike" id="btn-rec-dislike">✕</button>
+    <button class="action-btn btn-skip"    id="btn-rec-watch">▶</button>
+    <button class="action-btn btn-like"    id="btn-rec-like">✓</button>
   </div>
 </section>
 
@@ -1598,7 +1611,8 @@ async function loadRecQueue() {
       perPage: 50,
     });
     // Deduplicate: drop all seasons of shows already seen, keep earliest season of each new franchise
-    const candidates = deduplicateByFranchise(data.Page?.media || []);
+    const candidates = deduplicateByFranchise(data.Page?.media || [])
+      .filter(a => !seenIds.has(a.id));
     recQueue = engine.rankRecommendations(candidates, [...seenIds]);
     recPos = 0;
   } catch (e) {
@@ -1654,7 +1668,7 @@ function showNextRec(firstCard = false) {
   engine.trackShown(anime);
 
   attachSwipe(card,
-    () => { recSwipe(card, anime, 'watch'); },
+    () => { recSwipe(card, anime, 'like'); },
     () => { recSwipe(card, anime, 'dislike'); }
   );
 
@@ -1663,9 +1677,10 @@ function showNextRec(firstCard = false) {
 }
 
 function recSwipe(card, anime, action) {
-  const dir = action === 'watch' ? 'right' : action === 'dislike' ? 'left' : 'right';
+  const dir = action === 'dislike' ? 'left' : 'right';
   flyCard(card, dir).then(() => {
-    if (action !== 'skip') engine.update(anime, action);
+    engine.update(anime, action);
+    trackSeen(anime);
     recPos++;
     if (action === 'watch') openWatchSheet(anime);
     else showNextRec();
@@ -1676,9 +1691,9 @@ document.getElementById('btn-rec-dislike').addEventListener('click', () => {
   const card = document.querySelector('#rec-card-container .anime-card');
   if (card && currentRecAnime) recSwipe(card, currentRecAnime, 'dislike');
 });
-document.getElementById('btn-rec-skip').addEventListener('click', () => {
+document.getElementById('btn-rec-like').addEventListener('click', () => {
   const card = document.querySelector('#rec-card-container .anime-card');
-  if (card && currentRecAnime) recSwipe(card, currentRecAnime, 'skip');
+  if (card && currentRecAnime) recSwipe(card, currentRecAnime, 'like');
 });
 document.getElementById('btn-rec-watch').addEventListener('click', () => {
   const card = document.querySelector('#rec-card-container .anime-card');
