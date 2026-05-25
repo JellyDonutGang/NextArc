@@ -911,10 +911,15 @@
       width: 72px;
       height: 72px;
       border-radius: 50%;
-      background: rgba(30, 100, 255, 0.85);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-      border: 2.5px solid rgba(255,255,255,0.5);
+      /* Glassmorphism */
+      background: rgba(255, 255, 255, 0.12);
+      backdrop-filter: blur(16px) saturate(180%);
+      -webkit-backdrop-filter: blur(16px) saturate(180%);
+      border: 1.5px solid rgba(255, 255, 255, 0.28);
+      box-shadow:
+        0 4px 24px rgba(0, 0, 0, 0.35),
+        0 1px 0 rgba(255, 255, 255, 0.18) inset,
+        0 0 0 1px rgba(255, 255, 255, 0.06) inset;
       color: #fff;
       font-size: 26px;
       cursor: pointer;
@@ -922,13 +927,19 @@
       align-items: center;
       justify-content: center;
       z-index: 5;
-      transition: transform 0.15s, background 0.15s;
+      transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
       padding-left: 4px;
-      box-shadow: 0 4px 24px rgba(30,100,255,0.5);
+    }
+    .card-play-overlay:hover {
+      background: rgba(255, 255, 255, 0.2);
+      box-shadow:
+        0 6px 32px rgba(0, 0, 0, 0.4),
+        0 1px 0 rgba(255, 255, 255, 0.22) inset,
+        0 0 0 1px rgba(255, 255, 255, 0.1) inset;
     }
     .card-play-overlay:active {
-      transform: translate(-50%, -50%) scale(0.9);
-      background: rgba(10, 70, 220, 0.95);
+      transform: translate(-50%, -50%) scale(0.92);
+      background: rgba(255, 255, 255, 0.08);
     }
 
     /* ── Similar-pick badge (skip replacement) ───────── */
