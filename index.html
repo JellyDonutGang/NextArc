@@ -454,6 +454,70 @@
     .recs-header h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; }
     .recs-header p { font-size: 14px; color: var(--text-muted); margin-top: 4px; font-weight: 400; }
 
+    /* ── Gem Progress Bar ────────────────────────── */
+    .gem-progress-wrap {
+      width: 100%;
+      max-width: 420px;
+      padding: 0 16px 14px;
+      box-sizing: border-box;
+    }
+    .gem-progress-track {
+      position: relative;
+      width: calc(100% - 22px); /* inset so gem at 100% doesn't clip */
+      margin: 0 11px;
+      height: 6px;
+      background: var(--surface2);
+      border-radius: 99px;
+      overflow: visible;
+    }
+    .gem-progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent) 0%, #7dd3fc 100%);
+      border-radius: 99px;
+      transition: width 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+      box-shadow: 0 0 6px rgba(46, 128, 216, 0.5);
+    }
+    .gem-marker {
+      position: absolute;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 2;
+    }
+    .gem-icon {
+      width: 22px;
+      height: 22px;
+      color: var(--surface2);
+      filter: drop-shadow(0 0 0px transparent);
+      transition: color 0.3s ease, filter 0.3s ease, transform 0.3s ease;
+    }
+    .gem-icon svg { width: 100%; height: 100%; display: block; }
+
+    /* Filled state — gem reached */
+    .gem-marker.filled .gem-icon {
+      color: #7dd3fc;
+      filter: drop-shadow(0 0 4px #7dd3fc);
+    }
+
+    /* Active state — gem is currently showing */
+    .gem-marker.active .gem-icon {
+      color: #f0f9ff;
+      filter: drop-shadow(0 0 8px #7dd3fc) drop-shadow(0 0 16px #2e80d8);
+      animation: gem-pulse 1.2s ease-in-out infinite;
+    }
+
+    @keyframes gem-pulse {
+      0%   { transform: scale(1);    filter: drop-shadow(0 0 6px #7dd3fc) drop-shadow(0 0 14px #2e80d8); }
+      50%  { transform: scale(1.25); filter: drop-shadow(0 0 12px #e0f2fe) drop-shadow(0 0 24px #38bdf8); }
+      100% { transform: scale(1);    filter: drop-shadow(0 0 6px #7dd3fc) drop-shadow(0 0 14px #2e80d8); }
+    }
+
+    @keyframes gem-shine {
+      0%   { color: #7dd3fc; filter: drop-shadow(0 0 4px #7dd3fc); }
+      40%  { color: #ffffff; filter: drop-shadow(0 0 14px #e0f2fe) drop-shadow(0 0 28px #38bdf8); }
+      100% { color: #7dd3fc; filter: drop-shadow(0 0 4px #7dd3fc); }
+    }
+
     /* Rec card is same as swipe card but no stack */
     #rec-card-container {
       position: relative;
@@ -946,6 +1010,31 @@
     <p id="recs-subtitle">Personalised picks based on your taste</p>
   </div>
 
+  <!-- Gem progress bar -->
+  <div class="gem-progress-wrap">
+    <div class="gem-progress-track">
+      <div class="gem-progress-fill" id="gem-progress-fill"></div>
+      <!-- Gem 1 at 50% (8/16) -->
+      <div class="gem-marker" id="gem-marker-1" style="left:50%">
+        <div class="gem-icon" id="gem-icon-1">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <polygon points="12,2 18,8 12,22 6,8" fill="currentColor" opacity="0.9"/>
+            <polygon points="12,2 18,8 12,10 6,8" fill="currentColor" opacity="0.5"/>
+          </svg>
+        </div>
+      </div>
+      <!-- Gem 2 at 100% (16/16) -->
+      <div class="gem-marker" id="gem-marker-2" style="left:100%">
+        <div class="gem-icon" id="gem-icon-2">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <polygon points="12,2 18,8 12,22 6,8" fill="currentColor" opacity="0.9"/>
+            <polygon points="12,2 18,8 12,10 6,8" fill="currentColor" opacity="0.5"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div id="rec-card-container">
     <div class="spinner-wrap" id="recs-spinner">
       <div class="spinner"></div>
@@ -1410,6 +1499,55 @@ let currentRecIsGem   = false;   // true while a gem card is on screen
 const GEM_INTERVAL    = 8;       // show 1 gem every N regular recs
 const GEM_SCORE_MIN   = 75;      // must be genuinely good
 const GEM_POP_MAX     = 60000;   // niche but not totally obscure (sweet spot: 10k–60k)
+
+/* ─── Gem Progress Bar ──────────────────────────── */
+// Bar cycles 0→16 cards, with gem markers at 8 and 16.
+// recsSinceGem tracks progress within the current cycle (resets at each gem).
+// gemsClaimed tracks total gems shown so we know which marker to light.
+let gemsClaimed = 0; // increments each time a gem is actually shown
+
+function updateGemBar(isGemShowing = false) {
+  const fill    = document.getElementById('gem-progress-fill');
+  const marker1 = document.getElementById('gem-marker-1');
+  const marker2 = document.getElementById('gem-marker-2');
+  if (!fill) return;
+
+  // Total progress within a full 16-card cycle
+  // After first gem (8 cards): progress is 8+recsSinceGem, after second: wrap
+  const cyclePos = (gemsClaimed % 2 === 0)
+    ? recsSinceGem                     // heading toward gem 1 (0–8)
+    : GEM_INTERVAL + recsSinceGem;     // heading toward gem 2 (8–16)
+
+  const pct = Math.min((cyclePos / (GEM_INTERVAL * 2)) * 100, 100);
+  fill.style.width = pct + '%';
+
+  // Marker 1 fills once we've passed the first gem
+  const m1Filled = gemsClaimed >= 1;
+  const m2Filled = gemsClaimed >= 2;
+
+  marker1.classList.toggle('filled', m1Filled && !isGemShowing);
+  marker2.classList.toggle('filled', m2Filled && !isGemShowing);
+
+  // Active pulse on whichever gem is currently showing
+  // gemsClaimed is already incremented when isGemShowing=true:
+  //   odd gemsClaimed → gem marker 1 just triggered
+  //   even gemsClaimed → gem marker 2 just triggered (every 2nd gem)
+  const gem1Active = isGemShowing && (gemsClaimed % 2 === 1);
+  const gem2Active = isGemShowing && (gemsClaimed % 2 === 0);
+
+  marker1.classList.toggle('active', gem1Active);
+  marker2.classList.toggle('active', gem2Active);
+
+  // Nudge browser to replay the animation from frame 0
+  if (isGemShowing) {
+    const activeIcon = document.getElementById(gem1Active ? 'gem-icon-1' : 'gem-icon-2');
+    if (activeIcon) {
+      activeIcon.style.animation = 'none';
+      void activeIcon.offsetWidth; // force reflow
+      activeIcon.style.animation = '';
+    }
+  }
+}
 
 /* ─── Screen navigation ─────────────────────────── */
 function showScreen(id) {
@@ -2358,6 +2496,7 @@ function showNextRec(firstCard = false) {
       isGem     = true;
       gemPos++;
       recsSinceGem = 0;
+      gemsClaimed++;
       // Refill gem queue in background if running low
       if (gemQueue.length - gemPos < 3 && !isGemFetching) fetchGems();
     } else {
@@ -2373,6 +2512,7 @@ function showNextRec(firstCard = false) {
   currentRecAnime  = anime;
   currentRecIsGem  = isGem;
   trackSeen(anime);
+  updateGemBar(isGem);
 
   const card = buildCard(anime, true);
 
@@ -2441,6 +2581,9 @@ function recSwipe(card, anime, action) {
     }
     currentRecIsGem = false;
     document.getElementById('gem-save-row').classList.remove('visible');
+    // Clear active glow from gem markers now that the gem card is gone
+    document.getElementById('gem-marker-1')?.classList.remove('active');
+    document.getElementById('gem-marker-2')?.classList.remove('active');
 
     recSwipesSinceRank++;
 
