@@ -131,8 +131,8 @@
     .overlay-card p { font-size: 15px; color: var(--text-muted); line-height: 1.6; max-width: 300px; }
     .hint-row {
       display: flex;
-      gap: 24px;
-      align-items: center;
+      gap: 16px;
+      align-items: flex-start;
       justify-content: center;
       margin: 4px 0;
     }
@@ -152,8 +152,9 @@
       justify-content: center;
       font-size: 22px;
     }
-    .hint-icon.skip { background: rgba(255,255,255,0.08); }
-    .hint-icon.watch { background: rgba(230,57,70,0.18); }
+    .hint-icon.skip    { background: rgba(255,255,255,0.08); }
+    .hint-icon.neutral { background: rgba(255,255,255,0.06); }
+    .hint-icon.watch   { background: rgba(230,57,70,0.18); }
 
     /* ── Swipe Screen ──────────────────────────────── */
     #screen-swipe {
@@ -772,15 +773,19 @@
   <div class="overlay-card">
     <div style="font-size:42px">✨</div>
     <h2>Quick Taste Check</h2>
-    <p>Swipe through 15 anime so we can learn what you like. No pressure — just your gut reaction!</p>
+    <p>Rate anime as they appear — we'll build your personal taste profile in real time.</p>
     <div class="hint-row">
       <div class="hint-item">
         <div class="hint-icon skip">👈</div>
-        <span>Skip it</span>
+        <span>Didn't like it</span>
+      </div>
+      <div class="hint-item">
+        <div class="hint-icon neutral">🤷</div>
+        <span>Haven't seen it</span>
       </div>
       <div class="hint-item">
         <div class="hint-icon watch">👉</div>
-        <span>Love it</span>
+        <span>Liked it</span>
       </div>
     </div>
     <button class="btn-primary" id="btn-start-taste">Start Swiping</button>
