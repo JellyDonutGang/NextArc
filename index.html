@@ -3,24 +3,27 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#0a0a0a" />
+  <meta name="theme-color" content="#080e18" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Next Arc" />
   <link rel="manifest" href="manifest.json" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
   <title>Next Arc</title>
   <style>
     /* ── Reset & Base ─────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg: #0a0a0a;
-      --surface: #141414;
-      --surface2: #1e1e1e;
-      --border: #2a2a2a;
+      --bg: #080e18;
+      --surface: #0f1b2d;
+      --surface2: #162840;
+      --border: #1e3a5c;
       --text: #f0f0f0;
       --text-muted: #888;
-      --accent: #e63946;
+      --accent: #2e80d8;
       --green: #2ec4b6;
       --yellow: #ffb703;
       --radius: 20px;
@@ -32,10 +35,11 @@
       height: 100%;
       background: var(--bg);
       color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
       overflow: hidden;
       user-select: none;
       -webkit-user-select: none;
+      -webkit-font-smoothing: antialiased;
     }
 
     /* ── Screens ───────────────────────────────────── */
@@ -62,34 +66,35 @@
     /* ── Welcome Screen ────────────────────────────── */
     #screen-welcome {
       background: var(--bg);
-      gap: 20px;
+      gap: 24px;
       text-align: center;
     }
     .logo {
-      font-size: 52px;
-      font-weight: 900;
-      letter-spacing: -2px;
-      background: linear-gradient(135deg, #e63946, #ff6b6b);
+      font-size: 48px;
+      font-weight: 800;
+      letter-spacing: -1px;
+      background: linear-gradient(135deg, #2e80d8, #5ba3f0);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
     }
     .tagline {
-      font-size: 17px;
+      font-size: 16px;
       color: var(--text-muted);
-      max-width: 280px;
-      line-height: 1.5;
+      max-width: 260px;
+      line-height: 1.6;
+      font-weight: 400;
     }
     .welcome-art {
       font-size: 90px;
       line-height: 1;
-      filter: drop-shadow(0 8px 24px rgba(230,57,70,0.3));
+      filter: drop-shadow(0 8px 24px rgba(46,128,216,0.3));
     }
     .btn-primary {
       background: var(--accent);
       color: #fff;
       border: none;
-      border-radius: 50px;
+      border-radius: 14px;
       font-size: 17px;
       font-weight: 700;
       padding: 16px 48px;
@@ -119,16 +124,16 @@
     .overlay-card {
       background: var(--surface);
       border-radius: 28px 28px 0 0;
-      padding: 32px 28px max(28px, env(safe-area-inset-bottom));
+      padding: 36px 32px max(32px, env(safe-area-inset-bottom));
       width: 100%;
       text-align: center;
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 20px;
       align-items: center;
     }
-    .overlay-card h2 { font-size: 24px; font-weight: 800; }
-    .overlay-card p { font-size: 15px; color: var(--text-muted); line-height: 1.6; max-width: 300px; }
+    .overlay-card h2 { font-size: 22px; font-weight: 700; letter-spacing: -0.3px; }
+    .overlay-card p { font-size: 15px; color: var(--text-muted); line-height: 1.65; max-width: 300px; font-weight: 400; }
     .hint-row {
       display: flex;
       gap: 16px;
@@ -154,7 +159,7 @@
     }
     .hint-icon.skip    { background: rgba(255,255,255,0.08); }
     .hint-icon.neutral { background: rgba(255,255,255,0.06); }
-    .hint-icon.watch   { background: rgba(230,57,70,0.18); }
+    .hint-icon.watch   { background: rgba(46,128,216,0.18); }
 
     /* ── Swipe Screen ──────────────────────────────── */
     #screen-swipe {
@@ -169,9 +174,9 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 4px 12px;
+      padding: 0 8px 14px;
     }
-    .swipe-title { font-size: 13px; font-weight: 600; color: var(--text-muted); letter-spacing: 0.5px; text-transform: uppercase; }
+    .swipe-title { font-size: 11px; font-weight: 600; color: var(--text-muted); letter-spacing: 1px; text-transform: uppercase; }
     .signal-tracker {
       display: flex;
       gap: 8px;
@@ -181,13 +186,13 @@
       font-size: 12px;
       font-weight: 700;
       padding: 4px 10px;
-      border-radius: 20px;
+      border-radius: 8px;
       background: var(--surface2);
       border: 1.5px solid var(--border);
       transition: background 0.3s, color 0.3s, border-color 0.3s;
       letter-spacing: 0.2px;
     }
-    .signal-badge.likes   { color: var(--accent);     border-color: rgba(230,57,70,0.4); }
+    .signal-badge.likes   { color: var(--accent);     border-color: rgba(46,128,216,0.4); }
     .signal-badge.dislikes{ color: var(--text-muted); }
     .signal-badge.met     { background: rgba(46,196,182,0.2); border-color: var(--green); color: var(--green); }
 
@@ -225,7 +230,7 @@
     }
     .card-img-placeholder {
       width: 100%; height: 100%;
-      background: linear-gradient(135deg, #1e1e2e, #2a1a2e);
+      background: linear-gradient(135deg, #0f1b2d, #162840);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -244,16 +249,19 @@
       padding: 20px;
     }
     .card-title {
-      font-size: 22px;
-      font-weight: 800;
+      font-size: 21px;
+      font-weight: 700;
       line-height: 1.2;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
+      letter-spacing: -0.2px;
       text-shadow: 0 2px 8px rgba(0,0,0,0.8);
     }
     .card-meta {
-      font-size: 13px;
-      color: rgba(255,255,255,0.7);
+      font-size: 12px;
+      font-weight: 500;
+      color: rgba(255,255,255,0.65);
       margin-bottom: 10px;
+      letter-spacing: 0.2px;
     }
     .genre-chips {
       display: flex;
@@ -303,20 +311,20 @@
     /* Action buttons */
     .action-buttons {
       display: flex;
-      gap: 14px;
-      margin-top: 16px;
+      gap: 12px;
+      margin-top: 20px;
       align-items: center;
       justify-content: center;
     }
     .action-btn {
-      border-radius: 50%;
+      border-radius: 12px;
       border: none;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
       transition: transform 0.15s, box-shadow 0.15s;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.35);
     }
     .action-btn:active { transform: scale(0.92); }
 
@@ -325,7 +333,7 @@
       width: 62px; height: 62px;
       font-size: 22px;
       background: var(--surface2);
-      border: 2px solid rgba(230, 57, 70, 0.45);
+      border: 2px solid rgba(46, 128, 216, 0.45);
       color: var(--accent);
     }
 
@@ -348,14 +356,14 @@
 
     /* Text label override for taste-check buttons */
     .btn-text {
-      border-radius: 30px;
+      border-radius: 12px;
       font-size: 14px;
       font-weight: 700;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.3px;
     }
-    .btn-text.btn-dislike { width: 80px; height: 44px; }
-    .btn-text.btn-skip    { width: 68px; height: 38px; }
-    .btn-text.btn-like    { width: 80px; height: 44px; font-size: 14px; }
+    .btn-text.btn-dislike { width: 86px; height: 44px; }
+    .btn-text.btn-skip    { width: 72px; height: 38px; font-size: 13px; }
+    .btn-text.btn-like    { width: 86px; height: 44px; font-size: 14px; }
 
     /* ── Recommendations Screen ────────────────────── */
     #screen-recs {
@@ -366,10 +374,10 @@
     .recs-header {
       width: 100%;
       max-width: 420px;
-      padding: 0 4px 14px;
+      padding: 0 8px 16px;
     }
-    .recs-header h1 { font-size: 28px; font-weight: 900; }
-    .recs-header p { font-size: 14px; color: var(--text-muted); margin-top: 4px; }
+    .recs-header h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; }
+    .recs-header p { font-size: 14px; color: var(--text-muted); margin-top: 4px; font-weight: 400; }
 
     /* Rec card is same as swipe card but no stack */
     #rec-card-container {
@@ -413,14 +421,14 @@
     }
     #unlock-emoji {
       font-size: 72px;
-      filter: drop-shadow(0 0 30px rgba(230,57,70,0.9));
+      filter: drop-shadow(0 0 30px rgba(46,128,216,0.9));
       animation: none;
     }
     #unlock-headline {
-      font-size: 34px;
-      font-weight: 900;
-      letter-spacing: -1px;
-      background: linear-gradient(135deg, #e63946 0%, #ff6b6b 50%, #ffb703 100%);
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      background: linear-gradient(135deg, #2e80d8 0%, #5ba3f0 50%, #90c8f0 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
@@ -433,15 +441,15 @@
     }
     #unlock-btn {
       margin-top: 28px;
-      background: linear-gradient(135deg, #e63946, #ff6b6b);
+      background: linear-gradient(135deg, #2e80d8, #5ba3f0);
       color: #fff;
       border: none;
-      border-radius: 50px;
+      border-radius: 14px;
       font-size: 18px;
       font-weight: 800;
       padding: 18px 52px;
       cursor: pointer;
-      box-shadow: 0 0 40px rgba(230,57,70,0.6);
+      box-shadow: 0 0 40px rgba(46,128,216,0.6);
       letter-spacing: 0.5px;
       transform: scale(0);
       opacity: 0;
@@ -460,8 +468,8 @@
     }
 
     @keyframes pulseGlow {
-      0%, 100% { filter: drop-shadow(0 0 20px rgba(230,57,70,0.5)); }
-      50%       { filter: drop-shadow(0 0 50px rgba(230,57,70,1)); }
+      0%, 100% { filter: drop-shadow(0 0 20px rgba(46,128,216,0.5)); }
+      50%       { filter: drop-shadow(0 0 50px rgba(46,128,216,1)); }
     }
 
     /* Loading spinner */
@@ -557,12 +565,12 @@
     .trailer-wrap:active .trailer-play-btn { background: rgba(0,0,0,0.5); }
     .trailer-play-circle {
       width: 60px; height: 60px;
-      background: rgba(230,57,70,0.92);
+      background: rgba(46,128,216,0.92);
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 4px 24px rgba(230,57,70,0.55);
+      box-shadow: 0 4px 24px rgba(46,128,216,0.55);
       transition: transform 0.15s;
     }
     .trailer-wrap:active .trailer-play-circle { transform: scale(0.92); }
@@ -763,7 +771,7 @@
   <div class="welcome-art">🎌</div>
   <div class="logo">Next Arc</div>
   <p class="tagline">Discover anime you'll actually love, one swipe at a time.</p>
-  <button class="btn-primary" id="btn-start">Let's Go →</button>
+  <button class="btn-primary" id="btn-start">Discover →</button>
 </section>
 
 <!-- ══════════════════════════════════════════════ -->
@@ -885,7 +893,7 @@
   <div class="sheet-content">
     <div class="sheet-handle"></div>
     <div class="sheet-title">Now Watching</div>
-    <div class="sheet-anime-name" id="sheet-anime-name">—</div>
+    <div class="sheet-anime-name" id="sheet-anime-name"></div>
     <div id="trailer-section" style="display:none">
       <div class="trailer-section-label">Trailer</div>
       <div class="trailer-wrap" id="trailer-wrap">
@@ -1601,7 +1609,7 @@ function finishTaste() {
   let rafId = null;
   let particles = [];
 
-  const COLORS = ['#e63946','#ff6b6b','#ffb703','#2ec4b6','#ff9f1c','#ffffff','#ff4d6d'];
+  const COLORS = ['#2e80d8','#5ba3f0','#ffb703','#2ec4b6','#ff9f1c','#ffffff','#90c8f0'];
 
   function rand(min, max) { return min + Math.random() * (max - min); }
 
@@ -1669,7 +1677,7 @@ function finishTaste() {
     // Deep glow background pulse on first 600ms
     if (elapsed < 600) {
       const t = elapsed / 600;
-      ctx.fillStyle = `rgba(230,57,70,${0.18 * Math.sin(t * Math.PI)})`;
+      ctx.fillStyle = `rgba(46,128,216,${0.18 * Math.sin(t * Math.PI)})`;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
 
