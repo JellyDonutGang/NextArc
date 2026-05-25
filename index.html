@@ -412,6 +412,8 @@
       border-color: rgba(255,255,255,0.5);
       box-shadow: 0 4px 20px rgba(239,68,68,0.45), 0 1px 0 rgba(255,255,255,0.2) inset;
     }
+    /* Never show the heart outside the active recs screen */
+    #screen-recs:not(.active) .card-heart-btn { display: none; }
 
     /* ── Save toast ───────────────────────────────── */
     .save-toast {
