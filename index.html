@@ -1133,6 +1133,8 @@ const SEED_POOL_IDS = [
   1,      // Cowboy Bebop       — noir, episodic, mature, no romance
   5,      // Trigun             — action, comedy, western, bittersweet
   30,     // Neon Genesis Eva.  — dark, psychological, iconic, slow
+  33,     // Berserk (1997)     — dark fantasy, brutal, visceral, classic
+  45,     // Rurouni Kenshin    — samurai action, redemption, classic
   457,    // Mushishi           — atmospheric, episodic, zero conflict, niche
   918,    // Gintama            — heavy comedy, action, parody, long
   1535,   // Death Note         — thriller, dark, no romance, fast paced
@@ -1154,30 +1156,47 @@ const SEED_POOL_IDS = [
   40748,  // Jujutsu Kaisen     — dark action, modern, hype
   97986,  // Made in Abyss      — dark, adventure, beautiful, emotional
   101348, // Vinland Saga       — dark, violent, historical, no humor
-  130003, // Chainsaw Man       — ultra-violent, mature, dark action
+  127230, // Chainsaw Man       — ultra-violent, mature, dark action
+  // ── Horror / Psychological ───────────────────────
+  226,    // Elfen Lied         — body horror, tragedy, emotional, violent
+  323,    // Paranoia Agent     — psychological, surreal, Satoshi Kon
+  339,    // Serial Exp. Lain   — cyberpunk, slow, philosophical, eerie
+  934,    // Higurashi S1       — mystery horror, rural, psychological, disturbing
+  101759, // Promised Neverland — thriller, survival, dark, child protagonists
+  // ── Mecha / Sci-Fi ───────────────────────────────
+  20632,  // Aldnoah.Zero       — mecha, war, political, cold protagonist
+  99423,  // Darling in FranXX  — mecha, romance, emotional, divisive
+  116589, // 86 Eighty Six      — mecha, war drama, emotional, dark
   // ── Isekai Spectrum (dark → light) ────────────────
-  21355,  // Re:Zero            — dark isekai, thriller, high emotional
   19815,  // No Game No Life    — fan service, comedy, strategy isekai
   21202,  // KonoSuba           — comedy isekai, parody, light fan service
+  21355,  // Re:Zero            — dark isekai, thriller, high emotional
   101280, // Slime Isekai       — warm, upbeat isekai, low stakes, optimistic
   // ── Romance / Emotional ───────────────────────────
   4224,   // Toradora           — romance, comedy, bittersweet
   20665,  // Your Lie in April  — emotional, romance, music, tragedy
   21827,  // Violet Evergarden  — emotional, beautiful, slow, minimal humor
   101922, // Demon Slayer       — action, emotional, mainstream, medium dark
+  // ── Sports ───────────────────────────────────────
+  170,    // Slam Dunk          — basketball, classic, comedy, competitive
+  263,    // Hajime no Ippo     — boxing, intense, emotional, underdog
+  11771,  // Kuroko no Basket   — basketball, fast-paced, hyper abilities
+  18179,  // Yowamushi Pedal    — cycling, underdog, long, competitive
+  20583,  // Haikyuu!!          — volleyball, teamwork, feel-good, low darkness
+  21185,  // Ping Pong Anim.    — unique art, sports, emotional, niche
   // ── Comedy / Slice of Life ────────────────────────
   6547,   // Bakemonogatari     — unique style, mystery, romance, niche
   7088,   // Tatami Galaxy      — surreal, fast dialogue, smart, niche
   9756,   // Nichijou           — absurdist comedy, cute, surreal
   11981,  // Hyouka             — mystery, SOL, beautiful, subdued
-  20583,  // Haikyuu!!          — sports, teamwork, feel-good, low darkness
-  21185,  // Ping Pong Anim.    — unique art, sports, emotional, niche
+  20447,  // Noragami           — supernatural action, comedy, accessible
   21519,  // My Hero Academia   — mainstream action, heroics, feel-good
+  21804,  // Saiki K            — absurdist comedy, psychic powers, dry humor
   104578, // Spy x Family       — comedy, family, action, light, cozy
-  105333, // Bocchi the Rock    — music, comedy, social anxiety, healing
-  108725, // Dr. Stone          — science, adventure, optimistic, low violence
+  105333, // Dr. Stone          — science, adventure, optimistic, low violence
   112641, // Ranking of Kings   — fantasy, emotional, underdog, beautiful
   113415, // Oshi no Ko         — idol world, dark, drama, meta
+  130003, // Bocchi the Rock    — music, comedy, social anxiety, healing
   152634, // Frieren            — fantasy, slow burn, adult, emotional
   // ── Cozy / Healing (Iyashikei) ────────────────────
   5680,   // K-On!              — music, cute, cozy, zero stakes
@@ -1448,12 +1467,24 @@ function fetchMoreForReserve() {
   _reserveFetchPromise = (async () => {
     isLoadingReserve = true;
     try {
-      const page = Math.floor(Math.random() * 5) + 1;
-      const data = await fetchAniList(SEED_QUERY, {
-        page, perPage: 30, sort: ['SCORE_DESC'],
-      });
-      const fresh = deduplicateByFranchise(data.Page?.media || [])
-        .filter(a => !seenIds.has(a.id) && a.coverImage?.large);
+      // Two parallel pages with different sort orders and offsets for variety
+      const pageA  = Math.floor(Math.random() * 6) + 1;
+      const pageB  = Math.floor(Math.random() * 6) + 1;
+      const results = await Promise.allSettled([
+        fetchAniList(SEED_QUERY, { page: pageA, perPage: 50, sort: ['SCORE_DESC'] }),
+        fetchAniList(SEED_QUERY, { page: pageB, perPage: 50, sort: ['POPULARITY_DESC'] }),
+      ]);
+      const combined = [];
+      for (const r of results) {
+        if (r.status === 'fulfilled') combined.push(...(r.value?.Page?.media || []));
+      }
+      const seen = new Set();
+      const fresh = deduplicateByFranchise(
+        combined.filter(a => {
+          if (seen.has(a.id) || seenIds.has(a.id) || !a.coverImage?.large) return false;
+          seen.add(a.id); return true;
+        })
+      );
       fresh.forEach(a => trackSeen(a));
       reservePool.push(...fresh.sort(() => Math.random() - 0.5));
     } catch (e) {
