@@ -383,30 +383,35 @@
       box-shadow: 0 16px 48px rgba(0,0,0,0.6), 0 0 0 2px rgba(255,183,3,0.55);
     }
 
-    /* ── Gem save row ─────────────────────────────── */
-    .gem-save-row {
-      display: none;
-      justify-content: center;
-      width: 100%;
-      max-width: 420px;
-      margin-top: 10px;
-    }
-    .gem-save-row.visible { display: flex; }
-    .gem-save-btn {
-      background: rgba(255,183,3,0.10);
-      border: 1.5px solid rgba(255,183,3,0.45);
-      color: var(--yellow);
-      border-radius: 12px;
-      padding: 10px 32px;
-      font-size: 14px;
-      font-weight: 700;
-      font-family: inherit;
+    /* ── Card heart save button ───────────────────── */
+    .card-heart-btn {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(20px) saturate(160%);
+      -webkit-backdrop-filter: blur(20px) saturate(160%);
+      border: 1.5px solid rgba(255, 255, 255, 0.35);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.35), 0 1px 0 rgba(255,255,255,0.2) inset;
+      color: white;
+      font-size: 19px;
+      line-height: 1;
       cursor: pointer;
-      letter-spacing: 0.3px;
-      transition: background 0.15s, transform 0.1s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 6;
+      transition: transform 0.15s ease, background 0.2s ease, border-color 0.2s ease;
     }
-    .gem-save-btn:active { transform: scale(0.96); }
-    .gem-save-btn.saved  { background: rgba(255,183,3,0.22); }
+    .card-heart-btn:active { transform: scale(0.85); }
+    .card-heart-btn.saved {
+      background: rgba(239, 68, 68, 0.82);
+      border-color: rgba(255,255,255,0.5);
+      box-shadow: 0 4px 20px rgba(239,68,68,0.45), 0 1px 0 rgba(255,255,255,0.2) inset;
+    }
 
     /* ── Save toast ───────────────────────────────── */
     .save-toast {
@@ -1494,9 +1499,6 @@
     <button class="action-btn btn-skip    btn-text" id="btn-rec-skip">Skip</button>
     <button class="action-btn btn-like    btn-text" id="btn-rec-like">Good</button>
   </div>
-  <div class="gem-save-row" id="gem-save-row">
-    <button class="gem-save-btn" id="btn-gem-save">✦ Save for Later</button>
-  </div>
 </section>
 
 <div class="save-toast" id="save-toast">✓ Saved to your list</div>
@@ -1614,7 +1616,7 @@
       <button class="auth-tab" id="auth-tab-signup">Create Account</button>
     </div>
 
-    <input class="auth-input" type="text" id="auth-name" placeholder="Your name" style="display:none" autocomplete="name" />
+    <input class="auth-input" type="text" id="auth-name" placeholder="Username" style="display:none" autocomplete="username" />
     <input class="auth-input" type="email" id="auth-email" placeholder="Email address" autocomplete="email" />
     <input class="auth-input" type="password" id="auth-password" placeholder="Password" autocomplete="current-password" />
 
@@ -3065,11 +3067,16 @@ async function loadRecQueue() {
   }
 }
 
+function isAnimeSaved(id) {
+  const saved = JSON.parse(localStorage.getItem('nextarc_saved') || '[]');
+  return saved.some(a => a.id === id);
+}
+
 function showNextRec(firstCard = false) {
   const container = document.getElementById('rec-card-container');
   container.querySelectorAll('.anime-card').forEach(c => c.remove());
-  // Remove any previous play overlay (lives outside the card to allow backdrop-filter)
-  container.querySelectorAll('.card-play-overlay').forEach(b => b.remove());
+  // Remove overlays that live outside the card (play button + heart button)
+  container.querySelectorAll('.card-play-overlay, .card-heart-btn').forEach(b => b.remove());
 
   // Silently pre-fetch the next batch when approaching the end of the queue
   if (recQueue.length - recPos <= PREFETCH_THRESHOLD && !isPrefetching && nextRecQueue === null) {
@@ -3157,16 +3164,25 @@ function showNextRec(firstCard = false) {
   });
   container.appendChild(playBtn);
 
-  // Show/hide save row
-  const saveRow  = document.getElementById('gem-save-row');
-  const saveBtn  = document.getElementById('btn-gem-save');
-  if (isGem) {
-    saveRow.classList.add('visible');
-    saveBtn.textContent = '✦ Save for Later';
-    saveBtn.classList.remove('saved');
-  } else {
-    saveRow.classList.remove('visible');
-  }
+  // Heart save button — sibling of card so backdrop-filter works
+  const heartBtn = document.createElement('button');
+  heartBtn.className = 'card-heart-btn';
+  const alreadySaved = isAnimeSaved(anime.id);
+  heartBtn.innerHTML  = alreadySaved ? '❤' : '♡';
+  heartBtn.setAttribute('aria-label', 'Save');
+  if (alreadySaved) heartBtn.classList.add('saved');
+  heartBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    if (!isAnimeSaved(anime.id)) {
+      saveAnime(anime, isGem);
+      heartBtn.innerHTML = '❤';
+      heartBtn.classList.add('saved');
+      // Sync to cloud if signed in
+      const user = _auth.currentUser;
+      if (user) _syncToCloud(user);
+    }
+  });
+  container.appendChild(heartBtn);
 
   // Slam the first card in dramatically after unlock
   if (firstCard) {
@@ -3198,7 +3214,6 @@ function recSwipe(card, anime, action) {
       recPos++;
     }
     currentRecIsGem = false;
-    document.getElementById('gem-save-row').classList.remove('visible');
     // Clear active glow from gem markers now that the gem card is gone
     document.getElementById('gem-marker-1')?.classList.remove('active');
     document.getElementById('gem-marker-2')?.classList.remove('active');
@@ -3229,14 +3244,6 @@ document.getElementById('btn-rec-skip').addEventListener('click', () => {
 document.getElementById('btn-rec-like').addEventListener('click', () => {
   const card = document.querySelector('#rec-card-container .anime-card');
   if (card && currentRecAnime) recSwipe(card, currentRecAnime, 'like');
-});
-document.getElementById('btn-gem-save').addEventListener('click', () => {
-  if (currentRecAnime && currentRecIsGem) {
-    saveAnime(currentRecAnime, true); // mark as gem
-    const btn = document.getElementById('btn-gem-save');
-    btn.textContent = '✓ Saved';
-    btn.classList.add('saved');
-  }
 });
 // btn-rec-watch removed from DOM — play button is now a card overlay
 
