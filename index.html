@@ -1234,7 +1234,8 @@ let tasteIndex     = 0;
 let likeCount      = 0;    // real "good" signals collected
 let dislikeCount   = 0;    // real "bad" signals collected
 let totalShown     = 0;    // total onboarding cards shown (for hard cap)
-let isLoadingReserve = false;
+let isLoadingReserve    = false;
+let _reserveFetchPromise = null; // shared promise — concurrent callers wait for the same fetch
 let recQueue = [];
 let recPos   = 0;
 let seenIds        = new Set();
@@ -1277,22 +1278,35 @@ function shouldFinishOnboarding() {
 }
 
 /* ─── Dynamic reserve refetch ───────────────────── */
-async function fetchMoreForReserve() {
-  if (isLoadingReserve) return;
-  isLoadingReserve = true;
-  try {
-    const page = Math.floor(Math.random() * 5) + 1;
-    const data = await fetchAniList(SEED_QUERY, {
-      page, perPage: 30, sort: ['SCORE_DESC'],
-    });
-    const fresh = deduplicateByFranchise(data.Page?.media || [])
-      .filter(a => !seenIds.has(a.id) && a.coverImage?.large);
-    fresh.forEach(a => trackSeen(a));
-    reservePool.push(...fresh.sort(() => Math.random() - 0.5));
-  } catch (e) {
-    console.warn('Reserve refetch failed:', e);
-  }
-  isLoadingReserve = false;
+/**
+ * Fetch more anime into the reserve pool.
+ * KEY BEHAVIOUR: if a fetch is already in flight, return the SAME promise
+ * so concurrent callers (proactive + reactive) all wait for the same result
+ * instead of getting an immediately-resolved no-op.
+ */
+function fetchMoreForReserve() {
+  if (_reserveFetchPromise) return _reserveFetchPromise; // join existing fetch
+
+  _reserveFetchPromise = (async () => {
+    isLoadingReserve = true;
+    try {
+      const page = Math.floor(Math.random() * 5) + 1;
+      const data = await fetchAniList(SEED_QUERY, {
+        page, perPage: 30, sort: ['SCORE_DESC'],
+      });
+      const fresh = deduplicateByFranchise(data.Page?.media || [])
+        .filter(a => !seenIds.has(a.id) && a.coverImage?.large);
+      fresh.forEach(a => trackSeen(a));
+      reservePool.push(...fresh.sort(() => Math.random() - 0.5));
+    } catch (e) {
+      console.warn('Reserve refetch failed:', e);
+    } finally {
+      isLoadingReserve    = false;
+      _reserveFetchPromise = null;
+    }
+  })();
+
+  return _reserveFetchPromise;
 }
 
 /* ─── Build a card element ─────────────────────── */
@@ -1441,8 +1455,10 @@ function renderTasteCard(index, isReplacement = false) {
     if (reservePool.length > 0) {
       tasteAnime.push(reservePool.shift());
     } else if (!shouldFinishOnboarding()) {
-      // Reserve empty and minimum not met — fetch more, then retry
+      // Reserve empty and minimum not met — show spinner and wait for fetch
+      document.getElementById('swipe-spinner').style.display = 'flex';
       fetchMoreForReserve().then(() => {
+        document.getElementById('swipe-spinner').style.display = 'none';
         if (reservePool.length > 0) tasteAnime.push(reservePool.shift());
         renderTasteCard(index);
       });
@@ -1535,9 +1551,11 @@ function replaceSkippedCard(skipped, index) {
   const searchPool = [...reservePool, ...tasteAnime.slice(index)];
 
   if (searchPool.length === 0) {
-    // Nowhere to pull from — finish if we can, otherwise fetch more
+    // Nowhere to pull from — finish if we can, otherwise wait for fetch
     if (shouldFinishOnboarding()) { finishTaste(); return; }
+    document.getElementById('swipe-spinner').style.display = 'flex';
     fetchMoreForReserve().then(() => {
+      document.getElementById('swipe-spinner').style.display = 'none';
       if (reservePool.length > 0) tasteAnime.splice(index, 0, reservePool.shift());
       renderTasteCard(index, true);
     });
