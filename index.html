@@ -1100,6 +1100,18 @@ ${_REC_FIELDS}
   }
 }`;
 
+const GEM_QUERY_WIDE = `
+query ($excludeIds: [Int], $page: Int, $perPage: Int, $minScore: Int, $maxPop: Int) {
+  Page(page: $page, perPage: $perPage) {
+    media(type: ANIME, status_in: [FINISHED, RELEASING], isAdult: false,
+          episodes_greater: 1, averageScore_greater: $minScore,
+          popularity_lesser: $maxPop,
+          id_not_in: $excludeIds, sort: SCORE_DESC) {
+${_REC_FIELDS}
+    }
+  }
+}`;
+
 /* ─── Onboarding seed pool ──────────────────────
    Hand-picked AniList IDs covering the full spread
    of all 8 taste dimensions. The diversity algorithm
@@ -1389,8 +1401,8 @@ let _gemFetchPromise  = null;
 let recsSinceGem      = 0;       // recs shown since last gem
 let currentRecIsGem   = false;   // true while a gem card is on screen
 const GEM_INTERVAL    = 8;       // show 1 gem every N regular recs
-const GEM_SCORE_MIN   = 78;      // must be genuinely good
-const GEM_POP_MAX     = 15000;   // but not well-known
+const GEM_SCORE_MIN   = 75;      // must be genuinely good
+const GEM_POP_MAX     = 60000;   // niche but not totally obscure (sweet spot: 10k–60k)
 
 /* ─── Screen navigation ─────────────────────────── */
 function showScreen(id) {
@@ -2201,12 +2213,18 @@ async function fetchGems() {
     try {
       const { genres, tags } = buildQueryTargets();
       const excludeIds = [...seenIds];
-      const base = { excludeIds, page: 1, perPage: 20,
-                     minScore: GEM_SCORE_MIN, maxPop: GEM_POP_MAX };
+      const base = { excludeIds, page: Math.floor(Math.random() * 4) + 1,
+                     perPage: 25, minScore: GEM_SCORE_MIN, maxPop: GEM_POP_MAX };
+
+      // Build batch — always include a wide fallback so gemQueue is never empty
       const batch = [];
       if (genres.length > 0) batch.push(fetchAniList(GEM_QUERY_GENRE, { ...base, genres: genres.slice(0,3) }));
       if (tags.length   > 0) batch.push(fetchAniList(GEM_QUERY_TAG,   { ...base, tags:   tags.slice(0,5)   }));
-      if (batch.length === 0) return; // not enough profile yet
+      // Wide fallback: no genre/tag filter, just score + popularity cap
+      batch.push(fetchAniList(GEM_QUERY_WIDE, {
+        excludeIds, page: Math.floor(Math.random() * 4) + 1,
+        perPage: 25, minScore: GEM_SCORE_MIN, maxPop: GEM_POP_MAX,
+      }));
 
       const results = await Promise.allSettled(batch);
       const candidates = [];
@@ -2224,7 +2242,8 @@ async function fetchGems() {
       );
       const ranked = engine.rankRecommendations(unique, [...seenIds]);
       gemQueue.push(...ranked);
-    } catch (e) { console.warn('Gem fetch failed:', e); }
+      console.log(`[Gems] fetched ${ranked.length} gems (queue total: ${gemQueue.length})`);
+    } catch (e) { console.warn('[Gems] fetch failed:', e); }
     finally { isGemFetching = false; _gemFetchPromise = null; }
   })();
   return _gemFetchPromise;
