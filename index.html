@@ -615,6 +615,40 @@
       100% { transform: translate(-50%,-50%) scale(2.2); opacity: 0; }
     }
 
+    /* ── Pause gem animations when rec screen is not active ── */
+    /* All gem bar animations are paused unless #screen-recs.active */
+    #screen-recs:not(.active) .gem-progress-fill,
+    #screen-recs:not(.active) .gem-progress-fill::before,
+    #screen-recs:not(.active) .gem-icon {
+      animation-play-state: paused !important;
+    }
+
+    /* ── prefers-reduced-motion: disable all non-essential animations ── */
+    @media (prefers-reduced-motion: reduce) {
+      .gem-progress-fill,
+      .gem-progress-fill::before,
+      .gem-progress-fill.charging,
+      .gem-progress-fill.triggered,
+      .gem-icon,
+      .gem-marker.active .gem-icon,
+      .gem-marker.primed .gem-icon,
+      .gem-marker.active::before,
+      .card-slam,
+      .fly-left, .fly-right,
+      .anime-card,
+      .auth-panel,
+      .cta-panel {
+        animation: none !important;
+        transition: none !important;
+      }
+      .gem-progress-fill {
+        box-shadow: none;
+      }
+      .gem-progress-fill::after {
+        display: none;
+      }
+    }
+
     /* Rec card is same as swipe card but no stack */
     #rec-card-container {
       position: relative;
@@ -1203,6 +1237,15 @@
       text-align: center; padding: 20px 0;
     }
 
+    /* Radar chart */
+    .taste-radar-wrap {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      padding: 6px 0 14px;
+    }
+    .taste-radar-wrap svg { overflow: visible; }
+
     /* Saved grid */
     .saved-grid {
       display: grid;
@@ -1296,6 +1339,92 @@
       justify-content: space-between;
     }
     .recs-header-text { flex: 1; }
+
+    /* ══════════════════════════════════════════════ */
+    /*  SIGN-UP CTA SHEET                             */
+    /* ══════════════════════════════════════════════ */
+    #cta-sheet {
+      position: fixed; inset: 0; z-index: 390;
+      display: none; flex-direction: column;
+      justify-content: flex-end;
+    }
+    #cta-sheet.open { display: flex; }
+    .cta-backdrop {
+      position: absolute; inset: 0;
+      background: rgba(0,0,0,0.55);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+    }
+    .cta-panel {
+      position: relative;
+      background: var(--surface);
+      border-radius: 28px 28px 0 0;
+      border-top: 1px solid var(--border);
+      padding: 32px 24px max(28px, env(safe-area-inset-bottom));
+      display: flex; flex-direction: column; align-items: center; gap: 0;
+      animation: auth-slide-up 0.32s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    .cta-icon-row {
+      display: flex; gap: 10px; margin-bottom: 20px;
+    }
+    .cta-icon-bubble {
+      width: 52px; height: 52px;
+      border-radius: 16px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px;
+    }
+    .cta-icon-bubble.heart { background: rgba(239,68,68,0.15); }
+    .cta-icon-bubble.gem   { background: rgba(56,189,248,0.15); }
+    .cta-title {
+      font-size: 22px; font-weight: 800;
+      text-align: center; margin-bottom: 8px;
+    }
+    .cta-subtitle {
+      font-size: 14px; color: var(--text-muted);
+      text-align: center; line-height: 1.55;
+      margin-bottom: 24px; max-width: 300px;
+    }
+    .cta-benefits {
+      width: 100%; display: flex; flex-direction: column; gap: 10px;
+      margin-bottom: 26px;
+    }
+    .cta-benefit {
+      display: flex; align-items: center; gap: 12px;
+      background: var(--surface2);
+      border-radius: 14px; padding: 12px 14px;
+    }
+    .cta-benefit-icon {
+      width: 36px; height: 36px; flex-shrink: 0;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+    .cta-benefit-icon.b1 { background: rgba(239,68,68,0.15); }
+    .cta-benefit-icon.b2 { background: rgba(56,189,248,0.15); }
+    .cta-benefit-icon.b3 { background: rgba(168,85,247,0.15); }
+    .cta-benefit-text { flex: 1; }
+    .cta-benefit-text strong {
+      display: block; font-size: 13px; font-weight: 700; margin-bottom: 2px;
+    }
+    .cta-benefit-text span {
+      font-size: 12px; color: var(--text-muted); line-height: 1.4;
+    }
+    .cta-primary-btn {
+      width: 100%; padding: 16px;
+      background: var(--accent);
+      border: none; border-radius: 16px;
+      color: #fff; font-size: 16px; font-weight: 700; font-family: inherit;
+      cursor: pointer; margin-bottom: 10px;
+      transition: opacity 0.15s;
+    }
+    .cta-primary-btn:active { opacity: 0.82; }
+    .cta-skip-btn {
+      background: none; border: none;
+      color: var(--text-muted); font-size: 14px; font-weight: 500;
+      font-family: inherit; cursor: pointer; padding: 8px 16px;
+      transition: color 0.15s;
+    }
+    .cta-skip-btn:hover { color: var(--text); }
 
     /* ══════════════════════════════════════════════ */
     /*  AUTH SHEET                                    */
@@ -1624,6 +1753,46 @@
 <!-- ══════════════════════════════════════════════ -->
 <!--  AUTH SHEET                                   -->
 <!-- ══════════════════════════════════════════════ -->
+<!-- ══════════════════════════════════════════════ -->
+<!--  SIGN-UP CTA SHEET                            -->
+<!-- ══════════════════════════════════════════════ -->
+<div id="cta-sheet">
+  <div class="cta-backdrop" id="cta-backdrop"></div>
+  <div class="cta-panel">
+    <div class="cta-icon-row">
+      <div class="cta-icon-bubble heart">❤</div>
+      <div class="cta-icon-bubble gem">✦</div>
+    </div>
+    <div class="cta-title">Save your discoveries</div>
+    <div class="cta-subtitle">Create a free account to keep your saves and taste profile forever.</div>
+    <div class="cta-benefits">
+      <div class="cta-benefit">
+        <div class="cta-benefit-icon b1">❤</div>
+        <div class="cta-benefit-text">
+          <strong>Save anime</strong>
+          <span>Build your watchlist and gem collection across every session.</span>
+        </div>
+      </div>
+      <div class="cta-benefit">
+        <div class="cta-benefit-icon b2">◈</div>
+        <div class="cta-benefit-text">
+          <strong>Keep your Taste DNA</strong>
+          <span>Your taste profile improves with every swipe — don't lose it.</span>
+        </div>
+      </div>
+      <div class="cta-benefit">
+        <div class="cta-benefit-icon b3">↻</div>
+        <div class="cta-benefit-text">
+          <strong>Sync across devices</strong>
+          <span>Your picks follow you wherever you watch.</span>
+        </div>
+      </div>
+    </div>
+    <button class="cta-primary-btn" id="btn-cta-signup">Create free account</button>
+    <button class="cta-skip-btn" id="btn-cta-skip">Save locally for now</button>
+  </div>
+</div>
+
 <div id="auth-sheet">
   <div class="auth-backdrop" id="auth-backdrop"></div>
   <div class="auth-panel">
@@ -3234,17 +3403,24 @@ function showNextRec(firstCard = false) {
   heartBtn.addEventListener('click', e => {
     e.stopPropagation();
     if (isAnimeSaved(anime.id)) {
+      // Toggle off — always allowed regardless of auth state
       unsaveAnime(anime.id);
       heartBtn.innerHTML = '♡';
       heartBtn.classList.remove('saved');
       const user = _auth.currentUser;
       if (user) _syncToCloud(user);
     } else {
+      // Not yet saved
+      const user = _auth.currentUser;
+      if (!user) {
+        // Show sign-up CTA — pass the anime so "Save locally" still works
+        openCtaSheet(anime, isGem);
+        return;
+      }
       saveAnime(anime, isGem);
       heartBtn.innerHTML = '❤';
       heartBtn.classList.add('saved');
-      const user = _auth.currentUser;
-      if (user) _syncToCloud(user);
+      _syncToCloud(user);
     }
   });
   container.appendChild(heartBtn);
@@ -3273,6 +3449,14 @@ function recSwipe(card, anime, action) {
     if (action !== 'skip') engine.update(anime, action);
     totalCardsSwiped++;
     localStorage.setItem('nextarc_cards', totalCardsSwiped);
+
+    // After 10 swipes without signing in, nudge once per session
+    if (!_auth.currentUser && !_ctaSwipeNudgeDone && totalCardsSwiped === 10) {
+      _ctaSwipeNudgeDone = true;
+      setTimeout(() => {
+        if (!_auth.currentUser) openCtaSheet();
+      }, 600);
+    }
 
     // Gem cards don't consume from recQueue — only advance recPos for normal recs
     if (!currentRecIsGem) {
@@ -3658,6 +3842,97 @@ function _renderDimBars(containerId, traits, group) {
   );
 }
 
+/* ── Radar / spider chart for a taste dimension ─────────── */
+function _renderRadarChart(containerId, traits, group) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+
+  const rows = traits.filter(t => t.group === group && t.score > 0).slice(0, 6);
+  if (rows.length < 3) {
+    el.innerHTML = '<div class="taste-empty">Not enough data yet — keep swiping!</div>';
+    return;
+  }
+
+  const n = rows.length;
+  const max = rows[0].score;
+
+  // SVG coordinate space
+  const cx = 170, cy = 162;  // centre
+  const R  = 90;             // radar radius
+  const LR = 130;            // label centre distance from origin
+
+  // Angles: 0 → top (−π/2), proceeding clockwise
+  const angles = Array.from({ length: n }, (_, i) =>
+    (i / n) * Math.PI * 2 - Math.PI / 2
+  );
+
+  // Grid rings (25 / 50 / 75 / 100%)
+  const rings = [0.25, 0.5, 0.75, 1.0].map(p =>
+    `<circle cx="${cx}" cy="${cy}" r="${(R * p).toFixed(1)}"
+      fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>`
+  ).join('');
+
+  // Spokes
+  const spokes = angles.map(a =>
+    `<line x1="${cx}" y1="${cy}"
+      x2="${(cx + R * Math.cos(a)).toFixed(1)}"
+      y2="${(cy + R * Math.sin(a)).toFixed(1)}"
+      stroke="rgba(255,255,255,0.07)" stroke-width="1"/>`
+  ).join('');
+
+  // Data polygon vertices
+  const pts = rows.map((t, i) => {
+    const pct = t.score / max;
+    return [
+      cx + R * pct * Math.cos(angles[i]),
+      cy + R * pct * Math.sin(angles[i]),
+    ];
+  });
+  const polyStr = pts.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
+
+  // Dots at each vertex
+  const dots = pts.map(([x, y]) =>
+    `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3.5" fill="#2e80d8"/>`
+  ).join('');
+
+  // Axis-tip dots (faint, at full radius)
+  const tipDots = angles.map(a =>
+    `<circle cx="${(cx + R * Math.cos(a)).toFixed(1)}"
+              cy="${(cy + R * Math.sin(a)).toFixed(1)}"
+              r="2" fill="rgba(255,255,255,0.12)"/>`
+  ).join('');
+
+  // Labels — top 1: brand blue, top 2: brand gold, rest: muted
+  const LABEL_COLORS = ['#2e80d8', '#ffb703'];
+  const labels = rows.map((t, i) => {
+    const lx    = cx + LR * Math.cos(angles[i]);
+    const ly    = cy + LR * Math.sin(angles[i]);
+    const cosA  = Math.cos(angles[i]);
+    const anchor = cosA > 0.25 ? 'start' : cosA < -0.25 ? 'end' : 'middle';
+    const label  = _cleanLabel(t.key, group);
+    const color  = LABEL_COLORS[i] || 'rgba(255,255,255,0.45)';
+    const weight = i < 2 ? '700' : '500';
+    return `<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}"
+      text-anchor="${anchor}" dominant-baseline="middle"
+      fill="${color}" font-size="12" font-weight="${weight}"
+      font-family="Outfit, system-ui, sans-serif">${label}</text>`;
+  }).join('');
+
+  el.innerHTML = `<div class="taste-radar-wrap">
+    <svg viewBox="0 0 340 324" xmlns="http://www.w3.org/2000/svg" width="100%"
+         style="overflow:visible;display:block">
+      ${rings}
+      ${spokes}
+      ${tipDots}
+      <polygon points="${polyStr}"
+        fill="rgba(46,128,216,0.12)"
+        stroke="rgba(46,128,216,0.75)" stroke-width="1.5" stroke-linejoin="round"/>
+      ${dots}
+      ${labels}
+    </svg>
+  </div>`;
+}
+
 /* ── Render genre+tag bars for a single taste cluster ───────── */
 function _renderClusterBars(containerId, cluster) {
   const el = document.getElementById(containerId);
@@ -3747,8 +4022,8 @@ function _renderTasteDNA() {
     <div class="vibe-tags" id="vibe-tags-inner"></div>
   `;
 
-  // Render first dim tab
-  _renderDimBars('taste-dim-bars', traits, activeDims[0].group);
+  // Render first dim tab as radar chart
+  _renderRadarChart('taste-dim-bars', traits, activeDims[0].group);
 
   // Dim tab clicks
   section.querySelectorAll('#taste-dim-tabs .taste-dim-tab').forEach(btn => {
@@ -3756,7 +4031,7 @@ function _renderTasteDNA() {
       section.querySelectorAll('#taste-dim-tabs .taste-dim-tab')
         .forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-      _renderDimBars('taste-dim-bars', traits, btn.dataset.group);
+      _renderRadarChart('taste-dim-bars', traits, btn.dataset.group);
     });
   });
 
@@ -3852,6 +4127,45 @@ function closeAuthSheet() {
 document.getElementById('btn-open-auth').addEventListener('click', openAuthSheet);
 document.getElementById('btn-auth-cancel').addEventListener('click', closeAuthSheet);
 document.getElementById('auth-backdrop').addEventListener('click', closeAuthSheet);
+
+// ── Sign-up CTA sheet ──────────────────────────
+let _ctaPendingAnime = null;  // anime object waiting to be saved if user skips
+let _ctaPendingIsGem = false;
+let _ctaSwipeNudgeDone = false; // show the nudge at most once per session
+
+function openCtaSheet(pendingAnime = null, pendingIsGem = false) {
+  _ctaPendingAnime  = pendingAnime;
+  _ctaPendingIsGem  = pendingIsGem;
+  document.getElementById('cta-sheet').classList.add('open');
+}
+function closeCtaSheet() {
+  document.getElementById('cta-sheet').classList.remove('open');
+  _ctaPendingAnime = null;
+  _ctaPendingIsGem = false;
+}
+
+// "Create free account" → close CTA, open auth sheet
+document.getElementById('btn-cta-signup').addEventListener('click', () => {
+  closeCtaSheet();
+  openAuthSheet();
+});
+
+// "Save locally for now" → save to localStorage without cloud, close
+document.getElementById('btn-cta-skip').addEventListener('click', () => {
+  if (_ctaPendingAnime) {
+    saveAnime(_ctaPendingAnime, _ctaPendingIsGem);
+    // Update any visible heart button to reflect the save
+    const heartBtn = document.querySelector('.card-heart-btn');
+    if (heartBtn) {
+      heartBtn.innerHTML = '❤';
+      heartBtn.classList.add('saved');
+    }
+  }
+  closeCtaSheet();
+});
+
+// Backdrop tap dismisses without saving
+document.getElementById('cta-backdrop').addEventListener('click', closeCtaSheet);
 
 // Sign in / Sign up tab toggle
 let _authMode = 'signin';
