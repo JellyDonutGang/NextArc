@@ -911,35 +911,27 @@
       width: 72px;
       height: 72px;
       border-radius: 50%;
-      /* Glassmorphism */
-      background: rgba(255, 255, 255, 0.12);
-      backdrop-filter: blur(16px) saturate(180%);
-      -webkit-backdrop-filter: blur(16px) saturate(180%);
-      border: 1.5px solid rgba(255, 255, 255, 0.28);
+      /* Glassmorphism — works now that button is outside overflow:hidden card */
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(20px) saturate(160%) brightness(1.1);
+      -webkit-backdrop-filter: blur(20px) saturate(160%) brightness(1.1);
+      border: 1.5px solid rgba(255, 255, 255, 0.45);
       box-shadow:
-        0 4px 24px rgba(0, 0, 0, 0.35),
-        0 1px 0 rgba(255, 255, 255, 0.18) inset,
-        0 0 0 1px rgba(255, 255, 255, 0.06) inset;
+        0 8px 32px rgba(0, 0, 0, 0.45),
+        0 2px 0 rgba(255, 255, 255, 0.25) inset;
       color: #fff;
-      font-size: 26px;
+      font-size: 28px;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
       z-index: 5;
       transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
-      padding-left: 4px;
-    }
-    .card-play-overlay:hover {
-      background: rgba(255, 255, 255, 0.2);
-      box-shadow:
-        0 6px 32px rgba(0, 0, 0, 0.4),
-        0 1px 0 rgba(255, 255, 255, 0.22) inset,
-        0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+      padding-left: 5px; /* optical centre for ▶ */
     }
     .card-play-overlay:active {
-      transform: translate(-50%, -50%) scale(0.92);
-      background: rgba(255, 255, 255, 0.08);
+      transform: translate(-50%, -50%) scale(0.91);
+      background: rgba(255, 255, 255, 0.22);
     }
 
     /* ── Similar-pick badge (skip replacement) ───────── */
@@ -2587,6 +2579,8 @@ async function loadRecQueue() {
 function showNextRec(firstCard = false) {
   const container = document.getElementById('rec-card-container');
   container.querySelectorAll('.anime-card').forEach(c => c.remove());
+  // Remove any previous play overlay (lives outside the card to allow backdrop-filter)
+  container.querySelectorAll('.card-play-overlay').forEach(b => b.remove());
 
   // Silently pre-fetch the next batch when approaching the end of the queue
   if (recQueue.length - recPos <= PREFETCH_THRESHOLD && !isPrefetching && nextRecQueue === null) {
@@ -2661,7 +2655,10 @@ function showNextRec(firstCard = false) {
     card.appendChild(badge);
   }
 
-  // Play overlay — opens watch sheet without swiping
+  container.appendChild(card);
+
+  // Play overlay — appended to container (NOT card) so backdrop-filter works
+  // (.anime-card has overflow:hidden which kills backdrop-filter on children)
   const playBtn = document.createElement('button');
   playBtn.className = 'card-play-overlay';
   playBtn.innerHTML = '▶';
@@ -2669,9 +2666,7 @@ function showNextRec(firstCard = false) {
     e.stopPropagation();
     openWatchSheet(anime);
   });
-  card.appendChild(playBtn);
-
-  container.appendChild(card);
+  container.appendChild(playBtn);
 
   // Show/hide save row
   const saveRow  = document.getElementById('gem-save-row');
