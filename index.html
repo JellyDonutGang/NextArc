@@ -1149,6 +1149,32 @@
       transition: width 0.9s cubic-bezier(0.34,1.56,0.64,1);
     }
 
+    /* Taste dimension + cluster tabs */
+    .taste-dim-tabs {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+    .taste-dim-tab {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 5px 14px;
+      font-size: 12px; font-weight: 600;
+      font-family: inherit;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+      white-space: nowrap;
+    }
+    .taste-dim-tab.active {
+      background: rgba(46,128,216,0.16);
+      border-color: rgba(46,128,216,0.5);
+      color: #7dd3fc;
+    }
+    .taste-cluster-section { margin-top: 22px; }
+
     /* Vibe tags */
     .vibe-tags {
       display: flex; flex-wrap: wrap; gap: 8px;
@@ -3560,50 +3586,165 @@ function _renderStats() {
   document.getElementById('stat-saved').textContent = saved.length;
 }
 
+/* ── Taste DNA label cleaner ──────────────────────
+   Keys are stored with a group prefix, e.g. "genre:Action".
+   Strip it so only the human-readable name shows.              */
+function _cleanLabel(key, group) {
+  return key
+    .replace(new RegExp(`^${group}:`, 'i'), '') // strip "genre:" / "tone:" etc.
+    .replace(/^[^:]+:/, '')                      // strip any remaining "prefix:"
+    .replace(/_/g, ' ');                         // underscores → spaces
+}
+
+/* ── Render a bar chart for one group into containerId ─────── */
+function _renderDimBars(containerId, traits, group) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  const rows = traits.filter(t => t.group === group && t.score > 0).slice(0, 7);
+  if (!rows.length) {
+    el.innerHTML = '<div class="taste-empty">Not enough data yet — keep swiping!</div>';
+    return;
+  }
+  const max = rows[0].score;
+  el.innerHTML = rows.map(t => {
+    const pct   = Math.round((t.score / max) * 100);
+    const label = _cleanLabel(t.key, group);
+    return `<div class="taste-bar-row">
+      <span class="taste-bar-label">${label}</span>
+      <div class="taste-bar-track">
+        <div class="taste-bar-fill" style="width:0%" data-pct="${pct}"></div>
+      </div>
+    </div>`;
+  }).join('');
+  requestAnimationFrame(() =>
+    el.querySelectorAll('.taste-bar-fill').forEach(f => { f.style.width = f.dataset.pct + '%'; })
+  );
+}
+
+/* ── Render genre+tag bars for a single taste cluster ───────── */
+function _renderClusterBars(containerId, cluster) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  const entries = [
+    ...Object.entries(cluster.vectors?.genre || {}),
+    ...Object.entries(cluster.vectors?.tag   || {}),
+  ]
+    .filter(([, v]) => v > 0)
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, 8);
+
+  if (!entries.length) {
+    el.innerHTML = '<div class="taste-empty">Still learning this profile…</div>';
+    return;
+  }
+  const max = entries[0][1];
+  el.innerHTML = entries.map(([key, score]) => {
+    const pct   = Math.round((score / max) * 100);
+    const label = key.replace(/^[^:]+:/, '').replace(/_/g, ' ');
+    return `<div class="taste-bar-row">
+      <span class="taste-bar-label">${label}</span>
+      <div class="taste-bar-track">
+        <div class="taste-bar-fill" style="width:0%" data-pct="${pct}"></div>
+      </div>
+    </div>`;
+  }).join('');
+  requestAnimationFrame(() =>
+    el.querySelectorAll('.taste-bar-fill').forEach(f => { f.style.width = f.dataset.pct + '%'; })
+  );
+}
+
+/* ── Main Taste DNA renderer ─────────────────────── */
 function _renderTasteDNA() {
-  const barsEl  = document.getElementById('taste-bars-container');
-  const vibesEl = document.getElementById('vibe-tags');
+  const section = document.getElementById('profile-taste-section');
 
   if (!engine.onboarded) {
-    barsEl.innerHTML  = '<div class="taste-empty">Complete taste setup to see your DNA</div>';
-    vibesEl.innerHTML = '';
+    section.innerHTML = `
+      <div class="profile-section-title">Taste DNA</div>
+      <div class="taste-empty">Complete the taste check to see your DNA</div>`;
     return;
   }
 
-  // Genre bars — top 6
-  const traits = engine.topTraits(60);
-  const genreTraits = traits.filter(t => t.group === 'genre').slice(0, 6);
-  const toneTraits  = traits.filter(t => t.group === 'tone').slice(0, 5);
-  const maxScore = genreTraits[0]?.score || 1;
+  const traits = engine.topTraits(100);
 
-  barsEl.innerHTML = genreTraits.map(t => {
-    const pct   = Math.round((t.score / maxScore) * 100);
-    const label = t.key.replace(/_/g, ' ');
-    return `
-      <div class="taste-bar-row">
-        <span class="taste-bar-label">${label}</span>
-        <div class="taste-bar-track">
-          <div class="taste-bar-fill" style="width:0%" data-pct="${pct}"></div>
-        </div>
-      </div>`;
-  }).join('');
+  // Which dimension tabs have enough data to show?
+  const DIM_CONFIG = [
+    { group: 'genre',     label: 'Genres' },
+    { group: 'tone',      label: 'Tone' },
+    { group: 'tag',       label: 'Themes' },
+    { group: 'archetype', label: 'Characters' },
+  ];
+  const activeDims = DIM_CONFIG.filter(({ group }) =>
+    traits.some(t => t.group === group && t.score > 0)
+  );
+  if (!activeDims.length) activeDims.push(DIM_CONFIG[0]);
 
-  // Animate bars in on next frame
-  requestAnimationFrame(() => {
-    barsEl.querySelectorAll('.taste-bar-fill').forEach(el => {
-      el.style.width = el.dataset.pct + '%';
+  const dimTabsHtml = activeDims.map((d, i) =>
+    `<button class="taste-dim-tab${i === 0 ? ' active' : ''}" data-group="${d.group}">${d.label}</button>`
+  ).join('');
+
+  // Cluster profiles section — only shown when 2+ clusters exist
+  const summaries    = engine.clusterSummaries();
+  const rawClusters  = typeof engine._getActiveClusters === 'function'
+    ? engine._getActiveClusters().slice(0, 5) : [];
+  const showClusters = rawClusters.length >= 2;
+
+  const clusterTabsHtml = showClusters
+    ? rawClusters.map((c, i) => {
+        const label = summaries[i]?.label || `Profile ${i + 1}`;
+        return `<button class="taste-dim-tab${i === 0 ? ' active' : ''}" data-cluster-idx="${i}">${label}</button>`;
+      }).join('')
+    : '';
+
+  section.innerHTML = `
+    <div class="profile-section-title">Taste DNA</div>
+    <div class="taste-dim-tabs" id="taste-dim-tabs">${dimTabsHtml}</div>
+    <div id="taste-dim-bars"></div>
+
+    ${showClusters ? `
+    <div class="taste-cluster-section">
+      <div class="profile-section-title">Taste Profiles</div>
+      <div class="taste-dim-tabs" id="taste-cluster-tabs">${clusterTabsHtml}</div>
+      <div id="taste-cluster-bars"></div>
+    </div>` : ''}
+
+    <div class="vibe-tags" id="vibe-tags-inner"></div>
+  `;
+
+  // Render first dim tab
+  _renderDimBars('taste-dim-bars', traits, activeDims[0].group);
+
+  // Dim tab clicks
+  section.querySelectorAll('#taste-dim-tabs .taste-dim-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      section.querySelectorAll('#taste-dim-tabs .taste-dim-tab')
+        .forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      _renderDimBars('taste-dim-bars', traits, btn.dataset.group);
     });
   });
 
-  // Cluster vibe tags + tone tags
-  const clusters = engine.clusterSummaries();
-  const clusterTags = clusters.slice(0, 3).map(c =>
+  // Cluster tab clicks
+  if (showClusters) {
+    _renderClusterBars('taste-cluster-bars', rawClusters[0]);
+    section.querySelectorAll('#taste-cluster-tabs .taste-dim-tab').forEach((btn, i) => {
+      btn.addEventListener('click', () => {
+        section.querySelectorAll('#taste-cluster-tabs .taste-dim-tab')
+          .forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        _renderClusterBars('taste-cluster-bars', rawClusters[i]);
+      });
+    });
+  }
+
+  // Vibe pills — cluster labels + top tones
+  const clusterPills = summaries.slice(0, 3).map(c =>
     `<span class="vibe-tag accent">${c.label}</span>`
   );
-  const toneTags = toneTraits.slice(0, 3).map(t =>
-    `<span class="vibe-tag">${t.key.replace(/_/g, ' ')}</span>`
-  );
-  vibesEl.innerHTML = [...clusterTags, ...toneTags].join('');
+  const tonePills = traits.filter(t => t.group === 'tone' && t.score > 0)
+    .slice(0, 3)
+    .map(t => `<span class="vibe-tag">${_cleanLabel(t.key, 'tone')}</span>`);
+  const vibeEl = document.getElementById('vibe-tags-inner');
+  if (vibeEl) vibeEl.innerHTML = [...clusterPills, ...tonePills].join('');
 }
 
 function _renderSavedGrids() {
