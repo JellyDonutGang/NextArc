@@ -1396,8 +1396,43 @@ function updateSignalProgress() {
 }
 
 function shouldFinishOnboarding() {
-  return (likeCount >= MIN_LIKES && dislikeCount >= MIN_DISLIKES)
-      || totalShown >= MAX_ONBOARDING_SHOWN;
+  // Primary: full signal collected
+  if (likeCount >= MIN_LIKES && dislikeCount >= MIN_DISLIKES) return true;
+  // Hard cap
+  if (totalShown >= MAX_ONBOARDING_SHOWN) return true;
+  // Skipper escape: strong like signal + seen enough cards — skips carry implicit
+  // negative signal so don't hold the user hostage waiting for explicit dislikes
+  if (likeCount >= MIN_LIKES && totalShown >= 12) return true;
+  // Pool exhaustion: if we have any meaningful signal and pool is truly gone, proceed
+  if (likeCount >= 3 && reservePool.length === 0 && !isLoadingReserve) return true;
+  return false;
+}
+
+/* ─── Spinner helpers with timeout escape ───────── */
+let _spinnerTimeout = null;
+function showSwipeSpinner() {
+  document.getElementById('swipe-spinner').style.display = 'flex';
+  clearTimeout(_spinnerTimeout);
+  // After 6s, stop waiting and advance if we have any signal at all
+  _spinnerTimeout = setTimeout(() => {
+    hideSwipeSpinner();
+    if (likeCount > 0 || dislikeCount > 0) {
+      finishTaste();
+    } else {
+      // Truly no signal — show a gentle retry message inside the spinner area
+      const s = document.getElementById('swipe-spinner');
+      s.style.display = 'flex';
+      s.innerHTML = `<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:14px;line-height:1.6">
+        Having trouble loading anime.<br>Check your connection and
+        <span style="color:var(--accent);cursor:pointer;font-weight:600"
+          onclick="location.reload()">tap to retry</span>.
+      </div>`;
+    }
+  }, 6000);
+}
+function hideSwipeSpinner() {
+  clearTimeout(_spinnerTimeout);
+  document.getElementById('swipe-spinner').style.display = 'none';
 }
 
 /* ─── Dynamic reserve refetch ───────────────────── */
@@ -1579,11 +1614,17 @@ function renderTasteCard(index, isReplacement = false) {
       tasteAnime.push(reservePool.shift());
     } else if (!shouldFinishOnboarding()) {
       // Reserve empty and minimum not met — show spinner and wait for fetch
-      document.getElementById('swipe-spinner').style.display = 'flex';
+      showSwipeSpinner();
       fetchMoreForReserve().then(() => {
-        document.getElementById('swipe-spinner').style.display = 'none';
-        if (reservePool.length > 0) tasteAnime.push(reservePool.shift());
-        renderTasteCard(index);
+        hideSwipeSpinner();
+        if (reservePool.length > 0) {
+          tasteAnime.push(reservePool.shift());
+          renderTasteCard(index);
+        } else {
+          // Fetch returned nothing (all seen) — re-evaluate completion
+          if (shouldFinishOnboarding()) { finishTaste(); }
+          else { renderTasteCard(index); } // shouldFinish will catch pool=0 + signal
+        }
       });
       return;
     }
@@ -1676,11 +1717,16 @@ function replaceSkippedCard(skipped, index) {
   if (searchPool.length === 0) {
     // Nowhere to pull from — finish if we can, otherwise wait for fetch
     if (shouldFinishOnboarding()) { finishTaste(); return; }
-    document.getElementById('swipe-spinner').style.display = 'flex';
+    showSwipeSpinner();
     fetchMoreForReserve().then(() => {
-      document.getElementById('swipe-spinner').style.display = 'none';
-      if (reservePool.length > 0) tasteAnime.splice(index, 0, reservePool.shift());
-      renderTasteCard(index, true);
+      hideSwipeSpinner();
+      if (reservePool.length > 0) {
+        tasteAnime.splice(index, 0, reservePool.shift());
+        renderTasteCard(index, true);
+      } else {
+        // Pool truly empty after fetch — advance with whatever signal we have
+        finishTaste();
+      }
     });
     return;
   }
