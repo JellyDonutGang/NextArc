@@ -1243,6 +1243,32 @@
       font-size: 14px; color: var(--text-muted);
       text-align: center; padding: 20px 0;
     }
+    /* Collapsed: hide items beyond row 2 (3 cols × 2 rows = 6) */
+    .saved-grid.collapsed .saved-item:nth-child(n+7) {
+      display: none;
+    }
+    .saved-grid-expand-btn {
+      grid-column: 1 / -1;
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text-muted);
+      font-size: 12px; font-weight: 600; font-family: inherit;
+      padding: 9px 12px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      margin-top: 2px;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+    .saved-grid-expand-btn:hover {
+      background: var(--surface2);
+      border-color: rgba(255,255,255,0.15);
+      color: var(--text);
+    }
+    .saved-grid-expand-btn svg {
+      flex-shrink: 0;
+      transition: transform 0.2s;
+    }
 
     /* Profile icon button in recs header */
     .profile-icon-btn {
@@ -3100,6 +3126,12 @@ function isAnimeSaved(id) {
   return saved.some(a => a.id === id);
 }
 
+function unsaveAnime(id) {
+  const key = 'nextarc_saved';
+  const list = JSON.parse(localStorage.getItem(key) || '[]');
+  localStorage.setItem(key, JSON.stringify(list.filter(a => a.id !== id)));
+}
+
 function showNextRec(firstCard = false) {
   const container = document.getElementById('rec-card-container');
   container.querySelectorAll('.anime-card').forEach(c => c.remove());
@@ -3201,11 +3233,16 @@ function showNextRec(firstCard = false) {
   if (alreadySaved) heartBtn.classList.add('saved');
   heartBtn.addEventListener('click', e => {
     e.stopPropagation();
-    if (!isAnimeSaved(anime.id)) {
+    if (isAnimeSaved(anime.id)) {
+      unsaveAnime(anime.id);
+      heartBtn.innerHTML = '♡';
+      heartBtn.classList.remove('saved');
+      const user = _auth.currentUser;
+      if (user) _syncToCloud(user);
+    } else {
       saveAnime(anime, isGem);
       heartBtn.innerHTML = '❤';
       heartBtn.classList.add('saved');
-      // Sync to cloud if signed in
       const user = _auth.currentUser;
       if (user) _syncToCloud(user);
     }
@@ -3759,20 +3796,41 @@ function _renderSavedGrids() {
 function _renderGrid(id, items, isGem) {
   const el = document.getElementById(id);
   if (!items.length) {
+    el.classList.remove('collapsed');
     el.innerHTML = `<div class="saved-grid-empty">${isGem ? 'No gems saved yet' : 'Nothing saved yet'}</div>`;
     return;
   }
+  const COLLAPSE_AFTER = 6; // 2 rows × 3 cols
+  const needsCollapse = items.length > COLLAPSE_AFTER;
+
   el.innerHTML = items.map(a => {
     const title = a.title?.english || a.title?.romaji || '';
     const cover = a.coverImage?.large || a.coverImage?.medium || '';
     const badge = a.isGem ? `<div class="saved-item-gem-badge">✦ GEM</div>` : '';
-    return `
-      <div class="saved-item">
+    return `<div class="saved-item">
         <img src="${cover}" alt="${title}" loading="lazy">
         ${badge}
         <div class="saved-item-title">${title}</div>
       </div>`;
   }).join('');
+
+  if (needsCollapse) {
+    el.classList.add('collapsed');
+    const chevronDown = `<svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2.5 5L7 9.5L11.5 5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+    const chevronUp   = `<svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M11.5 9L7 4.5L2.5 9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+    const btn = document.createElement('button');
+    btn.className = 'saved-grid-expand-btn';
+    btn.innerHTML = `Show all ${items.length} ${chevronDown}`;
+    btn.addEventListener('click', () => {
+      const isNowCollapsed = el.classList.toggle('collapsed');
+      btn.innerHTML = isNowCollapsed
+        ? `Show all ${items.length} ${chevronDown}`
+        : `Show less ${chevronUp}`;
+    });
+    el.appendChild(btn);
+  } else {
+    el.classList.remove('collapsed');
+  }
 }
 
 // ── Navigation ─────────────────────────────────────
