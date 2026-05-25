@@ -1643,8 +1643,18 @@
   <div class="gem-progress-wrap">
     <div class="gem-progress-track">
       <div class="gem-progress-fill" id="taste-progress-fill"></div>
-      <div class="gem-marker" id="taste-gem-marker" style="left:100%">
-        <div class="gem-icon" id="taste-gem-icon">
+      <!-- Phase 1 gem at 50% — evolves when midpoint reached -->
+      <div class="gem-marker" id="taste-gem-marker-1" style="left:50%">
+        <div class="gem-icon" id="taste-gem-icon-1">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <polygon points="12,2 18,8 12,22 6,8" fill="currentColor" opacity="0.9"/>
+            <polygon points="12,2 18,8 12,10 6,8" fill="currentColor" opacity="0.5"/>
+          </svg>
+        </div>
+      </div>
+      <!-- Phase 2 gem at 100% — unlocks recs -->
+      <div class="gem-marker" id="taste-gem-marker-2" style="left:100%">
+        <div class="gem-icon" id="taste-gem-icon-2">
           <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <polygon points="12,2 18,8 12,22 6,8" fill="currentColor" opacity="0.9"/>
             <polygon points="12,2 18,8 12,10 6,8" fill="currentColor" opacity="0.5"/>
@@ -2190,9 +2200,11 @@ const SEED_POOL_IDS = [
 ];
 
 // ── Onboarding signal thresholds ──────────────────
-const MIN_LIKES             = 6;   // real likes required before recs unlock
-const MIN_DISLIKES          = 4;   // real dislikes required before recs unlock
-const MAX_ONBOARDING_SHOWN  = 30;  // hard cap — never show more than this
+const MIN_LIKES_P1          = 4;   // phase-1 gem: likes needed to hit midpoint
+const MIN_DISLIKES_P1       = 3;   // phase-1 gem: dislikes needed to hit midpoint
+const MIN_LIKES             = 8;   // phase-2 gem: likes needed to unlock recs
+const MIN_DISLIKES          = 6;   // phase-2 gem: dislikes needed to unlock recs
+const MAX_ONBOARDING_SHOWN  = 40;  // hard cap — never show more than this
 const INITIAL_QUEUE_SIZE    = 12;  // diverse anime shown first before reserve kicks in
 const RESERVE_LOW_THRESHOLD = 6;   // refetch reserve when it drops below this
 
@@ -2466,50 +2478,85 @@ function hideOverlay(id) {
   document.getElementById(id).classList.remove('visible');
 }
 
-/* ─── Onboarding power-up bar ───────────────────── */
+/* ─── Onboarding two-phase power-up bar ─────────── */
 function updateTasteBar() {
-  const fill   = document.getElementById('taste-progress-fill');
-  const marker = document.getElementById('taste-gem-marker');
-  if (!fill || !marker) return;
+  const fill    = document.getElementById('taste-progress-fill');
+  const marker1 = document.getElementById('taste-gem-marker-1');
+  const marker2 = document.getElementById('taste-gem-marker-2');
+  if (!fill || !marker1 || !marker2) return;
 
-  // Progress = weighted average of both sub-goals (likes + dislikes)
-  const likePct    = Math.min(1, likeCount    / MIN_LIKES);
-  const dislikePct = Math.min(1, dislikeCount / MIN_DISLIKES);
-  const pct        = Math.round((likePct * 50) + (dislikePct * 50));
+  // ── Phase 1: 0 → 50% (reaching midpoint gem) ──
+  const p1Like    = Math.min(1, likeCount    / MIN_LIKES_P1);
+  const p1Dislike = Math.min(1, dislikeCount / MIN_DISLIKES_P1);
+  const phase1Pct = (p1Like + p1Dislike) / 2;        // 0–1
+  const phase1Done = phase1Pct >= 1;
 
-  fill.style.width = pct + '%';
+  // ── Phase 2: 50 → 100% (reaching unlock gem) ──
+  const p2Like    = Math.min(1, likeCount    / MIN_LIKES);
+  const p2Dislike = Math.min(1, dislikeCount / MIN_DISLIKES);
+  const phase2Pct = (p2Like + p2Dislike) / 2;        // 0–1
+  const phase2Done = phase2Pct >= 1;
 
-  // Charging state: within 2 interactions of done
-  const interactionsLeft = Math.max(
-    MIN_LIKES    - likeCount,
-    MIN_DISLIKES - dislikeCount,
-    0
-  );
-  const isDone     = pct >= 100;
-  const isCharging = !isDone && interactionsLeft <= 2;
+  // Bar width: first half fills during phase 1, second half during phase 2
+  const barPct = phase2Done ? 100
+               : phase1Done ? Math.round(50 + phase2Pct * 50)
+               : Math.round(phase1Pct * 50);
 
-  fill.classList.toggle('charging',  isCharging && !isDone);
-  fill.classList.toggle('triggered', isDone);
+  fill.style.width = barPct + '%';
 
-  // Activate the gem when bar is full
-  if (isDone) {
-    marker.classList.add('active');
+  // ── Charging / trigger states ──
+  const towardP2 = phase1Done && !phase2Done;
+  const p2Left   = Math.max(MIN_LIKES - likeCount, MIN_DISLIKES - dislikeCount, 0);
+  const p1Left   = Math.max(MIN_LIKES_P1 - likeCount, MIN_DISLIKES_P1 - dislikeCount, 0);
+
+  const isCharging  = towardP2 ? p2Left <= 2 : (!phase1Done && p1Left <= 1);
+  const isTriggered = phase2Done;
+
+  fill.classList.toggle('charging',  isCharging && !isTriggered);
+  fill.classList.toggle('triggered', isTriggered);
+
+  // ── Gem 1 (midpoint) ──
+  if (phase1Done && !phase2Done) {
+    // Collected but bar is still going — show it as filled/glowing, not exploding
+    marker1.classList.remove('active', 'primed');
+    marker1.classList.add('filled');
+  } else if (phase1Done && phase2Done) {
+    marker1.classList.remove('active', 'primed');
+    marker1.classList.add('filled');
   } else {
-    marker.classList.remove('active', 'filled', 'primed');
-    if (isCharging) marker.classList.add('primed');
+    marker1.classList.remove('filled', 'active');
+    // Primed: 1 interaction away from midpoint
+    marker1.classList.toggle('primed', p1Left <= 1 && !phase1Done);
+  }
+
+  // Flash the midpoint gem the moment phase 1 completes (one-shot)
+  if (phase1Done && !marker1.dataset.flashed) {
+    marker1.dataset.flashed = '1';
+    marker1.classList.add('active');
+    setTimeout(() => {
+      marker1.classList.remove('active');
+      marker1.classList.add('filled');
+    }, 900);
+  }
+
+  // ── Gem 2 (unlock) ──
+  if (phase2Done) {
+    marker2.classList.add('active');
+  } else {
+    marker2.classList.remove('active', 'filled');
+    marker2.classList.toggle('primed', towardP2 && p2Left <= 2);
   }
 }
 
 function shouldFinishOnboarding() {
-  // Primary: full signal collected
+  // Primary: full signal collected (phase 2 complete)
   if (likeCount >= MIN_LIKES && dislikeCount >= MIN_DISLIKES) return true;
   // Hard cap
   if (totalShown >= MAX_ONBOARDING_SHOWN) return true;
-  // Skipper escape: strong like signal + seen enough cards — skips carry implicit
-  // negative signal so don't hold the user hostage waiting for explicit dislikes
-  if (likeCount >= MIN_LIKES && totalShown >= 12) return true;
-  // Pool exhaustion: if we have any meaningful signal and pool is truly gone, proceed
-  if (likeCount >= 3 && reservePool.length === 0 && !isLoadingReserve) return true;
+  // Skipper escape: strong like signal + seen plenty of cards
+  if (likeCount >= MIN_LIKES && totalShown >= 20) return true;
+  // Pool exhaustion: meaningful signal and reserve truly gone
+  if (likeCount >= 5 && reservePool.length === 0 && !isLoadingReserve) return true;
   return false;
 }
 
