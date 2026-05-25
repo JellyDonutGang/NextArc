@@ -1231,10 +1231,18 @@ let dislikeCount   = 0;    // real "bad" signals collected
 let totalShown     = 0;    // total onboarding cards shown (for hard cap)
 let isLoadingReserve = false;
 let recQueue = [];
-let recPos = 0;
-let seenIds = new Set();
+let recPos   = 0;
+let seenIds        = new Set();
 let seenFranchises = new Set();
 let currentRecAnime = null;
+
+// ── Adaptive rec system state ─────────────────────
+let nextRecQueue       = null;   // silently pre-loaded next batch
+let isPrefetching      = false;  // guard: no concurrent pre-fetches
+let recSwipesSinceRank = 0;      // swipes since last ranking/re-rank
+let lastRankSnapshot   = null;   // profile fingerprint at last rank
+const PREFETCH_THRESHOLD = 8;    // start pre-fetch when N cards remain
+const RERANK_THRESHOLD   = 8;    // re-rank remaining queue every N swipes
 
 /* ─── Screen navigation ─────────────────────────── */
 function showScreen(id) {
@@ -1778,17 +1786,187 @@ function buildQueryTargets() {
   const genres = traits
     .filter(t => t.group === 'genre' && t.score > 0)
     .map(t => t.key.replace('genre:', ''))
-    .filter((g, i, a) => a.indexOf(g) === i)   // dedupe
+    .filter((g, i, a) => a.indexOf(g) === i)
     .slice(0, 5);
 
   // Tag keys are stored as "tag:Psychological" — strip prefix, dedupe
   const tags = traits
     .filter(t => t.group === 'tag' && t.score > 0)
     .map(t => t.key.replace('tag:', ''))
-    .filter((t, i, a) => a.indexOf(t) === i)   // dedupe
+    .filter((t, i, a) => a.indexOf(t) === i)
     .slice(0, 8);
 
-  return { genres, tags };
+  // Per-cluster targets — once multiple clusters are established, each
+  // taste lane gets its own dedicated AniList query for maximum precision.
+  // A cluster for "dark psychological" and a cluster for "cozy healing"
+  // will fire completely different queries, rather than averaging them.
+  const clusterTargets = [];
+  if (engine.onboarded && engine.clusters.length >= 2) {
+    const activeClusters = engine._getActiveClusters().slice(0, 3);
+    for (const cluster of activeClusters) {
+      const cGenres = Object.entries(cluster.vectors.genre || {})
+        .filter(([, v]) => v > 0)
+        .sort(([, a], [, b]) => b - a)
+        .slice(0, 2)
+        .map(([k]) => k.replace('genre:', ''));
+
+      const cTags = Object.entries(cluster.vectors.tag || {})
+        .filter(([, v]) => v > 0)
+        .sort(([, a], [, b]) => b - a)
+        .slice(0, 3)
+        .map(([k]) => k.replace('tag:', ''));
+
+      if (cGenres.length > 0 || cTags.length > 0) {
+        clusterTargets.push({ genres: cGenres, tags: cTags });
+      }
+    }
+  }
+
+  return { genres, tags, clusterTargets };
+}
+
+/**
+ * Core fetch + rank logic shared by loadRecQueue and prefetchNextBatch.
+ * Fires 7–10 parallel AniList queries (global genre/tag + per-cluster),
+ * merges ~200–300 candidates, deduplicates, and returns a ranked queue.
+ */
+async function fetchAndRankCandidates() {
+  const { genres, tags, clusterTargets } = buildQueryTargets();
+  const excludeIds = [...seenIds];
+
+  const rp  = (max = 8)  => Math.floor(Math.random() * max) + 1;
+  const rp2 = (max = 15) => Math.floor(Math.random() * max) + 1;
+
+  const batch = [];
+
+  // 1. Primary genre, score-sorted — highest quality in top genre
+  if (genres[0]) batch.push(
+    fetchAniList(REC_QUERY_GENRE, {
+      genres: [genres[0]], excludeIds,
+      page: rp(8), perPage: 40, sort: ['SCORE_DESC'], minScore: 68,
+    })
+  );
+
+  // 2. Top genres combined (OR), popularity-sorted — mainstream titles
+  if (genres.length >= 2) batch.push(
+    fetchAniList(REC_QUERY_GENRE, {
+      genres: genres.slice(0, 3), excludeIds,
+      page: rp(10), perPage: 40, sort: ['POPULARITY_DESC'], minScore: 62,
+    })
+  );
+
+  // 3. Secondary genre deep dive, score-sorted
+  if (genres.length >= 2) batch.push(
+    fetchAniList(REC_QUERY_GENRE, {
+      genres: [genres[1]], excludeIds,
+      page: rp(8) + 3, perPage: 40, sort: ['SCORE_DESC'], minScore: 65,
+    })
+  );
+
+  // 4. Top tags (first half), score-sorted — surfaces niche thematic matches
+  if (tags.length >= 2) batch.push(
+    fetchAniList(REC_QUERY_TAG, {
+      tags: tags.slice(0, 4), excludeIds,
+      page: rp(8), perPage: 40, sort: ['SCORE_DESC'], minScore: 65,
+    })
+  );
+
+  // 5. Top tags (second half), popularity-sorted — broader tag sweep
+  if (tags.length >= 3) batch.push(
+    fetchAniList(REC_QUERY_TAG, {
+      tags: tags.slice(3, 8), excludeIds,
+      page: rp(10), perPage: 40, sort: ['POPULARITY_DESC'], minScore: 60,
+    })
+  );
+
+  // 6. Wide quality sweep — no genre/tag filter, high score bar.
+  //    Catches acclaimed shows that transcend genre labels.
+  batch.push(
+    fetchAniList(REC_QUERY_WIDE, {
+      excludeIds,
+      page: rp2(15), perPage: 40, sort: ['SCORE_DESC'], minScore: 74,
+    })
+  );
+
+  // 7. Wide popularity sweep — safety net for sparse taste profiles
+  batch.push(
+    fetchAniList(REC_QUERY_WIDE, {
+      excludeIds,
+      page: rp2(12), perPage: 40, sort: ['POPULARITY_DESC'], minScore: 62,
+    })
+  );
+
+  // 8–10. Per-cluster targeted queries — one per detected taste lane.
+  // A "dark psychological" cluster and a "cozy healing" cluster fire
+  // completely different queries instead of averaging into one.
+  for (const ct of clusterTargets) {
+    if (ct.genres.length > 0) {
+      batch.push(fetchAniList(REC_QUERY_GENRE, {
+        genres: ct.genres, excludeIds,
+        page: rp(10), perPage: 35, sort: ['SCORE_DESC'], minScore: 65,
+      }));
+    } else if (ct.tags.length > 0) {
+      batch.push(fetchAniList(REC_QUERY_TAG, {
+        tags: ct.tags, excludeIds,
+        page: rp(8), perPage: 35, sort: ['SCORE_DESC'], minScore: 65,
+      }));
+    }
+  }
+
+  const results = await Promise.all(batch);
+
+  // Merge + deduplicate across all queries
+  const mergedIds    = new Set(seenIds);
+  const allCandidates = [];
+  for (const data of results) {
+    for (const anime of (data?.Page?.media || [])) {
+      if (!mergedIds.has(anime.id) && anime.coverImage?.large) {
+        mergedIds.add(anime.id);
+        allCandidates.push(anime);
+      }
+    }
+  }
+
+  const candidates = deduplicateByFranchise(allCandidates)
+    .filter(a => !seenIds.has(a.id));
+
+  return engine.rankRecommendations(candidates, [...seenIds]);
+}
+
+/** Lightweight profile fingerprint — detects meaningful taste drift. */
+function snapshotProfile() {
+  return JSON.stringify(engine.vectors.genre) + JSON.stringify(engine.vectors.tone);
+}
+
+/**
+ * Re-score the unshown tail of the current queue using the updated profile.
+ * Called every RERANK_THRESHOLD swipes when the profile has shifted.
+ * Deferred via setTimeout(0) so it doesn't block the card animation.
+ */
+function rerankRemaining() {
+  const tail = recQueue.slice(recPos);
+  if (tail.length < 4) return;
+  const reranked = engine.rankRecommendations(tail, [...seenIds]);
+  recQueue           = [...recQueue.slice(0, recPos), ...reranked];
+  lastRankSnapshot   = snapshotProfile();
+  recSwipesSinceRank = 0;
+}
+
+/**
+ * Silently pre-fetch the next batch while the user is still swiping.
+ * Triggered when PREFETCH_THRESHOLD cards remain in the current queue.
+ * On queue exhaustion, the pre-fetched batch swaps in instantly — no spinner.
+ */
+async function prefetchNextBatch() {
+  if (isPrefetching || nextRecQueue !== null) return;
+  isPrefetching = true;
+  try {
+    nextRecQueue = await fetchAndRankCandidates();
+  } catch (e) {
+    console.warn('Prefetch failed:', e);
+    nextRecQueue = null;
+  }
+  isPrefetching = false;
 }
 
 async function loadRecQueue() {
@@ -1798,104 +1976,14 @@ async function loadRecQueue() {
     document.getElementById('recs-spinner').style.display = 'flex';
   }
   try {
-    const { genres, tags } = buildQueryTargets();
-    const excludeIds = [...seenIds];
-
-    // Random page helpers — spread across the library so we don't always hit the same titles
-    const rp  = (max = 8)  => Math.floor(Math.random() * max)  + 1;
-    const rp2 = (max = 15) => Math.floor(Math.random() * max)  + 1;
-
-    // ── Build 6 parallel queries ──────────────────────────────────────
-    // Each targets a different slice of AniList's library.
-    // Results are merged + deduplicated before being handed to the engine.
-    const batch = [];
-
-    // 1. Primary genre, score-sorted — quality picks in the user's top genre
-    if (genres[0]) batch.push(
-      fetchAniList(REC_QUERY_GENRE, {
-        genres: [genres[0]], excludeIds,
-        page: rp(8), perPage: 40, sort: ['SCORE_DESC'], minScore: 68,
-      })
-    );
-
-    // 2. Top genres combined (OR), popularity-sorted — catches mainstream titles
-    if (genres.length >= 2) batch.push(
-      fetchAniList(REC_QUERY_GENRE, {
-        genres: genres.slice(0, 3), excludeIds,
-        page: rp(10), perPage: 40, sort: ['POPULARITY_DESC'], minScore: 62,
-      })
-    );
-
-    // 3. Secondary genre, score-sorted — explores the #2 genre deeply
-    if (genres.length >= 2) batch.push(
-      fetchAniList(REC_QUERY_GENRE, {
-        genres: [genres[1]], excludeIds,
-        page: rp(8) + 3, perPage: 40, sort: ['SCORE_DESC'], minScore: 65,
-      })
-    );
-
-    // 4. Top tags (first half), score-sorted — surfaces niche matches
-    if (tags.length >= 2) batch.push(
-      fetchAniList(REC_QUERY_TAG, {
-        tags: tags.slice(0, 4), excludeIds,
-        page: rp(8), perPage: 40, sort: ['SCORE_DESC'], minScore: 65,
-      })
-    );
-
-    // 5. Top tags (second half), popularity-sorted — broader tag sweep
-    if (tags.length >= 3) batch.push(
-      fetchAniList(REC_QUERY_TAG, {
-        tags: tags.slice(3, 8), excludeIds,
-        page: rp(10), perPage: 40, sort: ['POPULARITY_DESC'], minScore: 60,
-      })
-    );
-
-    // 6. Wide quality sweep — no genre/tag filter, high-score threshold.
-    //    Catches acclaimed shows that might not match top genres/tags but
-    //    could still score well against the user's scalar profile.
-    batch.push(
-      fetchAniList(REC_QUERY_WIDE, {
-        excludeIds,
-        page: rp2(15), perPage: 40, sort: ['SCORE_DESC'], minScore: 74,
-      })
-    );
-
-    // Always add a popularity sweep as final safety net (covers cases where
-    // the user has few taste signals or genre/tag queries returned little)
-    batch.push(
-      fetchAniList(REC_QUERY_WIDE, {
-        excludeIds,
-        page: rp2(12), perPage: 40, sort: ['POPULARITY_DESC'], minScore: 62,
-      })
-    );
-
-    const results = await Promise.all(batch);
-
-    // ── Merge + deduplicate across all queries ────────────────────────
-    const mergedIds = new Set(seenIds);
-    const allCandidates = [];
-
-    for (const data of results) {
-      for (const anime of (data?.Page?.media || [])) {
-        if (!mergedIds.has(anime.id) && anime.coverImage?.large) {
-          mergedIds.add(anime.id);
-          allCandidates.push(anime);
-        }
-      }
-    }
-
-    // Franchise dedup — only the first entry per franchise
-    const candidates = deduplicateByFranchise(allCandidates)
-      .filter(a => !seenIds.has(a.id));
-
-    recQueue = engine.rankRecommendations(candidates, [...seenIds]);
-    recPos = 0;
-
+    recQueue           = await fetchAndRankCandidates();
+    recPos             = 0;
+    recSwipesSinceRank = 0;
+    lastRankSnapshot   = snapshotProfile();
   } catch (e) {
     console.error('loadRecQueue failed:', e);
     recQueue = [];
   }
-
   document.getElementById('recs-spinner').style.display = 'none';
   // Only auto-show next rec if we're already on the rec screen
   // (if celebration is still playing, dismissUnlockCelebration handles it)
@@ -1908,10 +1996,24 @@ function showNextRec(firstCard = false) {
   const container = document.getElementById('rec-card-container');
   container.querySelectorAll('.anime-card').forEach(c => c.remove());
 
-  // Reload if queue exhausted
+  // Silently pre-fetch the next batch when approaching the end of the queue
+  if (recQueue.length - recPos <= PREFETCH_THRESHOLD && !isPrefetching && nextRecQueue === null) {
+    prefetchNextBatch();
+  }
+
+  // Queue exhausted — swap in pre-fetched batch instantly, or fall back to spinner
   if (recPos >= recQueue.length) {
-    if (recQueue.length > 0) loadRecQueue();
-    else {
+    if (nextRecQueue !== null && nextRecQueue.length > 0) {
+      // Instant swap — the next batch was already loading in the background
+      recQueue           = nextRecQueue.filter(a => !seenIds.has(a.id));
+      nextRecQueue       = null;
+      recPos             = 0;
+      recSwipesSinceRank = 0;
+      lastRankSnapshot   = snapshotProfile();
+      showNextRec();
+    } else if (recQueue.length > 0 || isPrefetching) {
+      loadRecQueue(); // spinner while we wait
+    } else {
       container.innerHTML = `
         <div class="empty-state">
           <div class="big-emoji">🌸</div>
@@ -1968,6 +2070,18 @@ function recSwipe(card, anime, action) {
   flyCard(card, dir).then(() => {
     if (action !== 'skip') engine.update(anime, action);
     recPos++;
+    recSwipesSinceRank++;
+
+    // Every RERANK_THRESHOLD swipes, re-score the remaining queue if the
+    // taste profile has meaningfully shifted (e.g. 8 likes in a row for
+    // a new genre bubble more of that genre toward the front immediately).
+    if (action !== 'skip' && recSwipesSinceRank >= RERANK_THRESHOLD) {
+      const current = snapshotProfile();
+      if (current !== lastRankSnapshot) {
+        setTimeout(rerankRemaining, 0); // defer so card animation isn't blocked
+      }
+    }
+
     showNextRec();
   });
 }
