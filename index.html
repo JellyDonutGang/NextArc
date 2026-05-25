@@ -180,26 +180,7 @@
       justify-content: space-between;
       padding: 0 8px 14px;
     }
-    .swipe-title { font-size: 11px; font-weight: 600; color: var(--text-muted); letter-spacing: 1px; text-transform: uppercase; }
-    .signal-tracker {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-    }
-    .signal-badge {
-      font-size: 12px;
-      font-weight: 700;
-      padding: 4px 10px;
-      border-radius: 8px;
-      background: var(--surface2);
-      border: 1.5px solid var(--border);
-      transition: background 0.3s, color 0.3s, border-color 0.3s;
-      letter-spacing: 0.2px;
-    }
-    .signal-badge.likes   { color: var(--accent);     border-color: rgba(46,128,216,0.4); }
-    .signal-badge.dislikes{ color: var(--text-muted); }
-    .signal-badge.met     { background: rgba(46,196,182,0.2); border-color: var(--green); color: var(--green); }
-
+    .swipe-title { font-size: 11px; font-weight: 600; color: var(--text-muted); letter-spacing: 1px; text-transform: uppercase; width: 100%; text-align: center; }
     /* Card Stack */
     .card-stack {
       position: relative;
@@ -462,9 +443,6 @@
       -webkit-backdrop-filter: blur(20px) saturate(160%);
       border: 1.5px solid rgba(255, 255, 255, 0.35);
       box-shadow: 0 4px 16px rgba(0,0,0,0.35), 0 1px 0 rgba(255,255,255,0.2) inset;
-      color: white;
-      font-size: 19px;
-      line-height: 1;
       cursor: pointer;
       display: flex;
       align-items: center;
@@ -472,10 +450,27 @@
       z-index: 6;
       transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
     }
+    /* SVG heart — outlined when unsaved, filled when saved */
+    .card-heart-btn .heart-svg {
+      width: 20px; height: 20px;
+      flex-shrink: 0;
+      overflow: visible;
+    }
+    .card-heart-btn .heart-svg path {
+      fill: none;
+      stroke: rgba(255,255,255,0.9);
+      stroke-width: 1.6;
+      stroke-linejoin: round;
+      transition: fill 0.2s ease, stroke 0.2s ease;
+    }
     .card-heart-btn.saved {
       background: rgba(239, 68, 68, 0.82);
       border-color: rgba(255,255,255,0.5);
       box-shadow: 0 4px 20px rgba(239,68,68,0.45), 0 1px 0 rgba(255,255,255,0.2) inset;
+    }
+    .card-heart-btn.saved .heart-svg path {
+      fill: white;
+      stroke: none;
     }
     /* Never show the heart outside the active recs screen */
     #screen-recs:not(.active) .card-heart-btn { display: none; }
@@ -679,11 +674,13 @@
       100% { transform: translate(-50%,-50%) scale(2.2); opacity: 0; }
     }
 
-    /* ── Pause gem animations when rec screen is not active ── */
-    /* All gem bar animations are paused unless #screen-recs.active */
+    /* ── Pause gem animations when the relevant screen is not active ── */
     #screen-recs:not(.active) .gem-progress-fill,
     #screen-recs:not(.active) .gem-progress-fill::before,
-    #screen-recs:not(.active) .gem-icon {
+    #screen-recs:not(.active) .gem-icon,
+    #screen-swipe:not(.active) #taste-progress-fill,
+    #screen-swipe:not(.active) #taste-progress-fill::before,
+    #screen-swipe:not(.active) #taste-gem-icon {
       animation-play-state: paused !important;
     }
 
@@ -1641,9 +1638,19 @@
 <section id="screen-swipe" class="screen">
   <div class="swipe-header">
     <span class="swipe-title">Taste Check</span>
-    <div class="signal-tracker" id="signal-tracker">
-      <div class="signal-badge likes" id="signal-likes">♥ 0/6</div>
-      <div class="signal-badge dislikes" id="signal-dislikes">✕ 0/4</div>
+  </div>
+
+  <div class="gem-progress-wrap">
+    <div class="gem-progress-track">
+      <div class="gem-progress-fill" id="taste-progress-fill"></div>
+      <div class="gem-marker" id="taste-gem-marker" style="left:100%">
+        <div class="gem-icon" id="taste-gem-icon">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <polygon points="12,2 18,8 12,22 6,8" fill="currentColor" opacity="0.9"/>
+            <polygon points="12,2 18,8 12,10 6,8" fill="currentColor" opacity="0.5"/>
+          </svg>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -2459,14 +2466,38 @@ function hideOverlay(id) {
   document.getElementById(id).classList.remove('visible');
 }
 
-/* ─── Signal progress display ───────────────────── */
-function updateSignalProgress() {
-  const likesEl    = document.getElementById('signal-likes');
-  const dislikesEl = document.getElementById('signal-dislikes');
-  likesEl.textContent    = `♥ ${likeCount}/${MIN_LIKES}`;
-  dislikesEl.textContent = `✕ ${dislikeCount}/${MIN_DISLIKES}`;
-  likesEl.classList.toggle('met',    likeCount    >= MIN_LIKES);
-  dislikesEl.classList.toggle('met', dislikeCount >= MIN_DISLIKES);
+/* ─── Onboarding power-up bar ───────────────────── */
+function updateTasteBar() {
+  const fill   = document.getElementById('taste-progress-fill');
+  const marker = document.getElementById('taste-gem-marker');
+  if (!fill || !marker) return;
+
+  // Progress = weighted average of both sub-goals (likes + dislikes)
+  const likePct    = Math.min(1, likeCount    / MIN_LIKES);
+  const dislikePct = Math.min(1, dislikeCount / MIN_DISLIKES);
+  const pct        = Math.round((likePct * 50) + (dislikePct * 50));
+
+  fill.style.width = pct + '%';
+
+  // Charging state: within 2 interactions of done
+  const interactionsLeft = Math.max(
+    MIN_LIKES    - likeCount,
+    MIN_DISLIKES - dislikeCount,
+    0
+  );
+  const isDone     = pct >= 100;
+  const isCharging = !isDone && interactionsLeft <= 2;
+
+  fill.classList.toggle('charging',  isCharging && !isDone);
+  fill.classList.toggle('triggered', isDone);
+
+  // Activate the gem when bar is full
+  if (isDone) {
+    marker.classList.add('active');
+  } else {
+    marker.classList.remove('active', 'filled', 'primed');
+    if (isCharging) marker.classList.add('primed');
+  }
 }
 
 function shouldFinishOnboarding() {
@@ -2741,7 +2772,7 @@ function renderTasteCard(index, isReplacement = false) {
     setTimeout(() => badge.remove(), 2300);
   }
 
-  updateSignalProgress();
+  updateTasteBar();
   engine.trackShown(tasteAnime[index]);
 
   // Refill reserve proactively when running low
@@ -3460,16 +3491,17 @@ function showNextRec(firstCard = false) {
   // Heart save button — sibling of card so backdrop-filter works
   const heartBtn = document.createElement('button');
   heartBtn.className = 'card-heart-btn';
-  const alreadySaved = isAnimeSaved(anime.id);
-  heartBtn.innerHTML  = alreadySaved ? '❤' : '♡';
+  // Single SVG heart — CSS controls outlined vs filled, innerHTML never changes
+  heartBtn.innerHTML = `<svg class="heart-svg" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+    <path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"/>
+  </svg>`;
   heartBtn.setAttribute('aria-label', 'Save');
-  if (alreadySaved) heartBtn.classList.add('saved');
+  if (isAnimeSaved(anime.id)) heartBtn.classList.add('saved');
   heartBtn.addEventListener('click', e => {
     e.stopPropagation();
     if (isAnimeSaved(anime.id)) {
-      // Toggle off — always allowed regardless of auth state
+      // Toggle off
       unsaveAnime(anime.id);
-      heartBtn.innerHTML = '♡';
       heartBtn.classList.remove('saved');
       const user = _auth.currentUser;
       if (user) _syncToCloud(user);
@@ -3477,12 +3509,10 @@ function showNextRec(firstCard = false) {
       // Not yet saved
       const user = _auth.currentUser;
       if (!user) {
-        // Show sign-up CTA — pass the anime so "Save locally" still works
         openCtaSheet(anime, isGem);
         return;
       }
       saveAnime(anime, isGem);
-      heartBtn.innerHTML = '❤';
       heartBtn.classList.add('saved');
       _syncToCloud(user);
     }
@@ -4218,12 +4248,8 @@ document.getElementById('btn-cta-signup').addEventListener('click', () => {
 document.getElementById('btn-cta-skip').addEventListener('click', () => {
   if (_ctaPendingAnime) {
     saveAnime(_ctaPendingAnime, _ctaPendingIsGem);
-    // Update any visible heart button to reflect the save
     const heartBtn = document.querySelector('.card-heart-btn');
-    if (heartBtn) {
-      heartBtn.innerHTML = '❤';
-      heartBtn.classList.add('saved');
-    }
+    if (heartBtn) heartBtn.classList.add('saved');
   }
   closeCtaSheet();
 });
