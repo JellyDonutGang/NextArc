@@ -1007,14 +1007,21 @@
 const ANILIST = 'https://graphql.anilist.co';
 
 async function fetchAniList(query, variables = {}) {
-  const res = await fetch(ANILIST, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-    body: JSON.stringify({ query, variables }),
-  });
-  if (!res.ok) throw new Error('AniList request failed: ' + res.status);
-  const { data } = await res.json();
-  return data;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 12000);
+  try {
+    const res = await fetch(ANILIST, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({ query, variables }),
+      signal: controller.signal,
+    });
+    if (!res.ok) throw new Error('AniList request failed: ' + res.status);
+    const { data } = await res.json();
+    return data;
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 const SEED_QUERY = `
@@ -1598,13 +1605,13 @@ async function loadTasteAnime() {
   try {
     // Fetch 60-anime curated pool in two parallel requests (AniList caps at 50/page)
     const half = Math.ceil(SEED_POOL_IDS.length / 2);
-    const [d1, d2] = await Promise.all([
+    const [r1, r2] = await Promise.allSettled([
       fetchAniList(SEED_POOL_QUERY, { ids: SEED_POOL_IDS.slice(0, half) }),
       fetchAniList(SEED_POOL_QUERY, { ids: SEED_POOL_IDS.slice(half) }),
     ]);
     const raw = [
-      ...(d1.Page?.media || []),
-      ...(d2.Page?.media || []),
+      ...(r1.status === 'fulfilled' ? (r1.value?.Page?.media || []) : []),
+      ...(r2.status === 'fulfilled' ? (r2.value?.Page?.media || []) : []),
     ].filter(a => a.coverImage?.large);
 
     const pool = deduplicateByFranchise(raw);
@@ -1626,13 +1633,13 @@ async function loadTasteAnime() {
   } catch (e) {
     console.warn('Curated seed fetch failed, using popularity fallback:', e);
     try {
-      const [p1, p2] = await Promise.all([
+      const [fb1, fb2] = await Promise.allSettled([
         fetchAniList(SEED_QUERY, { page: 1, perPage: 30, sort: ['POPULARITY_DESC'] }),
         fetchAniList(SEED_QUERY, { page: 2, perPage: 30, sort: ['SCORE_DESC'] }),
       ]);
       const all = deduplicateByFranchise([
-        ...(p1.Page?.media || []),
-        ...(p2.Page?.media || []),
+        ...(fb1.status === 'fulfilled' ? (fb1.value?.Page?.media || []) : []),
+        ...(fb2.status === 'fulfilled' ? (fb2.value?.Page?.media || []) : []),
       ]).filter(a => a.coverImage?.large);
       all.forEach(a => trackSeen(a));
       const initial = selectDiverseSeed(all, Math.min(INITIAL_QUEUE_SIZE, all.length));
@@ -2148,13 +2155,14 @@ async function fetchAndRankCandidates() {
     }
   }
 
-  const results = await Promise.all(batch);
+  const results = await Promise.allSettled(batch);
 
   // Merge + deduplicate across all queries
   const mergedIds    = new Set(seenIds);
   const allCandidates = [];
-  for (const data of results) {
-    for (const anime of (data?.Page?.media || [])) {
+  for (const result of results) {
+    if (result.status !== 'fulfilled') continue;
+    for (const anime of (result.value?.Page?.media || [])) {
       if (!mergedIds.has(anime.id) && anime.coverImage?.large) {
         mergedIds.add(anime.id);
         allCandidates.push(anime);
@@ -2288,6 +2296,17 @@ async function loadRecQueue() {
     recQueue = [];
   }
   document.getElementById('recs-spinner').style.display = 'none';
+  // If we got nothing at all, show a retry message instead of a blank screen
+  if (recQueue.length === 0 && recScreen.classList.contains('active')) {
+    const container = document.getElementById('rec-card-container');
+    container.innerHTML = `
+      <div style="text-align:center;padding:40px 20px;color:var(--text-muted);font-size:15px;line-height:1.7">
+        Couldn't load recommendations right now.<br>
+        <span style="color:var(--accent);cursor:pointer;font-weight:600"
+          onclick="loadRecQueue()">Tap to try again</span>
+      </div>`;
+    return;
+  }
   // Only auto-show next rec if we're already on the rec screen
   // (if celebration is still playing, dismissUnlockCelebration handles it)
   if (recScreen.classList.contains('active')) {
