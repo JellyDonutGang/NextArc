@@ -12,6 +12,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
   <title>Next Arc</title>
+  <!-- Firebase v10 compat (no build step needed) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
   <style>
     /* ── Reset & Base ─────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -988,6 +992,357 @@
     @keyframes flyRight {
       to { transform: translateX(120vw) rotate(25deg); opacity: 0; }
     }
+
+    /* ══════════════════════════════════════════════ */
+    /*  PROFILE SCREEN                                */
+    /* ══════════════════════════════════════════════ */
+    #screen-profile {
+      background: var(--bg);
+      justify-content: flex-start;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding-top: max(0px, env(safe-area-inset-top));
+      padding-bottom: max(32px, env(safe-area-inset-bottom));
+      gap: 0;
+    }
+    .profile-topbar {
+      width: 100%;
+      max-width: 420px;
+      display: flex;
+      align-items: center;
+      padding: 16px 16px 20px;
+      gap: 10px;
+    }
+    .profile-back-btn {
+      width: 36px; height: 36px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-size: 20px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      line-height: 1;
+    }
+    .profile-topbar h1 { flex: 1; font-size: 22px; font-weight: 800; }
+    .profile-signout-btn {
+      background: none; border: none;
+      color: var(--text-muted); font-size: 13px;
+      font-family: inherit; cursor: pointer;
+      padding: 6px 10px;
+    }
+    .profile-pad {
+      width: 100%; max-width: 420px;
+      padding: 0 16px;
+    }
+
+    /* User card */
+    .profile-user-card {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+    .profile-avatar {
+      width: 54px; height: 54px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), #38bdf8);
+      color: white;
+      font-size: 22px; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+    .profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .profile-user-info { flex: 1; min-width: 0; }
+    .profile-user-name {
+      font-size: 16px; font-weight: 700;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .profile-user-sub {
+      font-size: 12px; color: var(--text-muted);
+      margin-top: 3px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .profile-synced-pill {
+      display: flex; align-items: center; gap: 4px;
+      font-size: 11px; color: var(--green);
+      background: rgba(46,196,182,0.12);
+      border: 1px solid rgba(46,196,182,0.25);
+      border-radius: 20px; padding: 4px 8px;
+      flex-shrink: 0;
+    }
+    .profile-signin-chip {
+      background: var(--accent); color: white;
+      font-size: 13px; font-weight: 700;
+      font-family: inherit; border: none;
+      border-radius: 20px; padding: 7px 14px;
+      cursor: pointer; flex-shrink: 0;
+    }
+
+    /* Stats */
+    .profile-stats-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .profile-stat {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px 8px;
+      text-align: center;
+    }
+    .profile-stat-value {
+      font-size: 24px; font-weight: 900;
+      color: var(--accent);
+      line-height: 1;
+    }
+    .profile-stat-label {
+      font-size: 11px; color: var(--text-muted);
+      margin-top: 4px; font-weight: 500;
+    }
+
+    /* Section titles */
+    .profile-section { margin-bottom: 24px; }
+    .profile-section-title {
+      font-size: 11px; font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase; letter-spacing: 1px;
+      margin-bottom: 12px;
+    }
+
+    /* Taste bars */
+    .taste-bar-row {
+      display: flex; align-items: center;
+      gap: 10px; margin-bottom: 9px;
+    }
+    .taste-bar-label {
+      font-size: 13px; font-weight: 500;
+      width: 110px; flex-shrink: 0;
+      text-transform: capitalize;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .taste-bar-track {
+      flex: 1; height: 6px;
+      background: var(--surface2);
+      border-radius: 99px; overflow: hidden;
+    }
+    .taste-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent) 0%, #38bdf8 100%);
+      border-radius: 99px;
+      width: 0%;
+      transition: width 0.9s cubic-bezier(0.34,1.56,0.64,1);
+    }
+
+    /* Vibe tags */
+    .vibe-tags {
+      display: flex; flex-wrap: wrap; gap: 8px;
+      margin-top: 14px;
+    }
+    .vibe-tag {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 5px 13px;
+      font-size: 12px; font-weight: 500;
+      color: var(--text);
+    }
+    .vibe-tag.accent {
+      background: rgba(46,128,216,0.14);
+      border-color: rgba(46,128,216,0.35);
+      color: #7dd3fc;
+    }
+    .vibe-tag.gem {
+      background: rgba(255,183,3,0.12);
+      border-color: rgba(255,183,3,0.3);
+      color: var(--yellow);
+    }
+    .taste-empty {
+      font-size: 14px; color: var(--text-muted);
+      text-align: center; padding: 20px 0;
+    }
+
+    /* Saved grid */
+    .saved-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+    .saved-item {
+      aspect-ratio: 2/3;
+      border-radius: 10px;
+      overflow: hidden;
+      background: var(--surface);
+      position: relative;
+      cursor: pointer;
+    }
+    .saved-item img {
+      width: 100%; height: 100%; object-fit: cover;
+      display: block;
+    }
+    .saved-item-gem-badge {
+      position: absolute;
+      top: 5px; left: 5px;
+      background: rgba(255,183,3,0.92);
+      color: #000;
+      font-size: 9px; font-weight: 800;
+      border-radius: 4px; padding: 2px 5px;
+      letter-spacing: 0.3px;
+    }
+    .saved-item-title {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 100%);
+      padding: 20px 6px 6px;
+      font-size: 10px; font-weight: 600;
+      line-height: 1.3;
+    }
+    .saved-grid-empty {
+      grid-column: 1 / -1;
+      font-size: 14px; color: var(--text-muted);
+      text-align: center; padding: 20px 0;
+    }
+
+    /* Profile icon button in recs header */
+    .profile-icon-btn {
+      width: 36px; height: 36px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      color: var(--text);
+      font-size: 17px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    .profile-icon-btn img {
+      width: 100%; height: 100%; object-fit: cover;
+      border-radius: 50%;
+    }
+    .profile-icon-btn.signed-in { border-color: var(--accent); }
+    /* Make recs-header a flex row so profile btn sits right */
+    .recs-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+    }
+    .recs-header-text { flex: 1; }
+
+    /* ══════════════════════════════════════════════ */
+    /*  AUTH SHEET                                    */
+    /* ══════════════════════════════════════════════ */
+    #auth-sheet {
+      position: fixed; inset: 0; z-index: 400;
+      display: none; flex-direction: column;
+      justify-content: flex-end;
+    }
+    #auth-sheet.open { display: flex; }
+    .auth-backdrop {
+      position: absolute; inset: 0;
+      background: rgba(0,0,0,0.65);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+    }
+    .auth-panel {
+      position: relative;
+      background: var(--surface);
+      border-radius: 28px 28px 0 0;
+      border-top: 1px solid var(--border);
+      padding: 28px 24px max(28px, env(safe-area-inset-bottom));
+      display: flex; flex-direction: column; gap: 11px;
+      max-height: 92vh; overflow-y: auto;
+      animation: auth-slide-up 0.32s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    @keyframes auth-slide-up {
+      from { transform: translateY(100%); }
+      to   { transform: translateY(0); }
+    }
+    .auth-header { text-align: center; margin-bottom: 6px; }
+    .auth-header h2 { font-size: 22px; font-weight: 800; }
+    .auth-header p  { font-size: 14px; color: var(--text-muted); margin-top: 5px; }
+
+    .auth-provider-btn {
+      width: 100%;
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      padding: 13px 16px;
+      border-radius: 14px;
+      font-size: 15px; font-weight: 600; font-family: inherit;
+      cursor: pointer; border: none;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+    .auth-provider-btn:active:not(:disabled) { transform: scale(0.97); }
+    .auth-provider-btn.google { background: #fff; color: #1f1f1f; }
+    .auth-provider-btn.apple  { background: #1c1c1e; color: #fff; border: 1px solid var(--border); }
+    .auth-provider-btn.facebook { background: #1877f2; color: #fff; }
+    .auth-provider-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+    .auth-provider-icon { width: 20px; height: 20px; flex-shrink: 0; }
+    .auth-coming-soon {
+      font-size: 10px; font-weight: 500;
+      background: var(--surface2);
+      border-radius: 4px; padding: 2px 6px;
+      color: var(--text-muted); margin-left: auto;
+    }
+
+    .auth-divider {
+      display: flex; align-items: center; gap: 12px;
+      color: var(--text-muted); font-size: 13px;
+    }
+    .auth-divider::before, .auth-divider::after {
+      content: ''; flex: 1; height: 1px; background: var(--border);
+    }
+
+    .auth-tabs {
+      display: grid; grid-template-columns: 1fr 1fr;
+      background: var(--surface2); border-radius: 11px; padding: 3px;
+    }
+    .auth-tab {
+      padding: 8px; border: none; background: none;
+      color: var(--text-muted); font-size: 14px; font-weight: 600;
+      font-family: inherit; border-radius: 9px; cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+    .auth-tab.active { background: var(--surface); color: var(--text); }
+
+    .auth-input {
+      width: 100%;
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 11px; padding: 13px 14px;
+      font-size: 15px; font-family: inherit; color: var(--text);
+      outline: none; transition: border-color 0.15s;
+    }
+    .auth-input:focus { border-color: var(--accent); }
+    .auth-input::placeholder { color: var(--text-muted); }
+
+    .auth-submit-btn {
+      width: 100%;
+      background: var(--accent); color: white;
+      border: none; border-radius: 14px;
+      padding: 14px; font-size: 16px; font-weight: 700;
+      font-family: inherit; cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .auth-submit-btn:active { opacity: 0.85; }
+
+    .auth-error {
+      color: #f87171; font-size: 13px;
+      text-align: center; min-height: 18px;
+    }
+    .auth-cancel-btn {
+      background: none; border: none;
+      color: var(--text-muted); font-size: 14px;
+      font-family: inherit; cursor: pointer; padding: 4px;
+      text-align: center;
+    }
   </style>
 </head>
 <body>
@@ -1095,8 +1450,11 @@
 
 <section id="screen-recs" class="screen">
   <div class="recs-header">
-    <h1>For You</h1>
-    <p id="recs-subtitle">Personalised picks based on your taste</p>
+    <div class="recs-header-text">
+      <h1>For You</h1>
+      <p id="recs-subtitle">Personalised picks based on your taste</p>
+    </div>
+    <button class="profile-icon-btn" id="btn-open-profile" aria-label="Profile">👤</button>
   </div>
 
   <!-- Gem progress bar -->
@@ -1142,6 +1500,130 @@
 </section>
 
 <div class="save-toast" id="save-toast">✓ Saved to your list</div>
+
+<!-- ══════════════════════════════════════════════ -->
+<!--  PROFILE SCREEN                               -->
+<!-- ══════════════════════════════════════════════ -->
+<section id="screen-profile" class="screen">
+
+  <div class="profile-topbar">
+    <button class="profile-back-btn" id="btn-profile-back">‹</button>
+    <h1>Profile</h1>
+    <button class="profile-signout-btn" id="btn-signout" style="display:none">Sign out</button>
+  </div>
+
+  <div class="profile-pad">
+
+    <!-- User card -->
+    <div class="profile-user-card">
+      <div class="profile-avatar" id="profile-avatar">?</div>
+      <div class="profile-user-info">
+        <div class="profile-user-name" id="profile-user-name">Not signed in</div>
+        <div class="profile-user-sub" id="profile-user-sub">Sign in to sync across devices</div>
+      </div>
+      <div id="profile-sync-pill" class="profile-synced-pill" style="display:none">
+        <span>✓</span><span>Synced</span>
+      </div>
+      <button class="profile-signin-chip" id="btn-open-auth">Sign in</button>
+    </div>
+
+    <!-- Stats row -->
+    <div class="profile-stats-row">
+      <div class="profile-stat">
+        <div class="profile-stat-value" id="stat-cards">0</div>
+        <div class="profile-stat-label">Cards Seen</div>
+      </div>
+      <div class="profile-stat">
+        <div class="profile-stat-value" id="stat-gems">0</div>
+        <div class="profile-stat-label">Gems Found</div>
+      </div>
+      <div class="profile-stat">
+        <div class="profile-stat-value" id="stat-saved">0</div>
+        <div class="profile-stat-label">Saved</div>
+      </div>
+    </div>
+
+    <!-- Taste DNA -->
+    <div class="profile-section" id="profile-taste-section">
+      <div class="profile-section-title">Your Taste DNA</div>
+      <div id="taste-bars-container"></div>
+      <div class="vibe-tags" id="vibe-tags"></div>
+    </div>
+
+    <!-- Saved list -->
+    <div class="profile-section">
+      <div class="profile-section-title">Saved Anime</div>
+      <div class="saved-grid" id="saved-grid"></div>
+    </div>
+
+    <!-- Gem collection -->
+    <div class="profile-section">
+      <div class="profile-section-title">✦ Gem Collection</div>
+      <div class="saved-grid" id="gems-grid"></div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════ -->
+<!--  AUTH SHEET                                   -->
+<!-- ══════════════════════════════════════════════ -->
+<div id="auth-sheet">
+  <div class="auth-backdrop" id="auth-backdrop"></div>
+  <div class="auth-panel">
+
+    <div class="auth-header">
+      <h2>Join Next Arc</h2>
+      <p>Sync your taste across every device</p>
+    </div>
+
+    <!-- Google -->
+    <button class="auth-provider-btn google" id="btn-google-signin">
+      <svg class="auth-provider-icon" viewBox="0 0 24 24">
+        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
+        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+      </svg>
+      Continue with Google
+    </button>
+
+    <!-- Apple (coming soon) -->
+    <button class="auth-provider-btn apple" disabled>
+      <svg class="auth-provider-icon" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+      </svg>
+      Sign in with Apple
+      <span class="auth-coming-soon">Soon</span>
+    </button>
+
+    <!-- Facebook (coming soon) -->
+    <button class="auth-provider-btn facebook" disabled>
+      <svg class="auth-provider-icon" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+      </svg>
+      Continue with Facebook
+      <span class="auth-coming-soon">Soon</span>
+    </button>
+
+    <div class="auth-divider"><span>or use email</span></div>
+
+    <!-- Sign in / Sign up tabs -->
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="auth-tab-signin">Sign In</button>
+      <button class="auth-tab" id="auth-tab-signup">Create Account</button>
+    </div>
+
+    <input class="auth-input" type="text" id="auth-name" placeholder="Your name" style="display:none" autocomplete="name" />
+    <input class="auth-input" type="email" id="auth-email" placeholder="Email address" autocomplete="email" />
+    <input class="auth-input" type="password" id="auth-password" placeholder="Password" autocomplete="current-password" />
+
+    <button class="auth-submit-btn" id="btn-auth-submit">Sign In</button>
+    <div class="auth-error" id="auth-error"></div>
+    <button class="auth-cancel-btn" id="btn-auth-cancel">Cancel</button>
+
+  </div>
+</div>
 
 <!-- ══════════════════════════════════════════════ -->
 <!--  WATCH BOTTOM SHEET                           -->
@@ -1577,6 +2059,9 @@ let recSwipesSinceRank = 0;      // swipes since last ranking/re-rank
 let lastRankSnapshot   = null;   // profile fingerprint at last rank
 const PREFETCH_THRESHOLD = 8;    // start pre-fetch when N cards remain
 const RERANK_THRESHOLD   = 8;    // re-rank remaining queue every N swipes
+
+// ── Lifetime stats (persisted to localStorage) ────
+let totalCardsSwiped = parseInt(localStorage.getItem('nextarc_cards') || '0');
 
 // ── Hidden Gem state ──────────────────────────────
 let gemQueue          = [];      // taste-matched low-popularity high-score picks
@@ -2521,12 +3006,16 @@ async function fetchGems() {
 
 /* ─── Save to list (localStorage) ──────────────── */
 
-function saveAnime(anime) {
+function saveAnime(anime, isGem = false) {
   const key = 'nextarc_saved';
   const list = JSON.parse(localStorage.getItem(key) || '[]');
   if (!list.find(a => a.id === anime.id)) {
-    list.push({ id: anime.id, title: anime.title, coverImage: anime.coverImage,
-                genres: anime.genres, averageScore: anime.averageScore });
+    list.push({
+      id: anime.id, title: anime.title, coverImage: anime.coverImage,
+      genres: anime.genres, averageScore: anime.averageScore,
+      popularity: anime.popularity,
+      isGem: isGem, savedAt: Date.now()
+    });
     localStorage.setItem(key, JSON.stringify(list));
   }
   showSaveToast();
@@ -2701,6 +3190,8 @@ function recSwipe(card, anime, action) {
   const dir = action === 'dislike' ? 'left' : 'right';
   flyCard(card, dir).then(() => {
     if (action !== 'skip') engine.update(anime, action);
+    totalCardsSwiped++;
+    localStorage.setItem('nextarc_cards', totalCardsSwiped);
 
     // Gem cards don't consume from recQueue — only advance recPos for normal recs
     if (!currentRecIsGem) {
@@ -2741,7 +3232,7 @@ document.getElementById('btn-rec-like').addEventListener('click', () => {
 });
 document.getElementById('btn-gem-save').addEventListener('click', () => {
   if (currentRecAnime && currentRecIsGem) {
-    saveAnime(currentRecAnime);
+    saveAnime(currentRecAnime, true); // mark as gem
     const btn = document.getElementById('btn-gem-save');
     btn.textContent = '✓ Saved';
     btn.classList.add('saved');
@@ -2953,6 +3444,278 @@ if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('sw.js').catch(console.warn);
   });
+}
+
+// ══════════════════════════════════════════════════
+//  FIREBASE + PROFILE
+// ══════════════════════════════════════════════════
+
+const _FB_CONFIG = {
+  apiKey:            "AIzaSyDa6gig9xfZk_82t8h3aeSJciwUdnnBysw",
+  authDomain:        "next-arc-b091b.firebaseapp.com",
+  projectId:         "next-arc-b091b",
+  storageBucket:     "next-arc-b091b.firebasestorage.app",
+  messagingSenderId: "488355535109",
+  appId:             "1:488355535109:web:40d86bfeae685d3dba3f6c",
+};
+
+firebase.initializeApp(_FB_CONFIG);
+const _auth = firebase.auth();
+const _db   = firebase.firestore();
+
+// ── Auth state listener ────────────────────────────
+_auth.onAuthStateChanged(user => {
+  _updateProfileUI(user);
+  if (user) _syncToCloud(user);
+});
+
+function _updateProfileUI(user) {
+  const avatarEl   = document.getElementById('profile-avatar');
+  const nameEl     = document.getElementById('profile-user-name');
+  const subEl      = document.getElementById('profile-user-sub');
+  const signinBtn  = document.getElementById('btn-open-auth');
+  const signoutBtn = document.getElementById('btn-signout');
+  const syncPill   = document.getElementById('profile-sync-pill');
+  const headerBtn  = document.getElementById('btn-open-profile');
+
+  if (user) {
+    // Avatar — photo or initial
+    if (user.photoURL) {
+      avatarEl.innerHTML = `<img src="${user.photoURL}" alt="avatar">`;
+    } else {
+      avatarEl.textContent = (user.displayName || user.email || '?')[0].toUpperCase();
+    }
+    nameEl.textContent  = user.displayName || 'Anime Fan';
+    subEl.textContent   = user.email || '';
+    signinBtn.style.display  = 'none';
+    signoutBtn.style.display = 'block';
+    syncPill.style.display   = 'flex';
+    // Update header icon
+    if (user.photoURL) {
+      headerBtn.innerHTML = `<img src="${user.photoURL}" alt="avatar">`;
+    } else {
+      headerBtn.textContent = (user.displayName || user.email || '?')[0].toUpperCase();
+    }
+    headerBtn.classList.add('signed-in');
+  } else {
+    avatarEl.textContent     = '?';
+    nameEl.textContent       = 'Not signed in';
+    subEl.textContent        = 'Sign in to sync across devices';
+    signinBtn.style.display  = 'block';
+    signoutBtn.style.display = 'none';
+    syncPill.style.display   = 'none';
+    headerBtn.innerHTML      = '👤';
+    headerBtn.classList.remove('signed-in');
+  }
+}
+
+async function _syncToCloud(user) {
+  try {
+    const saved = JSON.parse(localStorage.getItem('nextarc_saved') || '[]');
+    const traits = engine.onboarded ? engine.topTraits(20) : [];
+    const clusters = engine.onboarded ? engine.clusterSummaries() : [];
+    await _db.collection('users').doc(user.uid).set({
+      displayName: user.displayName || '',
+      email:       user.email || '',
+      photoURL:    user.photoURL || '',
+      stats: {
+        cardsSwipedTotal: totalCardsSwiped,
+        gemsFound:        gemsClaimed,
+        savedCount:       saved.length,
+        lastActiveAt:     firebase.firestore.FieldValue.serverTimestamp(),
+      },
+      tasteProfile: {
+        topTraits: traits,
+        clusters:  clusters,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      },
+      savedAnime: saved,
+    }, { merge: true });
+  } catch (e) {
+    console.warn('[Firestore] sync failed:', e);
+  }
+}
+
+// ── Profile screen rendering ───────────────────────
+function openProfileScreen() {
+  _renderStats();
+  _renderTasteDNA();
+  _renderSavedGrids();
+  showScreen('screen-profile');
+}
+
+function _renderStats() {
+  document.getElementById('stat-cards').textContent = totalCardsSwiped.toLocaleString();
+  document.getElementById('stat-gems').textContent  = gemsClaimed;
+  const saved = JSON.parse(localStorage.getItem('nextarc_saved') || '[]');
+  document.getElementById('stat-saved').textContent = saved.length;
+}
+
+function _renderTasteDNA() {
+  const barsEl  = document.getElementById('taste-bars-container');
+  const vibesEl = document.getElementById('vibe-tags');
+
+  if (!engine.onboarded) {
+    barsEl.innerHTML  = '<div class="taste-empty">Complete taste setup to see your DNA</div>';
+    vibesEl.innerHTML = '';
+    return;
+  }
+
+  // Genre bars — top 6
+  const traits = engine.topTraits(60);
+  const genreTraits = traits.filter(t => t.group === 'genre').slice(0, 6);
+  const toneTraits  = traits.filter(t => t.group === 'tone').slice(0, 5);
+  const maxScore = genreTraits[0]?.score || 1;
+
+  barsEl.innerHTML = genreTraits.map(t => {
+    const pct   = Math.round((t.score / maxScore) * 100);
+    const label = t.key.replace(/_/g, ' ');
+    return `
+      <div class="taste-bar-row">
+        <span class="taste-bar-label">${label}</span>
+        <div class="taste-bar-track">
+          <div class="taste-bar-fill" style="width:0%" data-pct="${pct}"></div>
+        </div>
+      </div>`;
+  }).join('');
+
+  // Animate bars in on next frame
+  requestAnimationFrame(() => {
+    barsEl.querySelectorAll('.taste-bar-fill').forEach(el => {
+      el.style.width = el.dataset.pct + '%';
+    });
+  });
+
+  // Cluster vibe tags + tone tags
+  const clusters = engine.clusterSummaries();
+  const clusterTags = clusters.slice(0, 3).map(c =>
+    `<span class="vibe-tag accent">${c.label}</span>`
+  );
+  const toneTags = toneTraits.slice(0, 3).map(t =>
+    `<span class="vibe-tag">${t.key.replace(/_/g, ' ')}</span>`
+  );
+  vibesEl.innerHTML = [...clusterTags, ...toneTags].join('');
+}
+
+function _renderSavedGrids() {
+  const all  = JSON.parse(localStorage.getItem('nextarc_saved') || '[]');
+  const gems = all.filter(a => a.isGem);
+  const rest = all.filter(a => !a.isGem);
+
+  _renderGrid('saved-grid', rest, false);
+  _renderGrid('gems-grid', gems, true);
+}
+
+function _renderGrid(id, items, isGem) {
+  const el = document.getElementById(id);
+  if (!items.length) {
+    el.innerHTML = `<div class="saved-grid-empty">${isGem ? 'No gems saved yet' : 'Nothing saved yet'}</div>`;
+    return;
+  }
+  el.innerHTML = items.map(a => {
+    const title = a.title?.english || a.title?.romaji || '';
+    const cover = a.coverImage?.large || a.coverImage?.medium || '';
+    const badge = a.isGem ? `<div class="saved-item-gem-badge">✦ GEM</div>` : '';
+    return `
+      <div class="saved-item">
+        <img src="${cover}" alt="${title}" loading="lazy">
+        ${badge}
+        <div class="saved-item-title">${title}</div>
+      </div>`;
+  }).join('');
+}
+
+// ── Navigation ─────────────────────────────────────
+document.getElementById('btn-open-profile').addEventListener('click', openProfileScreen);
+document.getElementById('btn-profile-back').addEventListener('click', () => showScreen('screen-recs'));
+document.getElementById('btn-signout').addEventListener('click', () => {
+  _auth.signOut();
+});
+
+// ── Auth sheet ─────────────────────────────────────
+function openAuthSheet() {
+  document.getElementById('auth-sheet').classList.add('open');
+}
+function closeAuthSheet() {
+  document.getElementById('auth-sheet').classList.remove('open');
+  document.getElementById('auth-error').textContent = '';
+}
+
+document.getElementById('btn-open-auth').addEventListener('click', openAuthSheet);
+document.getElementById('btn-auth-cancel').addEventListener('click', closeAuthSheet);
+document.getElementById('auth-backdrop').addEventListener('click', closeAuthSheet);
+
+// Sign in / Sign up tab toggle
+let _authMode = 'signin';
+document.getElementById('auth-tab-signin').addEventListener('click', () => {
+  _authMode = 'signin';
+  document.getElementById('auth-tab-signin').classList.add('active');
+  document.getElementById('auth-tab-signup').classList.remove('active');
+  document.getElementById('auth-name').style.display = 'none';
+  document.getElementById('auth-password').setAttribute('autocomplete', 'current-password');
+  document.getElementById('btn-auth-submit').textContent = 'Sign In';
+  document.getElementById('auth-error').textContent = '';
+});
+document.getElementById('auth-tab-signup').addEventListener('click', () => {
+  _authMode = 'signup';
+  document.getElementById('auth-tab-signup').classList.add('active');
+  document.getElementById('auth-tab-signin').classList.remove('active');
+  document.getElementById('auth-name').style.display = 'block';
+  document.getElementById('auth-password').setAttribute('autocomplete', 'new-password');
+  document.getElementById('btn-auth-submit').textContent = 'Create Account';
+  document.getElementById('auth-error').textContent = '';
+});
+
+// Google sign-in
+document.getElementById('btn-google-signin').addEventListener('click', async () => {
+  document.getElementById('auth-error').textContent = '';
+  try {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    await _auth.signInWithPopup(provider);
+    closeAuthSheet();
+  } catch (e) {
+    document.getElementById('auth-error').textContent = _friendlyError(e.code);
+  }
+});
+
+// Email / password submit
+document.getElementById('btn-auth-submit').addEventListener('click', async () => {
+  const email    = document.getElementById('auth-email').value.trim();
+  const password = document.getElementById('auth-password').value;
+  const name     = document.getElementById('auth-name').value.trim();
+  const errEl    = document.getElementById('auth-error');
+  errEl.textContent = '';
+
+  if (!email || !password) {
+    errEl.textContent = 'Please enter your email and password.';
+    return;
+  }
+
+  try {
+    if (_authMode === 'signup') {
+      const cred = await _auth.createUserWithEmailAndPassword(email, password);
+      if (name) await cred.user.updateProfile({ displayName: name });
+    } else {
+      await _auth.signInWithEmailAndPassword(email, password);
+    }
+    closeAuthSheet();
+  } catch (e) {
+    errEl.textContent = _friendlyError(e.code);
+  }
+});
+
+function _friendlyError(code) {
+  const map = {
+    'auth/email-already-in-use':    'That email is already registered. Try signing in.',
+    'auth/invalid-email':           'Please enter a valid email address.',
+    'auth/weak-password':           'Password must be at least 6 characters.',
+    'auth/user-not-found':          'No account found with that email.',
+    'auth/wrong-password':          'Incorrect password. Try again.',
+    'auth/too-many-requests':       'Too many attempts. Please wait and try again.',
+    'auth/popup-closed-by-user':    'Sign-in cancelled.',
+    'auth/network-request-failed':  'Network error. Check your connection.',
+  };
+  return map[code] || 'Something went wrong. Please try again.';
 }
 
 // Init taste engine
