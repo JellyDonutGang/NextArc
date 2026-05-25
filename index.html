@@ -982,61 +982,70 @@ query ($ids: [Int]) {
 }`;
 
 const SEED_POOL_IDS = [
-  // ── Originals ─────────────────────────────────────
-  1,      // Cowboy Bebop       — noir, episodic, mature, low emotion
+  // ── Classics / Prestige ───────────────────────────
+  1,      // Cowboy Bebop       — noir, episodic, mature, no romance
   5,      // Trigun             — action, comedy, western, bittersweet
   30,     // Neon Genesis Eva.  — dark, psychological, iconic, slow
-  457,    // Mushishi           — slow, atmospheric, no conflict, niche
-  918,    // Gintama            — heavy comedy, action, long
-  1535,   // Death Note         — thriller, dark, no romance, fast
+  457,    // Mushishi           — atmospheric, episodic, zero conflict, niche
+  918,    // Gintama            — heavy comedy, action, parody, long
+  1535,   // Death Note         — thriller, dark, no romance, fast paced
   1706,   // Code Geass         — mecha, political strategy, dark
   2001,   // Gurren Lagann      — hype, action, emotional, fast
-  2167,   // Clannad            — romance, slice of life, emotional
-  2593,   // Spice and Wolf     — romance, economics, adult, slow
-  4181,   // Clannad After Story— max emotional, heavy romance
-  4224,   // Toradora           — romance, comedy, emotional
+  2167,   // Clannad            — romance, SOL, emotional, slow burn
+  2593,   // Spice and Wolf     — adult romance, economics, slow burn
+  // ── Action / Dark Spectrum ────────────────────────
   5114,   // FMA Brotherhood    — action, dark, emotional, mainstream
-  5680,   // K-On!              — music, cute, cozy, low stakes
-  6547,   // Bakemonogatari     — unique style, mystery, romance, niche
-  7088,   // Tatami Galaxy      — surreal, fast dialogue, niche, smart
   9253,   // Steins;Gate        — sci-fi, dark, emotional, slow burn
-  9756,   // Nichijou           — absurdist comedy, cute, surreal
-  9989,   // AnoHana            — emotional, grief, light romance
   11061,  // Hunter x Hunter    — long action, dark arcs, emotional
-  11617,  // Another            — horror, mystery, dark, short
   11757,  // Sword Art Online   — mainstream action, romance, low darkness
-  11981,  // Hyouka             — mystery, slice of life, beautiful
   13601,  // Psycho-Pass        — dark sci-fi, dystopia, action
   15125,  // Madoka Magica      — dark magical girl, tragedy, short
   16498,  // Attack on Titan    — dark, violent, action, mainstream
-  17205,  // Non Non Biyori     — cozy, zero conflict, slow, rural
-  19815,  // Kill la Kill       — fan service, action, over-the-top
-  20517,  // Barakamon          — heartwarming, slice of life, cozy
-  20583,  // Haikyuu!!          — sports, teamwork, feel-good, low darkness
-  20665,  // Your Lie in April  — emotional, romance, music, tragedy
-  21185,  // Ping Pong Anim.    — unique art, sports, emotional, niche
-  21202,  // KonoSuba           — comedy, fantasy, parody, light fan service
-  21355,  // Re:Zero            — dark isekai, thriller, emotional
-  21519,  // My Hero Academia   — mainstream action, heroics, feel-good
-  21827,  // Violet Evergarden  — emotional, beautiful, slow, low humor
-  22319,  // Tokyo Ghoul        — dark, horror, action, identity
   22535,  // Parasyte           — dark sci-fi, body horror, thriller
-  24765,  // Baccano!           — dark comedy, non-linear, gangster
-  30276,  // One Punch Man      — comedy, action, zero romance
+  30276,  // One Punch Man      — subversive comedy, action, zero romance
   32182,  // Mob Psycho 100     — comedy, action, emotional growth
   40748,  // Jujutsu Kaisen     — dark action, modern, hype
   97986,  // Made in Abyss      — dark, adventure, beautiful, emotional
-  99426,  // Overlord           — dark isekai, power fantasy, no romance
-  100922, // Fruits Basket 2019 — romance, family, healing, emotional
   101348, // Vinland Saga       — dark, violent, historical, no humor
+  130003, // Chainsaw Man       — ultra-violent, mature, dark action
+  // ── Isekai Spectrum (dark → light) ────────────────
+  21355,  // Re:Zero            — dark isekai, thriller, high emotional
+  19815,  // No Game No Life    — fan service, comedy, strategy isekai
+  21202,  // KonoSuba           — comedy isekai, parody, light fan service
+  101280, // Slime Isekai       — warm, upbeat isekai, low stakes, optimistic
+  // ── Romance / Emotional ───────────────────────────
+  4224,   // Toradora           — romance, comedy, bittersweet
+  20665,  // Your Lie in April  — emotional, romance, music, tragedy
+  21827,  // Violet Evergarden  — emotional, beautiful, slow, minimal humor
   101922, // Demon Slayer       — action, emotional, mainstream, medium dark
+  // ── Comedy / Slice of Life ────────────────────────
+  6547,   // Bakemonogatari     — unique style, mystery, romance, niche
+  7088,   // Tatami Galaxy      — surreal, fast dialogue, smart, niche
+  9756,   // Nichijou           — absurdist comedy, cute, surreal
+  11981,  // Hyouka             — mystery, SOL, beautiful, subdued
+  20583,  // Haikyuu!!          — sports, teamwork, feel-good, low darkness
+  21185,  // Ping Pong Anim.    — unique art, sports, emotional, niche
+  21519,  // My Hero Academia   — mainstream action, heroics, feel-good
   104578, // Spy x Family       — comedy, family, action, light, cozy
   105333, // Bocchi the Rock    — music, comedy, social anxiety, healing
-  108725, // Dr. Stone          — science, adventure, optimistic, action
+  108725, // Dr. Stone          — science, adventure, optimistic, low violence
   112641, // Ranking of Kings   — fantasy, emotional, underdog, beautiful
   113415, // Oshi no Ko         — idol world, dark, drama, meta
-  130003, // Chainsaw Man       — dark action, mature, ultra-violent, hype
   152634, // Frieren            — fantasy, slow burn, adult, emotional
+  // ── Cozy / Healing (Iyashikei) ────────────────────
+  5680,   // K-On!              — music, cute, cozy, zero stakes
+  17205,  // Non Non Biyori     — cozy, zero conflict, slow, rural
+  20517,  // Barakamon          — heartwarming, SOL, cozy, adult
+  98444,  // Yuru Camp          — solo iyashikei, camping, mindful, quiet
+  // ── Calibration Gaps (targeted) ──────────────────
+  11617,  // High School DxD    — pure ecchi/fan service anchor, harem
+  14813,  // Oregairu (SNAFU)   — cynical realism, social complexity, no violence
+  20920,  // DanMachi           — adventure, light harem, dungeon fantasy, positive
+  98659,  // Classroom of Elite — cold psychological strategy, morally grey, low violence
+  101291, // Bunny Girl Senpai  — supernatural romance, emotional, no tragedy
+  // ── Romantic Comedy (fun romance, no tragedy) ─────
+  101921, // Kaguya-sama        — competitive rom-com, pure fun, zero sadness
+  132405, // My Dress-Up Darling— wholesome romance + fan service, warm, cozy
 ];
 
 // ── Onboarding signal thresholds ──────────────────
