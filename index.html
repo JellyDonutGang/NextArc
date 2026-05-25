@@ -354,6 +354,81 @@
       color: #fff;
     }
 
+    /* ── Hidden Gem card ──────────────────────────── */
+    .gem-badge {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      background: rgba(255,183,3,0.93);
+      color: #2a1500;
+      padding: 5px 12px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      z-index: 6;
+      pointer-events: none;
+      animation: gemPulse 2.4s ease-in-out infinite;
+    }
+    @keyframes gemPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(255,183,3,0.45); }
+      50%       { box-shadow: 0 0 0 7px rgba(255,183,3,0); }
+    }
+    .anime-card.is-gem {
+      box-shadow: 0 16px 48px rgba(0,0,0,0.6), 0 0 0 2px rgba(255,183,3,0.55);
+    }
+
+    /* ── Gem save row ─────────────────────────────── */
+    .gem-save-row {
+      display: none;
+      justify-content: center;
+      width: 100%;
+      max-width: 420px;
+      margin-top: 10px;
+    }
+    .gem-save-row.visible { display: flex; }
+    .gem-save-btn {
+      background: rgba(255,183,3,0.10);
+      border: 1.5px solid rgba(255,183,3,0.45);
+      color: var(--yellow);
+      border-radius: 12px;
+      padding: 10px 32px;
+      font-size: 14px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      letter-spacing: 0.3px;
+      transition: background 0.15s, transform 0.1s;
+    }
+    .gem-save-btn:active { transform: scale(0.96); }
+    .gem-save-btn.saved  { background: rgba(255,183,3,0.22); }
+
+    /* ── Save toast ───────────────────────────────── */
+    .save-toast {
+      position: fixed;
+      bottom: 110px;
+      left: 50%;
+      transform: translateX(-50%) translateY(14px);
+      background: var(--surface);
+      border: 1px solid rgba(255,183,3,0.5);
+      color: var(--yellow);
+      padding: 10px 22px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 600;
+      font-family: inherit;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 300;
+      white-space: nowrap;
+      transition: opacity 0.22s ease, transform 0.22s ease;
+    }
+    .save-toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
     /* Text label override for taste-check buttons */
     .btn-text {
       border-radius: 12px;
@@ -883,7 +958,12 @@
     <button class="action-btn btn-skip    btn-text" id="btn-rec-skip">Skip</button>
     <button class="action-btn btn-like    btn-text" id="btn-rec-like">Good</button>
   </div>
+  <div class="gem-save-row" id="gem-save-row">
+    <button class="gem-save-btn" id="btn-gem-save">✦ Save for Later</button>
+  </div>
 </section>
+
+<div class="save-toast" id="save-toast">✓ Saved to your list</div>
 
 <!-- ══════════════════════════════════════════════ -->
 <!--  WATCH BOTTOM SHEET                           -->
@@ -991,6 +1071,30 @@ query ($excludeIds: [Int], $page: Int, $perPage: Int, $sort: [MediaSort], $minSc
     media(type: ANIME, status_in: [FINISHED, RELEASING], isAdult: false,
           episodes_greater: 1, averageScore_greater: $minScore,
           id_not_in: $excludeIds, sort: $sort) {
+${_REC_FIELDS}
+    }
+  }
+}`;
+
+const GEM_QUERY_GENRE = `
+query ($excludeIds: [Int], $page: Int, $perPage: Int, $minScore: Int, $maxPop: Int, $genres: [String]) {
+  Page(page: $page, perPage: $perPage) {
+    media(type: ANIME, status_in: [FINISHED, RELEASING], isAdult: false,
+          episodes_greater: 1, averageScore_greater: $minScore,
+          popularity_lesser: $maxPop,
+          id_not_in: $excludeIds, genre_in: $genres, sort: SCORE_DESC) {
+${_REC_FIELDS}
+    }
+  }
+}`;
+
+const GEM_QUERY_TAG = `
+query ($excludeIds: [Int], $page: Int, $perPage: Int, $minScore: Int, $maxPop: Int, $tags: [String]) {
+  Page(page: $page, perPage: $perPage) {
+    media(type: ANIME, status_in: [FINISHED, RELEASING], isAdult: false,
+          episodes_greater: 1, averageScore_greater: $minScore,
+          popularity_lesser: $maxPop,
+          id_not_in: $excludeIds, tag_in: $tags, sort: SCORE_DESC) {
 ${_REC_FIELDS}
     }
   }
@@ -1257,6 +1361,17 @@ let recSwipesSinceRank = 0;      // swipes since last ranking/re-rank
 let lastRankSnapshot   = null;   // profile fingerprint at last rank
 const PREFETCH_THRESHOLD = 8;    // start pre-fetch when N cards remain
 const RERANK_THRESHOLD   = 8;    // re-rank remaining queue every N swipes
+
+// ── Hidden Gem state ──────────────────────────────
+let gemQueue          = [];      // taste-matched low-popularity high-score picks
+let gemPos            = 0;       // cursor into gemQueue
+let isGemFetching     = false;
+let _gemFetchPromise  = null;
+let recsSinceGem      = 0;       // recs shown since last gem
+let currentRecIsGem   = false;   // true while a gem card is on screen
+const GEM_INTERVAL    = 8;       // show 1 gem every N regular recs
+const GEM_SCORE_MIN   = 78;      // must be genuinely good
+const GEM_POP_MAX     = 15000;   // but not well-known
 
 /* ─── Screen navigation ─────────────────────────── */
 function showScreen(id) {
@@ -2000,12 +2115,73 @@ async function prefetchNextBatch() {
   isPrefetching = false;
 }
 
+/* ─── Hidden Gem helpers ────────────────────────── */
+
+async function fetchGems() {
+  if (_gemFetchPromise) return _gemFetchPromise;
+  _gemFetchPromise = (async () => {
+    isGemFetching = true;
+    try {
+      const { genres, tags } = buildQueryTargets();
+      const excludeIds = [...seenIds];
+      const base = { excludeIds, page: 1, perPage: 20,
+                     minScore: GEM_SCORE_MIN, maxPop: GEM_POP_MAX };
+      const batch = [];
+      if (genres.length > 0) batch.push(fetchAniList(GEM_QUERY_GENRE, { ...base, genres: genres.slice(0,3) }));
+      if (tags.length   > 0) batch.push(fetchAniList(GEM_QUERY_TAG,   { ...base, tags:   tags.slice(0,5)   }));
+      if (batch.length === 0) return; // not enough profile yet
+
+      const results = await Promise.allSettled(batch);
+      const candidates = [];
+      for (const r of results) {
+        if (r.status === 'fulfilled' && r.value?.Page?.media) {
+          candidates.push(...r.value.Page.media);
+        }
+      }
+      const seen = new Set();
+      const unique = deduplicateByFranchise(
+        candidates.filter(a => {
+          if (seen.has(a.id) || seenIds.has(a.id) || !a.coverImage?.large) return false;
+          seen.add(a.id); return true;
+        })
+      );
+      const ranked = engine.rankRecommendations(unique, [...seenIds]);
+      gemQueue.push(...ranked);
+    } catch (e) { console.warn('Gem fetch failed:', e); }
+    finally { isGemFetching = false; _gemFetchPromise = null; }
+  })();
+  return _gemFetchPromise;
+}
+
+/* ─── Save to list (localStorage) ──────────────── */
+
+function saveAnime(anime) {
+  const key = 'nextarc_saved';
+  const list = JSON.parse(localStorage.getItem(key) || '[]');
+  if (!list.find(a => a.id === anime.id)) {
+    list.push({ id: anime.id, title: anime.title, coverImage: anime.coverImage,
+                genres: anime.genres, averageScore: anime.averageScore });
+    localStorage.setItem(key, JSON.stringify(list));
+  }
+  showSaveToast();
+}
+
+let _toastTimer = null;
+function showSaveToast() {
+  const t = document.getElementById('save-toast');
+  t.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
 async function loadRecQueue() {
   // Only show spinner if rec screen is already active
   const recScreen = document.getElementById('screen-recs');
   if (recScreen.classList.contains('active')) {
     document.getElementById('recs-spinner').style.display = 'flex';
   }
+  // Kick off gem fetch in parallel — doesn't block rec loading
+  if (gemQueue.length - gemPos < 3 && !isGemFetching) fetchGems();
   try {
     recQueue           = await fetchAndRankCandidates();
     recPos             = 0;
@@ -2056,15 +2232,47 @@ function showNextRec(firstCard = false) {
     return;
   }
 
-  const anime = recQueue[recPos];
-  currentRecAnime = anime;
-  trackSeen(anime); // records both ID and franchise name
+  // ── Hidden Gem injection ────────────────────────
+  // Every GEM_INTERVAL regular recs, surface a taste-matched hidden gem
+  let isGem = false;
+  let anime;
+  if (recsSinceGem >= GEM_INTERVAL && gemPos < gemQueue.length) {
+    const candidate = gemQueue[gemPos];
+    if (candidate && !seenIds.has(candidate.id)) {
+      anime     = candidate;
+      isGem     = true;
+      gemPos++;
+      recsSinceGem = 0;
+      // Refill gem queue in background if running low
+      if (gemQueue.length - gemPos < 3 && !isGemFetching) fetchGems();
+    } else {
+      gemPos++; // skip stale gem, fall through to normal rec
+    }
+  }
+
+  if (!anime) {
+    anime = recQueue[recPos];
+    recsSinceGem++;
+  }
+
+  currentRecAnime  = anime;
+  currentRecIsGem  = isGem;
+  trackSeen(anime);
 
   const card = buildCard(anime, true);
 
   // Update stamps for discovery mode
   card.querySelector('.stamp-like').textContent    = 'WATCH';
   card.querySelector('.stamp-dislike').textContent = 'NOPE';
+
+  // Hidden Gem treatment
+  if (isGem) {
+    card.classList.add('is-gem');
+    const badge = document.createElement('div');
+    badge.className   = 'gem-badge';
+    badge.textContent = '✦ Hidden Gem';
+    card.appendChild(badge);
+  }
 
   // Play overlay — opens watch sheet without swiping
   const playBtn = document.createElement('button');
@@ -2077,6 +2285,17 @@ function showNextRec(firstCard = false) {
   card.appendChild(playBtn);
 
   container.appendChild(card);
+
+  // Show/hide save row
+  const saveRow  = document.getElementById('gem-save-row');
+  const saveBtn  = document.getElementById('btn-gem-save');
+  if (isGem) {
+    saveRow.classList.add('visible');
+    saveBtn.textContent = '✦ Save for Later';
+    saveBtn.classList.remove('saved');
+  } else {
+    saveRow.classList.remove('visible');
+  }
 
   // Slam the first card in dramatically after unlock
   if (firstCard) {
@@ -2100,16 +2319,22 @@ function recSwipe(card, anime, action) {
   const dir = action === 'dislike' ? 'left' : 'right';
   flyCard(card, dir).then(() => {
     if (action !== 'skip') engine.update(anime, action);
-    recPos++;
+
+    // Gem cards don't consume from recQueue — only advance recPos for normal recs
+    if (!currentRecIsGem) {
+      recPos++;
+    }
+    currentRecIsGem = false;
+    document.getElementById('gem-save-row').classList.remove('visible');
+
     recSwipesSinceRank++;
 
     // Every RERANK_THRESHOLD swipes, re-score the remaining queue if the
-    // taste profile has meaningfully shifted (e.g. 8 likes in a row for
-    // a new genre bubble more of that genre toward the front immediately).
+    // taste profile has meaningfully shifted
     if (action !== 'skip' && recSwipesSinceRank >= RERANK_THRESHOLD) {
       const current = snapshotProfile();
       if (current !== lastRankSnapshot) {
-        setTimeout(rerankRemaining, 0); // defer so card animation isn't blocked
+        setTimeout(rerankRemaining, 0);
       }
     }
 
@@ -2128,6 +2353,14 @@ document.getElementById('btn-rec-skip').addEventListener('click', () => {
 document.getElementById('btn-rec-like').addEventListener('click', () => {
   const card = document.querySelector('#rec-card-container .anime-card');
   if (card && currentRecAnime) recSwipe(card, currentRecAnime, 'like');
+});
+document.getElementById('btn-gem-save').addEventListener('click', () => {
+  if (currentRecAnime && currentRecIsGem) {
+    saveAnime(currentRecAnime);
+    const btn = document.getElementById('btn-gem-save');
+    btn.textContent = '✓ Saved';
+    btn.classList.add('saved');
+  }
 });
 // btn-rec-watch removed from DOM — play button is now a card overlay
 
