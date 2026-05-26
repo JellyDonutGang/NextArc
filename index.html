@@ -211,44 +211,29 @@
     .anime-card.top { z-index: 2; }
 
     /* ── Tapered corner brackets ─────────────────── */
-    /* Top-left and bottom-right only — thick at vertex, fade to nothing */
-    .card-corners {
-      position: absolute; inset: 0;
-      pointer-events: none; z-index: 5;
-    }
-    .cc-tl-h, .cc-tl-v, .cc-br-h, .cc-br-v {
+    /* Single border element — mask reveals only top-left + bottom-right corners.
+       Lives inside the card so it travels with swipe gestures.
+       inset: 1px keeps the border fully visible (not clipped by overflow:hidden).
+       The mask fades from opaque at the corner to transparent along each arm,
+       making the bracket appear thick at the curve and taper to nothing. */
+    .card-corner-frame {
       position: absolute;
-      border-radius: 2px;
+      inset: 1px;
+      border-radius: calc(var(--radius) - 1px);
+      border: 3px solid var(--genre-color, #2e80d8);
+      pointer-events: none;
+      z-index: 5;
+      mask-image:
+        radial-gradient(circle 58px at 0% 0%, black 0%, transparent 100%),
+        radial-gradient(circle 58px at 100% 100%, black 0%, transparent 100%);
+      -webkit-mask-image:
+        radial-gradient(circle 58px at 0% 0%, black 0%, transparent 100%),
+        radial-gradient(circle 58px at 100% 100%, black 0%, transparent 100%);
+      mask-composite: add;
+      -webkit-mask-composite: source-over;
     }
-    /* Top-left horizontal arm */
-    .cc-tl-h {
-      top: 0; left: 0;
-      height: 4px; width: 42px;
-      background: linear-gradient(to right, var(--genre-color, #2e80d8) 0%, transparent 100%);
-    }
-    /* Top-left vertical arm */
-    .cc-tl-v {
-      top: 0; left: 0;
-      width: 4px; height: 42px;
-      background: linear-gradient(to bottom, var(--genre-color, #2e80d8) 0%, transparent 100%);
-    }
-    /* Bottom-right horizontal arm */
-    .cc-br-h {
-      bottom: 0; right: 0;
-      height: 4px; width: 42px;
-      background: linear-gradient(to left, var(--genre-color, #2e80d8) 0%, transparent 100%);
-    }
-    /* Bottom-right vertical arm */
-    .cc-br-v {
-      bottom: 0; right: 0;
-      width: 4px; height: 42px;
-      background: linear-gradient(to top, var(--genre-color, #2e80d8) 0%, transparent 100%);
-    }
-    /* Gem cards use gold corners */
-    .anime-card.is-gem .cc-tl-h,
-    .anime-card.is-gem .cc-tl-v,
-    .anime-card.is-gem .cc-br-h,
-    .anime-card.is-gem .cc-br-v {
+    /* Gem cards: gold brackets */
+    .anime-card.is-gem .card-corner-frame {
       --genre-color: #ffb703;
     }
 
@@ -2820,12 +2805,7 @@ function buildCard(anime, isTop = true) {
       <div class="card-meta">${score} ${eps}</div>
       <div class="genre-chips">${genres.map(g => `<span class="chip">${g}</span>`).join('')}</div>
     </div>
-    <div class="card-corners">
-      <span class="cc-tl-h"></span>
-      <span class="cc-tl-v"></span>
-      <span class="cc-br-h"></span>
-      <span class="cc-br-v"></span>
-    </div>`;
+    <div class="card-corner-frame"></div>`;
 
   return card;
 }
