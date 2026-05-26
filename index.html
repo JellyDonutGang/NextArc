@@ -41,6 +41,7 @@
       color: var(--text);
       font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
       overflow: hidden;
+      overscroll-behavior: none;
       user-select: none;
       -webkit-user-select: none;
       -webkit-font-smoothing: antialiased;
@@ -50,6 +51,7 @@
     .screen {
       position: fixed;
       inset: 0;
+      overflow: hidden;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -198,8 +200,8 @@
       touch-action: none;
       will-change: transform;
       box-shadow: 0 16px 48px rgba(0,0,0,0.6),
-                  0 0 22px var(--genre-glow, rgba(46,128,216,0.4)),
-                  0 0 55px var(--genre-glow, rgba(46,128,216,0.12)),
+                  0 0 14px var(--genre-glow, rgba(46,128,216,0.22)),
+                  0 0 32px var(--genre-glow, rgba(46,128,216,0.07)),
                   inset 0 0 0 1px rgba(255,255,255,0.10);
       background: var(--surface2);
     }
@@ -2839,7 +2841,7 @@ function buildCard(anime, isTop = true) {
   const genreColor = getGenreColor(anime.genres);
   const rgb = hexToRgb(genreColor);
   card.style.setProperty('--genre-color', genreColor);
-  card.style.setProperty('--genre-glow', `rgba(${rgb},0.45)`);
+  card.style.setProperty('--genre-glow', `rgba(${rgb},0.28)`);
 
   // Each chip gets its own genre colour
   const genreChips = genres.map(g => {
