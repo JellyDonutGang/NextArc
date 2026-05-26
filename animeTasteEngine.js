@@ -514,7 +514,7 @@ class NextArcEngine {
 
     // ── Global scalar update ───────────────────────────────────────────
     if (isPositive) {
-      this._absorbPositive(this.dims, features.scalars, isWatch || isSuperLike);
+      this._absorbPositive(this.dims, features.scalars, isWatch || isSuperLike, isSuperLike);
     } else {
       this._absorbNegative(this.dims, features.scalars, isDislike);
     }
@@ -522,13 +522,13 @@ class NextArcEngine {
     // ── Cluster update (positive signals only) ─────────────────────────
     if (isPositive) {
       const signal = isSuperLike ? 5.0 : isWatch ? 3.5 : (this.onboarded ? 2.0 : 3.0);
-      this._absorbIntoCluster(features, signal);
+      this._absorbIntoCluster(features, signal, isSuperLike);
     }
 
     // ── Boundary test resolution ───────────────────────────────────────
     if (this.pendingTests.has(anime.id)) {
       const { dimension, testLevel } = this.pendingTests.get(anime.id);
-      this._processBoundaryResult(dimension, testLevel, isPositive, isDislike);
+      this._processBoundaryResult(dimension, testLevel, isPositive, isDislike, isSuperLike);
       this.pendingTests.delete(anime.id);
     }
 
@@ -672,7 +672,7 @@ class NextArcEngine {
    * Assign a liked/watched anime to an existing cluster or create a new one.
    * This is the engine of taste-lane detection.
    */
-  _absorbIntoCluster(features, signal) {
+  _absorbIntoCluster(features, signal, isSuperLike = false) {
     let bestCluster = null;
     let bestSim     = -1;
 
@@ -681,8 +681,12 @@ class NextArcEngine {
       if (sim > bestSim) { bestSim = sim; bestCluster = cluster; }
     }
 
-    if (bestCluster && bestSim >= this.CLUSTER_JOIN_THRESHOLD) {
-      this._updateCluster(bestCluster, features, signal);
+    // Superlike uses a lower join threshold — commit to an existing cluster
+    // more aggressively so the strong preference reinforces the right lane.
+    const threshold = isSuperLike ? 0.42 : this.CLUSTER_JOIN_THRESHOLD;
+
+    if (bestCluster && bestSim >= threshold) {
+      this._updateCluster(bestCluster, features, signal, isSuperLike);
     } else {
       this.clusters.push(this._createCluster(features, signal));
       if (this.clusters.length > this.MAX_CLUSTERS) {
@@ -705,11 +709,9 @@ class NextArcEngine {
     };
   }
 
-  _updateCluster(cluster, features, signal) {
-    const lr = 0.22; // centroid learning rate
-
-    // Update scalar profile
-    this._absorbPositive(cluster.dims, features.scalars, false);
+  _updateCluster(cluster, features, signal, isSuperLike = false) {
+    // Update scalar profile — thread isSuperLike for higher learning rate
+    this._absorbPositive(cluster.dims, features.scalars, false, isSuperLike);
 
     // Update key fingerprints (union — new keys always added)
     for (const t of features.keys.tone)      cluster.tones.add(t);
@@ -724,7 +726,9 @@ class NextArcEngine {
     }
 
     cluster.weight  += signal;
-    cluster.count   += 1;
+    // Superlike counts as 2 swipes worth of evidence — boosts cluster weight
+    // and recency score so this lane surfaces more reliably in recommendations.
+    cluster.count   += isSuperLike ? 2 : 1;
     cluster.lastSeen = this.totalSwipes;
   }
 
@@ -1100,13 +1104,17 @@ class NextArcEngine {
     return weight > 0 ? total / weight : 0.5;
   }
 
-  _processBoundaryResult(dimension, testLevel, liked, isDislike = false) {
+  _processBoundaryResult(dimension, testLevel, liked, isDislike = false, isSuperLike = false) {
     const p = this.dims[dimension];
     this.dimTestCounts[dimension]++;
-    this.dimCooldowns[dimension] = 4;
+
+    // Superlike at a boundary = strong "yes, push further" signal.
+    // Halve the cooldown so the engine re-probes sooner, and expand tolerance
+    // more aggressively (1.2 vs 0.5) to match the strength of the preference.
+    this.dimCooldowns[dimension] = isSuperLike ? 2 : 4;
 
     if (liked) {
-      p.tolerance = Math.min(10, testLevel + 0.5);
+      p.tolerance = Math.min(10, testLevel + (isSuperLike ? 1.2 : 0.5));
       p.preferred = p.preferred * 0.88 + testLevel * 0.12;
     } else if (isDislike) {
       p.tolerance = Math.max(p.preferred - 0.5, p.tolerance - 1.8);
@@ -1115,7 +1123,8 @@ class NextArcEngine {
       p.tolerance = Math.max(p.preferred, p.tolerance - 0.5);
     }
 
-    p.confidence = Math.min(1, p.confidence + 0.12);
+    // Superlike resolves boundary ambiguity faster: 0.20 confidence gain vs 0.12.
+    p.confidence = Math.min(1, p.confidence + (isSuperLike ? 0.20 : 0.12));
   }
 
 
@@ -1191,10 +1200,16 @@ class NextArcEngine {
    * Absorb a positive signal into a dims profile (global or per-cluster).
    * Called with this.dims for the global profile, cluster.dims for clusters.
    */
-  _absorbPositive(dims, scalars, isWatch) {
-    const lr = isWatch        ? 0.22
+  _absorbPositive(dims, scalars, isWatch, isSuperLike = false) {
+    // Superlike: highest learning rate (0.32) — user is signalling a strong
+    // preference so we want the profile to shift meaningfully toward this anime.
+    const lr = isSuperLike    ? 0.32
+             : isWatch        ? 0.22
              : this.onboarded ? 0.15
              :                  0.28;
+
+    // Superlike also earns more confidence per swipe (0.14 vs 0.07).
+    const confGain = isSuperLike ? 0.14 : 0.07;
 
     for (const [dim, profile] of Object.entries(dims)) {
       const level = scalars[dim] ?? 5;
@@ -1202,7 +1217,7 @@ class NextArcEngine {
       if (level > profile.tolerance) {
         profile.tolerance = profile.tolerance * 0.65 + level * 0.35;
       }
-      profile.confidence = Math.min(1, profile.confidence + 0.07);
+      profile.confidence = Math.min(1, profile.confidence + confGain);
     }
   }
 
