@@ -2163,7 +2163,7 @@ query ($page: Int, $perPage: Int, $sort: [MediaSort]) {
 
 const _REC_FIELDS = `
       id title { romaji english } coverImage { extraLarge large } genres
-      tags { name rank } averageScore popularity episodes startDate { year }
+      tags { name rank } averageScore popularity trending episodes startDate { year }
       externalLinks { site url }
       studios(isMain: true) { nodes { name } }
       relations { edges { relationType } }

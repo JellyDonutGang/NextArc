@@ -572,6 +572,14 @@ class NextArcEngine {
     if (pool.length === 0) return [];
 
     const profiles     = pool.map(anime => ({ anime, features: extractFeatures(anime) }));
+
+    // Build trending map from candidate data (field added to _REC_FIELDS at no extra cost).
+    // Used only inside _findWildcards to bias exploration toward currently-buzzing titles.
+    const trendingMap = new Map();
+    for (const anime of pool) {
+      if (anime.trending) trendingMap.set(anime.id, anime.trending);
+    }
+
     const activeClusters = this.onboarded ? this._getActiveClusters() : [];
     const multiCluster   = activeClusters.length >= 2;
 
@@ -624,7 +632,7 @@ class NextArcEngine {
       : [];
 
     // ── Wildcards ─────────────────────────────────────────────────────
-    const wildcardCandidates = this._findWildcards(scored);
+    const wildcardCandidates = this._findWildcards(scored, trendingMap);
 
     // ── Allocate slots ────────────────────────────────────────────────
     const total     = Math.min(pool.length, 30);
@@ -1132,9 +1140,28 @@ class NextArcEngine {
      WILDCARDS
      ════════════════════════════════════════════════════════════════════ */
 
-  _findWildcards(strongScored) {
+  _findWildcards(strongScored, trendingMap = new Map()) {
     const cutoff = Math.floor(strongScored.length * 0.70);
-    return strongScored.slice(cutoff).sort(() => Math.random() - 0.5);
+    const pool   = strongScored.slice(cutoff);
+
+    // No trending data — pure random as before
+    if (trendingMap.size === 0) return pool.sort(() => Math.random() - 0.5);
+
+    // Normalise trending scores within this pool so relative buzz matters,
+    // not absolute numbers (AniList trending values vary wildly in magnitude).
+    const scores  = pool.map(p => trendingMap.get(p.anime.id) || 0);
+    const maxTrend = Math.max(...scores, 1);
+
+    // 65% random + 35% trending bias.
+    // Keeps wildcards genuinely exploratory while nudging toward titles that
+    // are currently buzzing — if the taste fit is low either way, a trending
+    // show is more likely to feel rewarding than a random obscurity.
+    return pool
+      .map((p, i) => ({
+        ...p,
+        _wScore: Math.random() * 0.65 + (scores[i] / maxTrend) * 0.35,
+      }))
+      .sort((a, b) => b._wScore - a._wScore);
   }
 
 
