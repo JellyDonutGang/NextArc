@@ -224,11 +224,11 @@
       pointer-events: none;
       z-index: 5;
       mask-image:
-        radial-gradient(ellipse 50% 50% at 0% 0%, black 0%, transparent 100%),
-        radial-gradient(ellipse 50% 50% at 100% 100%, black 0%, transparent 100%);
+        radial-gradient(ellipse 52% 52% at 0% 0%, black 0%, black 78%, transparent 100%),
+        radial-gradient(ellipse 52% 52% at 100% 100%, black 0%, black 78%, transparent 100%);
       -webkit-mask-image:
-        radial-gradient(ellipse 50% 50% at 0% 0%, black 0%, transparent 100%),
-        radial-gradient(ellipse 50% 50% at 100% 100%, black 0%, transparent 100%);
+        radial-gradient(ellipse 52% 52% at 0% 0%, black 0%, black 78%, transparent 100%),
+        radial-gradient(ellipse 52% 52% at 100% 100%, black 0%, black 78%, transparent 100%);
       mask-composite: add;
       -webkit-mask-composite: source-over;
     }
@@ -598,6 +598,8 @@
       max-width: 420px;
       padding: 2px 16px 16px;
       box-sizing: border-box;
+      position: relative;
+      z-index: 10;
     }
     .gem-progress-track {
       position: relative;
@@ -1797,9 +1799,10 @@
   </div>
 
   <div class="action-buttons">
-    <button class="action-btn btn-dislike btn-text" id="btn-dislike">Bad</button>
-    <button class="action-btn btn-skip    btn-text" id="btn-skip">Skip</button>
-    <button class="action-btn btn-like    btn-text" id="btn-like">Good</button>
+    <button class="action-btn btn-dislike    btn-text" id="btn-dislike">Bad</button>
+    <button class="action-btn btn-skip       btn-text" id="btn-skip">Skip</button>
+    <button class="action-btn btn-supergood  btn-text" id="btn-supergood">★ Super</button>
+    <button class="action-btn btn-like       btn-text" id="btn-like">Good</button>
   </div>
 </section>
 
@@ -3042,18 +3045,23 @@ function renderTasteCard(index, isReplacement = false) {
 
   attachSwipe(top,
     () => { swipeTaste(top, index, 'like'); },
-    () => { swipeTaste(top, index, 'dislike'); }
+    () => { swipeTaste(top, index, 'dislike'); },
+    () => { swipeTaste(top, index, 'superlike'); },
+    () => { swipeTaste(top, index, 'skip'); }
   );
 }
 
 function swipeTaste(card, index, action) {
   const anime = tasteAnime[index];
-  const dir   = action === 'like' ? 'right' : action === 'dislike' ? 'left' : 'right';
+  const dir   = action === 'dislike'   ? 'left'
+              : action === 'skip'      ? 'down'
+              : action === 'superlike' ? 'up'
+              : 'right';
   flyCard(card, dir).then(() => {
     if (action === 'skip') {
       replaceSkippedCard(anime, index);
     } else {
-      if (action === 'like')    likeCount++;
+      if (action === 'like' || action === 'superlike') likeCount++;
       if (action === 'dislike') dislikeCount++;
       totalShown++;
       updateTasteBar();
@@ -3332,6 +3340,10 @@ function finishTaste() {
 document.getElementById('btn-like').addEventListener('click', () => {
   const card = document.querySelector('#card-stack .anime-card.top');
   if (card) swipeTaste(card, tasteIndex, 'like');
+});
+document.getElementById('btn-supergood').addEventListener('click', () => {
+  const card = document.querySelector('#card-stack .anime-card.top');
+  if (card) swipeTaste(card, tasteIndex, 'superlike');
 });
 document.getElementById('btn-skip').addEventListener('click', () => {
   const card = document.querySelector('#card-stack .anime-card.top');
@@ -3805,7 +3817,7 @@ function recSwipe(card, anime, action) {
               action === 'skip'      ? 'down'  :
               action === 'supergood' ? 'up'    : 'right';
   flyCard(card, dir).then(() => {
-    if (action !== 'skip') engine.update(anime, action === 'supergood' ? 'like' : action);
+    if (action !== 'skip') engine.update(anime, action === 'supergood' ? 'superlike' : action);
     totalCardsSwiped++;
     localStorage.setItem('nextarc_cards', totalCardsSwiped);
 

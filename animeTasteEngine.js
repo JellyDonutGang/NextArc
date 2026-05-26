@@ -493,15 +493,18 @@ class NextArcEngine {
   update(anime, action) {
     if (action === 'skip') { this.totalSwipes++; return; }
 
-    const isPositive = action === 'like' || action === 'watch';
-    const isWatch    = action === 'watch';
-    const isDislike  = action === 'dislike';
-    const features   = extractFeatures(anime);
+    const isSuperLike = action === 'superlike';
+    const isPositive  = action === 'like' || action === 'watch' || isSuperLike;
+    const isWatch     = action === 'watch';
+    const isDislike   = action === 'dislike';
+    const features    = extractFeatures(anime);
 
     // ── Global vector update ───────────────────────────────────────────
-    const catDelta = isWatch   ?  3.5
-                   : isPositive ? (this.onboarded ?  2.0 :  3.0)
-                   :              (this.onboarded ? -2.0 : -3.0);
+    // superlike carries 5.0 — 2.5× the normal post-onboarding like weight
+    const catDelta = isSuperLike ?  5.0
+                   : isWatch     ?  3.5
+                   : isPositive  ? (this.onboarded ?  2.0 :  3.0)
+                   :               (this.onboarded ? -2.0 : -3.0);
 
     for (const [group, keys] of Object.entries(features.keys)) {
       for (const key of keys) {
@@ -511,14 +514,14 @@ class NextArcEngine {
 
     // ── Global scalar update ───────────────────────────────────────────
     if (isPositive) {
-      this._absorbPositive(this.dims, features.scalars, isWatch);
+      this._absorbPositive(this.dims, features.scalars, isWatch || isSuperLike);
     } else {
       this._absorbNegative(this.dims, features.scalars, isDislike);
     }
 
     // ── Cluster update (positive signals only) ─────────────────────────
     if (isPositive) {
-      const signal = isWatch ? 3.5 : (this.onboarded ? 2.0 : 3.0);
+      const signal = isSuperLike ? 5.0 : isWatch ? 3.5 : (this.onboarded ? 2.0 : 3.0);
       this._absorbIntoCluster(features, signal);
     }
 
