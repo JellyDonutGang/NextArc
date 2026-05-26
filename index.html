@@ -311,14 +311,14 @@
       gap: 6px;
     }
     .chip {
-      background: rgba(255,255,255,0.12);
-      backdrop-filter: blur(4px);
       border-radius: 50px;
       padding: 4px 10px;
       font-size: 11px;
-      font-weight: 600;
-      color: rgba(255,255,255,0.9);
-      border: 1px solid rgba(255,255,255,0.15);
+      font-weight: 700;
+      color: #fff;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.4);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      border: none;
     }
 
     /* Swipe stamps */
@@ -348,6 +348,21 @@
       color: var(--accent);
       border-color: var(--accent);
       transform: rotate(15deg);
+    }
+    .stamp-up {
+      top: 28px;
+      left: 50%;
+      transform: translateX(-50%) rotate(-5deg);
+      color: #ffb703;
+      border-color: #ffb703;
+    }
+    .stamp-down {
+      top: auto;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%) rotate(5deg);
+      color: rgba(255,255,255,0.55);
+      border-color: rgba(255,255,255,0.55);
     }
 
     /* Action buttons */
@@ -394,6 +409,15 @@
       font-size: 28px;
       background: var(--accent);
       color: #fff;
+    }
+
+    /* Super Good — gold, swipes up */
+    .btn-supergood {
+      width: 62px; height: 62px;
+      font-size: 22px;
+      background: linear-gradient(135deg, #b45309, #d97706);
+      color: #fff;
+      border: none;
     }
 
     /* ── Hidden Gem card — Legendary treatment ───── */
@@ -549,9 +573,10 @@
       font-weight: 700;
       letter-spacing: 0.3px;
     }
-    .btn-text.btn-dislike { width: 86px; height: 44px; }
-    .btn-text.btn-skip    { width: 72px; height: 38px; font-size: 13px; }
-    .btn-text.btn-like    { width: 86px; height: 44px; font-size: 14px; }
+    .btn-text.btn-dislike   { width: 72px; height: 44px; }
+    .btn-text.btn-skip      { width: 60px; height: 38px; font-size: 13px; }
+    .btn-text.btn-supergood { width: 74px; height: 44px; font-size: 13px; font-weight: 800; letter-spacing: 0.1px; }
+    .btn-text.btn-like      { width: 72px; height: 44px; font-size: 14px; }
 
     /* ── Recommendations Screen ────────────────────── */
     #screen-recs {
@@ -579,9 +604,9 @@
       width: calc(100% - 28px);
       margin: 0 14px;
       height: 8px;
-      background: #0a1628;
+      background: rgba(255,255,255,0.12);
       border-radius: 99px;
-      box-shadow: inset 0 1px 4px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05);
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.08);
       overflow: visible;
     }
 
@@ -1161,11 +1186,23 @@
     .fly-out-right {
       animation: flyRight 0.38s cubic-bezier(0.4, 0, 0.2, 1) forwards;
     }
+    .fly-out-up {
+      animation: flyUp 0.38s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+    .fly-out-down {
+      animation: flyDown 0.38s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
     @keyframes flyLeft {
       to { transform: translateX(-120vw) rotate(-25deg); opacity: 0; }
     }
     @keyframes flyRight {
       to { transform: translateX(120vw) rotate(25deg); opacity: 0; }
+    }
+    @keyframes flyUp {
+      to { transform: translateY(-120vh) scale(0.9); opacity: 0; }
+    }
+    @keyframes flyDown {
+      to { transform: translateY(120vh) scale(0.95); opacity: 0; }
     }
 
     /* ══════════════════════════════════════════════ */
@@ -1860,9 +1897,10 @@
   </div>
 
   <div class="action-buttons">
-    <button class="action-btn btn-dislike btn-text" id="btn-rec-dislike">Bad</button>
-    <button class="action-btn btn-skip    btn-text" id="btn-rec-skip">Skip</button>
-    <button class="action-btn btn-like    btn-text" id="btn-rec-like">Good</button>
+    <button class="action-btn btn-dislike    btn-text" id="btn-rec-dislike">Bad</button>
+    <button class="action-btn btn-skip       btn-text" id="btn-rec-skip">Skip</button>
+    <button class="action-btn btn-supergood  btn-text" id="btn-rec-supergood">★ Super</button>
+    <button class="action-btn btn-like       btn-text" id="btn-rec-like">Good</button>
   </div>
 </section>
 
@@ -2780,7 +2818,8 @@ function buildCard(anime, isTop = true) {
   const imgSrc = anime.coverImage?.extraLarge || anime.coverImage?.large || '';
   const title = anime.title?.english || anime.title?.romaji || 'Unknown';
   const score = anime.averageScore ? `⭐ ${(anime.averageScore / 10).toFixed(1)}` : '';
-  const eps = anime.episodes ? `· ${anime.episodes} eps` : '';
+  const year  = anime.startDate?.year ? String(anime.startDate.year) : '';
+  const eps   = anime.episodes ? `${anime.episodes} eps` : '';
   const genres = (anime.genres || []).slice(0, 4);
 
   // Apply genre colour theme via CSS variables
@@ -2789,21 +2828,27 @@ function buildCard(anime, isTop = true) {
   card.style.setProperty('--genre-color', genreColor);
   card.style.setProperty('--genre-glow', `rgba(${rgb},0.45)`);
 
-  // Primary genre label (first genre that has a colour mapping, else first genre)
-  const primaryGenre = (anime.genres || []).find(g => GENRE_COLORS[g]) || (anime.genres || [])[0] || '';
+  // Each chip gets its own genre colour
+  const genreChips = genres.map(g => {
+    const c = GENRE_COLORS[g] || '#2e80d8';
+    return `<span class="chip" style="background:${c}">${g}</span>`;
+  }).join('');
+
+  const metaLine = [score, year, eps].filter(Boolean).join(' · ');
 
   card.innerHTML = `
     <div class="stamp stamp-like">LIKE</div>
     <div class="stamp stamp-dislike">NOPE</div>
+    <div class="stamp stamp-up">SUPER</div>
+    <div class="stamp stamp-down">SKIP</div>
     ${imgSrc
       ? `<img class="card-img" src="${imgSrc}" alt="${title}" loading="lazy" />`
       : `<div class="card-img-placeholder">🎌</div>`}
     <div class="card-gradient"></div>
-    ${primaryGenre ? `<div class="genre-pill">${primaryGenre}</div>` : ''}
     <div class="card-info">
       <div class="card-title">${title}</div>
-      <div class="card-meta">${score} ${eps}</div>
-      <div class="genre-chips">${genres.map(g => `<span class="chip">${g}</span>`).join('')}</div>
+      <div class="card-meta">${metaLine}</div>
+      <div class="genre-chips">${genreChips}</div>
     </div>
     <div class="card-corner-frame"></div>`;
 
@@ -2811,10 +2856,19 @@ function buildCard(anime, isTop = true) {
 }
 
 /* ─── Swipe gesture engine ─────────────────────── */
-function attachSwipe(card, onLike, onDislike) {
-  let startX = 0, startY = 0, dx = 0, dragging = false;
+function attachSwipe(card, onLike, onDislike, onSuperGood, onSkipDown) {
+  let startX = 0, startY = 0, dx = 0, dy = 0, dragging = false;
   const stampLike    = card.querySelector('.stamp-like');
   const stampDislike = card.querySelector('.stamp-dislike');
+  const stampUp      = card.querySelector('.stamp-up');
+  const stampDown    = card.querySelector('.stamp-down');
+
+  function clearStamps() {
+    stampLike.style.opacity    = 0;
+    stampDislike.style.opacity = 0;
+    if (stampUp)   stampUp.style.opacity   = 0;
+    if (stampDown) stampDown.style.opacity = 0;
+  }
 
   function onStart(x, y) {
     startX = x; startY = y; dragging = true;
@@ -2823,28 +2877,35 @@ function attachSwipe(card, onLike, onDislike) {
   function onMove(x, y) {
     if (!dragging) return;
     dx = x - startX;
-    const dy = y - startY;
-    const rot = dx * 0.08;
-    card.style.transform = `translateX(${dx}px) translateY(${dy * 0.3}px) rotate(${rot}deg)`;
-    const progress = Math.min(Math.abs(dx) / 80, 1);
-    if (dx > 0) {
-      stampLike.style.opacity    = progress;
-      stampDislike.style.opacity = 0;
+    dy = y - startY;
+    const isVertical = Math.abs(dy) > Math.abs(dx) + 10;
+    if (isVertical) {
+      card.style.transform = `translateY(${dy}px) translateX(${dx * 0.2}px)`;
+      const progress = Math.min(Math.abs(dy) / 80, 1);
+      clearStamps();
+      if (dy < 0 && stampUp)   stampUp.style.opacity   = progress;
+      if (dy > 0 && stampDown) stampDown.style.opacity = progress;
     } else {
-      stampDislike.style.opacity = progress;
-      stampLike.style.opacity    = 0;
+      const rot = dx * 0.08;
+      card.style.transform = `translateX(${dx}px) translateY(${dy * 0.25}px) rotate(${rot}deg)`;
+      const progress = Math.min(Math.abs(dx) / 80, 1);
+      clearStamps();
+      if (dx > 0) stampLike.style.opacity    = progress;
+      else        stampDislike.style.opacity = progress;
     }
   }
   function onEnd() {
     if (!dragging) return;
     dragging = false;
     card.style.transition = 'transform 0.3s ease';
-    stampLike.style.opacity    = 0;
-    stampDislike.style.opacity = 0;
-    if (dx > 80)       { onLike(); }
-    else if (dx < -80) { onDislike(); }
-    else               { card.style.transform = ''; }
-    dx = 0;
+    clearStamps();
+    const isVertical = Math.abs(dy) > Math.abs(dx) + 10;
+    if      (isVertical && dy < -80 && onSuperGood) { onSuperGood(); }
+    else if (isVertical && dy >  80 && onSkipDown)  { onSkipDown(); }
+    else if (dx > 80)                               { onLike(); }
+    else if (dx < -80)                              { onDislike(); }
+    else { card.style.transform = ''; }
+    dx = 0; dy = 0;
   }
 
   // Touch
@@ -2860,7 +2921,8 @@ function attachSwipe(card, onLike, onDislike) {
 /* ─── Fly-out animation helper ──────────────────── */
 function flyCard(card, direction) {
   return new Promise(resolve => {
-    card.classList.add(direction === 'right' ? 'fly-out-right' : 'fly-out-left');
+    const cls = { right: 'fly-out-right', left: 'fly-out-left', up: 'fly-out-up', down: 'fly-out-down' };
+    card.classList.add(cls[direction] || 'fly-out-right');
     card.addEventListener('animationend', () => { card.remove(); resolve(); }, { once: true });
   });
 }
@@ -3729,7 +3791,9 @@ function showNextRec(firstCard = false) {
 
   attachSwipe(card,
     () => { recSwipe(card, anime, 'like'); },
-    () => { recSwipe(card, anime, 'dislike'); }
+    () => { recSwipe(card, anime, 'dislike'); },
+    () => { recSwipe(card, anime, 'supergood'); },
+    () => { recSwipe(card, anime, 'skip'); }
   );
 
   document.getElementById('recs-subtitle').textContent =
@@ -3737,9 +3801,11 @@ function showNextRec(firstCard = false) {
 }
 
 function recSwipe(card, anime, action) {
-  const dir = action === 'dislike' ? 'left' : 'right';
+  const dir = action === 'dislike'   ? 'left'  :
+              action === 'skip'      ? 'down'  :
+              action === 'supergood' ? 'up'    : 'right';
   flyCard(card, dir).then(() => {
-    if (action !== 'skip') engine.update(anime, action);
+    if (action !== 'skip') engine.update(anime, action === 'supergood' ? 'like' : action);
     totalCardsSwiped++;
     localStorage.setItem('nextarc_cards', totalCardsSwiped);
 
@@ -3782,6 +3848,10 @@ document.getElementById('btn-rec-dislike').addEventListener('click', () => {
 document.getElementById('btn-rec-skip').addEventListener('click', () => {
   const card = document.querySelector('#rec-card-container .anime-card');
   if (card && currentRecAnime) recSwipe(card, currentRecAnime, 'skip');
+});
+document.getElementById('btn-rec-supergood').addEventListener('click', () => {
+  const card = document.querySelector('#rec-card-container .anime-card');
+  if (card && currentRecAnime) recSwipe(card, currentRecAnime, 'supergood');
 });
 document.getElementById('btn-rec-like').addEventListener('click', () => {
   const card = document.querySelector('#rec-card-container .anime-card');
