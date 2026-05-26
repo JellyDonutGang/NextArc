@@ -2354,12 +2354,16 @@ const SEED_POOL_IDS = [
 ];
 
 // ── Onboarding signal thresholds ──────────────────
-const MIN_LIKES_P1          = 4;   // phase-1 gem: likes needed to hit midpoint
-const MIN_DISLIKES_P1       = 3;   // phase-1 gem: dislikes needed to hit midpoint
-const MIN_LIKES             = 8;   // phase-2 gem: likes needed to unlock recs
-const MIN_DISLIKES          = 6;   // phase-2 gem: dislikes needed to unlock recs
+const MIN_LIKES_P1          = 4;   // phase-1 gem: likes needed to hit midpoint (mixed path)
+const MIN_DISLIKES_P1       = 3;   // phase-1 gem: dislikes needed to hit midpoint (mixed path)
+const MIN_LIKES             = 8;   // phase-2 gem: likes needed to unlock recs (mixed path)
+const MIN_DISLIKES          = 6;   // phase-2 gem: dislikes needed to unlock recs (mixed path)
 const MIN_TOTAL_SHOWN       = 18;  // minimum cards seen before unlock fires
 const MAX_ONBOARDING_SHOWN  = 40;  // hard cap — never show more than this
+// Likes-only path — for users new to anime who can't confidently say "Bad"
+const MIN_LIKES_P1_SOLO     = 6;   // phase-1 gem: likes alone (no dislikes needed)
+const MIN_LIKES_SOLO        = 10;  // phase-2 gem: likes alone (no dislikes needed)
+const MIN_TOTAL_SOLO        = 20;  // minimum cards seen for likes-only unlock
 const INITIAL_QUEUE_SIZE    = 12;  // diverse anime shown first before reserve kicks in
 const RESERVE_LOW_THRESHOLD = 6;   // refetch reserve when it drops below this
 
@@ -2641,18 +2645,27 @@ function updateTasteBar() {
   if (!fill || !marker1 || !marker2) return;
 
   // ── Phase 1: 0 → 50% (reaching midpoint gem) ──
+  // Two paths: mixed (likes + dislikes) OR likes-only
   const p1Like    = Math.min(1, likeCount    / MIN_LIKES_P1);
   const p1Dislike = Math.min(1, dislikeCount / MIN_DISLIKES_P1);
-  const phase1Pct = (p1Like + p1Dislike) / 2;        // 0–1
-  const phase1Done = phase1Pct >= 1;
+  const p1Mixed   = (p1Like + p1Dislike) / 2;
+  const p1Solo    = Math.min(1, likeCount / MIN_LIKES_P1_SOLO);
+  const phase1Pct = Math.max(p1Mixed, p1Solo);        // 0–1
+  const phase1Done = (likeCount >= MIN_LIKES_P1 && dislikeCount >= MIN_DISLIKES_P1)
+                  || likeCount >= MIN_LIKES_P1_SOLO;
 
   // ── Phase 2: 50 → 100% (reaching unlock gem) ──
-  // Three equal factors: likes, dislikes, total cards seen
+  // Mixed path: likes + dislikes + total cards
   const p2Like    = Math.min(1, likeCount    / MIN_LIKES);
   const p2Dislike = Math.min(1, dislikeCount / MIN_DISLIKES);
   const p2Total   = Math.min(1, totalShown   / MIN_TOTAL_SHOWN);
-  const phase2Pct = (p2Like + p2Dislike + p2Total) / 3;  // 0–1
-  const phase2Done = p2Like >= 1 && p2Dislike >= 1 && p2Total >= 1;
+  const p2Mixed   = (p2Like + p2Dislike + p2Total) / 3;
+  // Likes-only path: 75% likes weight, 25% total cards seen
+  const p2Solo    = Math.min(1, likeCount / MIN_LIKES_SOLO) * 0.75
+                  + Math.min(1, totalShown / MIN_TOTAL_SOLO) * 0.25;
+  const phase2Pct  = Math.max(p2Mixed, p2Solo);       // 0–1
+  const phase2Done = (likeCount >= MIN_LIKES && dislikeCount >= MIN_DISLIKES && totalShown >= MIN_TOTAL_SHOWN)
+                  || (likeCount >= MIN_LIKES_SOLO && totalShown >= MIN_TOTAL_SOLO);
 
   // Bar width: first half fills during phase 1, second half during phase 2
   const barPct = phase2Done ? 100
@@ -2663,8 +2676,15 @@ function updateTasteBar() {
 
   // ── Charging / trigger states ──
   const towardP2 = phase1Done && !phase2Done;
-  const p2Left   = Math.max(MIN_LIKES - likeCount, MIN_DISLIKES - dislikeCount, 0);
-  const p1Left   = Math.max(MIN_LIKES_P1 - likeCount, MIN_DISLIKES_P1 - dislikeCount, 0);
+  // "how many more" — take the minimum across whichever path is closer
+  const p2LeftMixed = Math.max(MIN_LIKES - likeCount, MIN_DISLIKES - dislikeCount, 0);
+  const p2LeftSolo  = Math.max(MIN_LIKES_SOLO - likeCount, 0);
+  const p2Left      = Math.min(p2LeftMixed, p2LeftSolo);
+  const p1Left      = Math.max(
+    Math.min(MIN_LIKES_P1 - likeCount, MIN_DISLIKES_P1 - dislikeCount),
+    MIN_LIKES_P1_SOLO - likeCount,
+    0
+  );
 
   const isCharging  = towardP2 ? p2Left <= 2 : (!phase1Done && p1Left <= 1);
   const isTriggered = phase2Done;
@@ -2706,8 +2726,10 @@ function updateTasteBar() {
 }
 
 function shouldFinishOnboarding() {
-  // Primary: full signal + minimum cards seen
+  // Primary: full mixed signal (experienced users)
   if (likeCount >= MIN_LIKES && dislikeCount >= MIN_DISLIKES && totalShown >= MIN_TOTAL_SHOWN) return true;
+  // Likes-only path: new users who haven't seen enough to dislike anything
+  if (likeCount >= MIN_LIKES_SOLO && totalShown >= MIN_TOTAL_SOLO) return true;
   // Hard cap
   if (totalShown >= MAX_ONBOARDING_SHOWN) return true;
   // Skipper escape: strong like signal + seen plenty of cards
