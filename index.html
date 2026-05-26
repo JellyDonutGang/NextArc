@@ -218,8 +218,8 @@
        making the bracket appear thick at the curve and taper to nothing. */
     .card-corner-frame {
       position: absolute;
-      inset: 1px;
-      border-radius: calc(var(--radius) - 1px);
+      inset: 0;
+      border-radius: var(--radius);
       border: 3px solid var(--genre-color, #2e80d8);
       pointer-events: none;
       z-index: 5;
