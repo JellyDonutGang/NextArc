@@ -198,9 +198,8 @@
       touch-action: none;
       will-change: transform;
       box-shadow: 0 16px 48px rgba(0,0,0,0.6),
-                  0 0 0 2.5px var(--genre-color, #2e80d8),
-                  0 0 20px var(--genre-glow, rgba(46,128,216,0.45)),
-                  0 0 50px var(--genre-glow, rgba(46,128,216,0.15)),
+                  0 0 22px var(--genre-glow, rgba(46,128,216,0.4)),
+                  0 0 55px var(--genre-glow, rgba(46,128,216,0.12)),
                   inset 0 0 0 1px rgba(255,255,255,0.10);
       background: var(--surface2);
     }
@@ -210,6 +209,48 @@
       z-index: 0;
     }
     .anime-card.top { z-index: 2; }
+
+    /* ── Tapered corner brackets ─────────────────── */
+    /* Top-left and bottom-right only — thick at vertex, fade to nothing */
+    .card-corners {
+      position: absolute; inset: 0;
+      pointer-events: none; z-index: 5;
+    }
+    .cc-tl-h, .cc-tl-v, .cc-br-h, .cc-br-v {
+      position: absolute;
+      border-radius: 2px;
+    }
+    /* Top-left horizontal arm */
+    .cc-tl-h {
+      top: 0; left: 0;
+      height: 4px; width: 42px;
+      background: linear-gradient(to right, var(--genre-color, #2e80d8) 0%, transparent 100%);
+    }
+    /* Top-left vertical arm */
+    .cc-tl-v {
+      top: 0; left: 0;
+      width: 4px; height: 42px;
+      background: linear-gradient(to bottom, var(--genre-color, #2e80d8) 0%, transparent 100%);
+    }
+    /* Bottom-right horizontal arm */
+    .cc-br-h {
+      bottom: 0; right: 0;
+      height: 4px; width: 42px;
+      background: linear-gradient(to left, var(--genre-color, #2e80d8) 0%, transparent 100%);
+    }
+    /* Bottom-right vertical arm */
+    .cc-br-v {
+      bottom: 0; right: 0;
+      width: 4px; height: 42px;
+      background: linear-gradient(to top, var(--genre-color, #2e80d8) 0%, transparent 100%);
+    }
+    /* Gem cards use gold corners */
+    .anime-card.is-gem .cc-tl-h,
+    .anime-card.is-gem .cc-tl-v,
+    .anime-card.is-gem .cc-br-h,
+    .anime-card.is-gem .cc-br-v {
+      --genre-color: #ffb703;
+    }
 
     /* Subtle holographic sheen on every card */
     .anime-card::after {
@@ -2778,6 +2819,12 @@ function buildCard(anime, isTop = true) {
       <div class="card-title">${title}</div>
       <div class="card-meta">${score} ${eps}</div>
       <div class="genre-chips">${genres.map(g => `<span class="chip">${g}</span>`).join('')}</div>
+    </div>
+    <div class="card-corners">
+      <span class="cc-tl-h"></span>
+      <span class="cc-tl-v"></span>
+      <span class="cc-br-h"></span>
+      <span class="cc-br-v"></span>
     </div>`;
 
   return card;
