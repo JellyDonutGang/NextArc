@@ -614,49 +614,78 @@
       top: 50%;
       transform: translate(-50%, -50%);
       z-index: 2;
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
+
+    /* Lock icon — shown by default */
+    .marker-lock {
+      position: absolute;
+      width: 22px; height: 22px;
+      display: flex; align-items: center; justify-content: center;
+      color: #1e3555;            /* dormant — barely visible on track */
+      transition: color 0.3s, filter 0.3s;
+    }
+    .marker-lock svg { width: 100%; height: 100%; display: block; }
+
+    /* Gem icon — hidden until unlocked */
     .gem-icon {
-      width: 24px;
-      height: 24px;
-      color: #1a2e4a;           /* dark/dormant — nearly invisible on track */
-      transition: color 0.35s ease, filter 0.35s ease;
-      position: relative;
+      position: absolute;
+      width: 24px; height: 24px;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0;
+      transform: scale(0);
+      color: #ffb703;
     }
     .gem-icon svg { width: 100%; height: 100%; display: block; }
 
-    /* Collected — this gem was found earlier in the cycle */
-    .gem-marker.filled .gem-icon {
-      color: #ffb703;
-      filter: drop-shadow(0 0 5px rgba(255,183,3,0.7));
-    }
-
-    /* Primed — bar is within 2 cards of this gem */
-    .gem-marker.primed .gem-icon {
+    /* ── Primed — close to threshold ── */
+    .gem-marker.primed .marker-lock {
       color: #ffd75e;
-      animation: gem-pre-pulse 0.42s ease-in-out infinite alternate;
+      animation: lock-pre-pulse 0.42s ease-in-out infinite alternate;
     }
-    @keyframes gem-pre-pulse {
-      from { filter: drop-shadow(0 0 5px rgba(255,183,3,0.7));  transform: scale(1);    }
-      to   { filter: drop-shadow(0 0 12px rgba(255,220,100,1.0)); transform: scale(1.12); }
+    @keyframes lock-pre-pulse {
+      from { filter: drop-shadow(0 0 4px rgba(255,183,3,0.6));  transform: scale(1);    }
+      to   { filter: drop-shadow(0 0 10px rgba(255,220,100,1)); transform: scale(1.12); }
     }
 
-    /* ACTIVE — gem card is on screen right now */
+    /* ── Active — threshold just hit: lock opens, gem appears ── */
+    .gem-marker.active .marker-lock {
+      animation: lock-unlock 0.42s ease-in forwards;
+    }
     .gem-marker.active .gem-icon {
-      color: #fff8e1;
-      animation: gem-explode-in 0.38s cubic-bezier(0.34,1.56,0.64,1) forwards,
-                 gem-active-pulse 1s ease-in-out 0.38s infinite;
+      animation: gem-explode-in 0.38s cubic-bezier(0.34,1.56,0.64,1) 0.3s forwards,
+                 gem-active-pulse 1s ease-in-out 0.68s infinite;
+    }
+    @keyframes lock-unlock {
+      0%   { transform: scale(1)    rotate(0deg);   opacity: 1; color: #ffd75e; filter: drop-shadow(0 0 6px rgba(255,183,3,0.8)); }
+      20%  { transform: scale(1.2)  rotate(-18deg); opacity: 1; }
+      40%  { transform: scale(1.15) rotate(12deg);  opacity: 0.9; }
+      60%  { transform: scale(1.05) rotate(-8deg);  opacity: 0.6; filter: drop-shadow(0 0 12px white); }
+      100% { transform: scale(0)    rotate(20deg);  opacity: 0; }
     }
     @keyframes gem-explode-in {
-      0%   { transform: scale(0.6);  filter: drop-shadow(0 0 4px #ffb703); }
-      65%  { transform: scale(1.75); filter: drop-shadow(0 0 16px white) drop-shadow(0 0 32px #ffb703); }
-      100% { transform: scale(1.4);  filter: drop-shadow(0 0 10px white) drop-shadow(0 0 22px #ffb703); }
+      0%   { opacity: 1; transform: scale(0.5);  filter: drop-shadow(0 0 4px #ffb703); }
+      65%  { opacity: 1; transform: scale(1.75); filter: drop-shadow(0 0 16px white) drop-shadow(0 0 32px #ffb703); }
+      100% { opacity: 1; transform: scale(1.4);  filter: drop-shadow(0 0 10px white) drop-shadow(0 0 22px #ffb703); }
     }
     @keyframes gem-active-pulse {
       0%,100% { transform: scale(1.4); filter: drop-shadow(0 0 8px  white) drop-shadow(0 0 18px #ffb703); }
       50%     { transform: scale(1.6); filter: drop-shadow(0 0 14px white) drop-shadow(0 0 30px #ffd75e) drop-shadow(0 0 44px #ffb703); }
     }
 
-    /* Radial burst ring — gold */
+    /* ── Filled — already collected, just show gem glowing ── */
+    .gem-marker.filled .marker-lock { display: none; }
+    .gem-marker.filled .gem-icon {
+      opacity: 1;
+      transform: scale(1);
+      filter: drop-shadow(0 0 5px rgba(255,183,3,0.7));
+    }
+
+    /* Radial burst ring — fires when gem appears (delayed to match) */
     .gem-marker.active::before {
       content: '';
       position: absolute;
@@ -665,7 +694,7 @@
       width: 52px; height: 52px;
       border-radius: 50%;
       background: radial-gradient(circle, rgba(255,220,100,0.6) 0%, rgba(255,183,3,0.2) 45%, transparent 70%);
-      animation: gem-burst 0.5s ease-out forwards;
+      animation: gem-burst 0.5s ease-out 0.3s forwards;
       pointer-events: none;
     }
     @keyframes gem-burst {
@@ -678,9 +707,11 @@
     #screen-recs:not(.active) .gem-progress-fill,
     #screen-recs:not(.active) .gem-progress-fill::before,
     #screen-recs:not(.active) .gem-icon,
+    #screen-recs:not(.active) .marker-lock,
     #screen-swipe:not(.active) #taste-progress-fill,
     #screen-swipe:not(.active) #taste-progress-fill::before,
-    #screen-swipe:not(.active) #taste-gem-icon {
+    #screen-swipe:not(.active) .gem-icon,
+    #screen-swipe:not(.active) .marker-lock {
       animation-play-state: paused !important;
     }
 
@@ -1643,8 +1674,15 @@
   <div class="gem-progress-wrap">
     <div class="gem-progress-track">
       <div class="gem-progress-fill" id="taste-progress-fill"></div>
-      <!-- Phase 1 gem at 50% — evolves when midpoint reached -->
+      <!-- Phase 1 lock/gem at 50% -->
       <div class="gem-marker" id="taste-gem-marker-1" style="left:50%">
+        <div class="marker-lock">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M8 11V7a4 4 0 0 1 8 0v4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+            <rect x="5" y="11" width="14" height="10" rx="2.5" fill="currentColor"/>
+            <circle cx="12" cy="16.5" r="1.5" fill="rgba(0,0,0,0.4)"/>
+          </svg>
+        </div>
         <div class="gem-icon" id="taste-gem-icon-1">
           <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <polygon points="12,2 18,8 12,22 6,8" fill="currentColor" opacity="0.9"/>
@@ -1652,8 +1690,15 @@
           </svg>
         </div>
       </div>
-      <!-- Phase 2 gem at 100% — unlocks recs -->
+      <!-- Phase 2 lock/gem at 100% — unlocks recs -->
       <div class="gem-marker" id="taste-gem-marker-2" style="left:100%">
+        <div class="marker-lock">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M8 11V7a4 4 0 0 1 8 0v4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+            <rect x="5" y="11" width="14" height="10" rx="2.5" fill="currentColor"/>
+            <circle cx="12" cy="16.5" r="1.5" fill="rgba(0,0,0,0.4)"/>
+          </svg>
+        </div>
         <div class="gem-icon" id="taste-gem-icon-2">
           <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <polygon points="12,2 18,8 12,22 6,8" fill="currentColor" opacity="0.9"/>
@@ -1730,8 +1775,15 @@
   <div class="gem-progress-wrap">
     <div class="gem-progress-track">
       <div class="gem-progress-fill" id="gem-progress-fill"></div>
-      <!-- Gem 1 at 50% (8/16) -->
+      <!-- Marker 1 at 50% -->
       <div class="gem-marker" id="gem-marker-1" style="left:50%">
+        <div class="marker-lock">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M8 11V7a4 4 0 0 1 8 0v4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+            <rect x="5" y="11" width="14" height="10" rx="2.5" fill="currentColor"/>
+            <circle cx="12" cy="16.5" r="1.5" fill="rgba(0,0,0,0.4)"/>
+          </svg>
+        </div>
         <div class="gem-icon" id="gem-icon-1">
           <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <polygon points="12,2 18,8 12,22 6,8" fill="currentColor" opacity="0.9"/>
@@ -1739,8 +1791,15 @@
           </svg>
         </div>
       </div>
-      <!-- Gem 2 at 100% (16/16) -->
+      <!-- Marker 2 at 100% -->
       <div class="gem-marker" id="gem-marker-2" style="left:100%">
+        <div class="marker-lock">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M8 11V7a4 4 0 0 1 8 0v4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+            <rect x="5" y="11" width="14" height="10" rx="2.5" fill="currentColor"/>
+            <circle cx="12" cy="16.5" r="1.5" fill="rgba(0,0,0,0.4)"/>
+          </svg>
+        </div>
         <div class="gem-icon" id="gem-icon-2">
           <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <polygon points="12,2 18,8 12,22 6,8" fill="currentColor" opacity="0.9"/>
