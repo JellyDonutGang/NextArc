@@ -2263,6 +2263,7 @@ const MIN_LIKES_P1          = 4;   // phase-1 gem: likes needed to hit midpoint
 const MIN_DISLIKES_P1       = 3;   // phase-1 gem: dislikes needed to hit midpoint
 const MIN_LIKES             = 8;   // phase-2 gem: likes needed to unlock recs
 const MIN_DISLIKES          = 6;   // phase-2 gem: dislikes needed to unlock recs
+const MIN_TOTAL_SHOWN       = 18;  // minimum cards seen before unlock fires
 const MAX_ONBOARDING_SHOWN  = 40;  // hard cap — never show more than this
 const INITIAL_QUEUE_SIZE    = 12;  // diverse anime shown first before reserve kicks in
 const RESERVE_LOW_THRESHOLD = 6;   // refetch reserve when it drops below this
@@ -2551,10 +2552,12 @@ function updateTasteBar() {
   const phase1Done = phase1Pct >= 1;
 
   // ── Phase 2: 50 → 100% (reaching unlock gem) ──
+  // Three equal factors: likes, dislikes, total cards seen
   const p2Like    = Math.min(1, likeCount    / MIN_LIKES);
   const p2Dislike = Math.min(1, dislikeCount / MIN_DISLIKES);
-  const phase2Pct = (p2Like + p2Dislike) / 2;        // 0–1
-  const phase2Done = phase2Pct >= 1;
+  const p2Total   = Math.min(1, totalShown   / MIN_TOTAL_SHOWN);
+  const phase2Pct = (p2Like + p2Dislike + p2Total) / 3;  // 0–1
+  const phase2Done = p2Like >= 1 && p2Dislike >= 1 && p2Total >= 1;
 
   // Bar width: first half fills during phase 1, second half during phase 2
   const barPct = phase2Done ? 100
@@ -2608,14 +2611,14 @@ function updateTasteBar() {
 }
 
 function shouldFinishOnboarding() {
-  // Primary: full signal collected (phase 2 complete)
-  if (likeCount >= MIN_LIKES && dislikeCount >= MIN_DISLIKES) return true;
+  // Primary: full signal + minimum cards seen
+  if (likeCount >= MIN_LIKES && dislikeCount >= MIN_DISLIKES && totalShown >= MIN_TOTAL_SHOWN) return true;
   // Hard cap
   if (totalShown >= MAX_ONBOARDING_SHOWN) return true;
   // Skipper escape: strong like signal + seen plenty of cards
-  if (likeCount >= MIN_LIKES && totalShown >= 20) return true;
+  if (likeCount >= MIN_LIKES && totalShown >= 24) return true;
   // Pool exhaustion: meaningful signal and reserve truly gone
-  if (likeCount >= 5 && reservePool.length === 0 && !isLoadingReserve) return true;
+  if (likeCount >= 5 && totalShown >= MIN_TOTAL_SHOWN && reservePool.length === 0 && !isLoadingReserve) return true;
   return false;
 }
 
@@ -2902,6 +2905,7 @@ function swipeTaste(card, index, action) {
       if (action === 'like')    likeCount++;
       if (action === 'dislike') dislikeCount++;
       totalShown++;
+      updateTasteBar();
       engine.update(anime, action);
       tasteIndex = index + 1;
       renderTasteCard(tasteIndex);
