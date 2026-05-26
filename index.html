@@ -606,9 +606,11 @@
       width: calc(100% - 28px);
       margin: 0 14px;
       height: 8px;
-      background: rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.28);
       border-radius: 99px;
-      box-shadow: inset 0 1px 3px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.08);
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.3),
+                  0 0 0 1px rgba(255,255,255,0.22),
+                  0 0 8px rgba(255,255,255,0.08);
       overflow: visible;
     }
 
@@ -690,15 +692,21 @@
       justify-content: center;
     }
 
-    /* Lock icon — shown by default */
+    /* Lock icon — always gold and gently pulsing */
     .marker-lock {
       position: absolute;
       width: 22px; height: 22px;
       display: flex; align-items: center; justify-content: center;
-      color: #1e3555;            /* dormant — barely visible on track */
+      color: #ffb703;
+      filter: drop-shadow(0 0 4px rgba(255,183,3,0.7));
+      animation: lock-idle-pulse 2s ease-in-out infinite;
       transition: color 0.3s, filter 0.3s;
     }
     .marker-lock svg { width: 100%; height: 100%; display: block; }
+    @keyframes lock-idle-pulse {
+      0%, 100% { filter: drop-shadow(0 0 3px rgba(255,183,3,0.6));  transform: scale(1);    }
+      50%      { filter: drop-shadow(0 0 9px rgba(255,220,80,0.95)); transform: scale(1.08); }
+    }
 
     /* Gem icon — hidden until unlocked */
     .gem-icon {
@@ -711,14 +719,14 @@
     }
     .gem-icon svg { width: 100%; height: 100%; display: block; }
 
-    /* ── Primed — close to threshold ── */
+    /* ── Primed — close to threshold: faster, brighter pulse ── */
     .gem-marker.primed .marker-lock {
       color: #ffd75e;
       animation: lock-pre-pulse 0.42s ease-in-out infinite alternate;
     }
     @keyframes lock-pre-pulse {
-      from { filter: drop-shadow(0 0 4px rgba(255,183,3,0.6));  transform: scale(1);    }
-      to   { filter: drop-shadow(0 0 10px rgba(255,220,100,1)); transform: scale(1.12); }
+      from { filter: drop-shadow(0 0 6px rgba(255,183,3,0.8));  transform: scale(1);    }
+      to   { filter: drop-shadow(0 0 14px rgba(255,220,100,1)) drop-shadow(0 0 4px white); transform: scale(1.18); }
     }
 
     /* ── Active — threshold just hit: lock opens, gem appears ── */
@@ -780,7 +788,9 @@
     #screen-swipe:not(.active) #taste-progress-fill,
     #screen-swipe:not(.active) #taste-progress-fill::before,
     #screen-swipe:not(.active) .gem-icon,
-    #screen-swipe:not(.active) .marker-lock {
+    #screen-swipe:not(.active) .marker-lock,
+    #screen-swipe:not(.active) .marker-lock,
+    #screen-recs:not(.active) .gem-marker .marker-lock {
       animation-play-state: paused !important;
     }
 
