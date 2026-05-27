@@ -2192,7 +2192,7 @@ query ($page: Int, $perPage: Int, $sort: [MediaSort]) {
     media(type: ANIME, status: FINISHED, sort: $sort, isAdult: false, episodes_greater: 1) {
       id title { romaji english } coverImage { extraLarge large } genres
       tags { name rank } averageScore popularity episodes startDate { year }
-      externalLinks { site url }
+      externalLinks { site url type }
       studios(isMain: true) { nodes { name } }
       relations { edges { relationType } }
     }
@@ -2206,7 +2206,7 @@ query ($page: Int, $perPage: Int, $sort: [MediaSort]) {
 const _REC_FIELDS = `
       id title { romaji english } coverImage { extraLarge large } genres
       tags { name rank } averageScore popularity trending episodes startDate { year }
-      externalLinks { site url }
+      externalLinks { site url type }
       studios(isMain: true) { nodes { name } }
       relations { edges { relationType } }
       trailer { id site thumbnail }
@@ -2302,7 +2302,7 @@ query ($ids: [Int]) {
     media(id_in: $ids, type: ANIME, isAdult: false) {
       id title { romaji english } coverImage { extraLarge large } genres
       tags { name rank } averageScore popularity episodes startDate { year }
-      externalLinks { site url }
+      externalLinks { site url type }
       studios(isMain: true) { nodes { name } }
       relations { edges { relationType } }
     }
@@ -4093,17 +4093,29 @@ function openWatchSheet(anime) {
   const links = document.getElementById('stream-links');
   links.innerHTML = '';
 
+  // Use AniList's type field — pull every STREAMING link, not just the 9 we know
   const externalLinks = anime.externalLinks || [];
-  const matched = [];
+  const streamingLinks = externalLinks.filter(l => l.type === 'STREAMING' && l.url);
 
-  for (const site of STREAMING_SITES) {
-    const link = externalLinks.find(l =>
-      site.domains.some(d => (l.url || '').toLowerCase().includes(d))
+  const matched = streamingLinks.map(l => {
+    // Use branded logo if we have one
+    const known = STREAMING_SITES.find(s =>
+      s.domains.some(d => (l.url || '').toLowerCase().includes(d))
     );
-    if (link) matched.push({ ...site, url: link.url });
-  }
+    if (known) return { ...known, url: l.url };
+    // Unknown service — derive clean name from AniList's site field or hostname
+    let displayName = l.site || '';
+    if (!displayName) {
+      try {
+        const host = new URL(l.url).hostname.replace(/^www\./, '');
+        displayName = host.split('.')[0];
+      } catch { displayName = 'Watch'; }
+    }
+    displayName = displayName.charAt(0).toUpperCase() + displayName.slice(1);
+    return { name: displayName, logo: null, icon: '▶', url: l.url };
+  });
 
-  // Fallback: search link
+  // Fallback: Google search if AniList has no streaming links at all
   if (matched.length === 0) {
     const title = encodeURIComponent(anime.title?.english || anime.title?.romaji || '');
     matched.push({ name: 'Search on Google', icon: '🔍', url: `https://google.com/search?q=${title}+watch+anime+online` });
