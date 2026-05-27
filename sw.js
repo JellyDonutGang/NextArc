@@ -6,7 +6,7 @@
  *   - Images (cover art): stale-while-revalidate
  */
 
-const CACHE_VERSION = 'nextarc-v70';
+const CACHE_VERSION = 'nextarc-v71';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -38,6 +38,13 @@ self.addEventListener('activate', event => {
           .map(k => caches.delete(k))
       )
     ).then(() => self.clients.claim())
+     .then(() => {
+       // After claiming, tell every open tab to reload so it picks up
+       // the new version cleanly — avoids old HTML running under new SW
+       return self.clients.matchAll({ type: 'window' }).then(clients => {
+         clients.forEach(client => client.postMessage({ type: 'SW_UPDATED' }));
+       });
+     })
   );
 });
 

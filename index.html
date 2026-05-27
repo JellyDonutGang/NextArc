@@ -4850,6 +4850,13 @@ document.getElementById('unlock-btn').addEventListener('click', () => {
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('sw.js').catch(console.warn);
+    // When a new SW activates and takes over, reload the page so the fresh
+    // files are used — prevents old HTML running under a mismatched new SW
+    navigator.serviceWorker.addEventListener('message', event => {
+      if (event.data?.type === 'SW_UPDATED') {
+        window.location.reload();
+      }
+    });
   });
 }
 
@@ -5727,6 +5734,6 @@ else {
   }
 }
 </script>
-<div id="version-badge">v70</div>
+<div id="version-badge">v71</div>
 </body>
 </html>
