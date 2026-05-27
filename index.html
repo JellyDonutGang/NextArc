@@ -208,11 +208,25 @@
       cursor: grab;
       touch-action: none;
       will-change: transform;
+      /* Drop shadow + inset border only — colored glow lives on the parent
+         so it isn't clipped by overflow:hidden + will-change compositing */
       box-shadow: 0 16px 48px rgba(0,0,0,0.6),
-                  0 0 14px var(--genre-glow, rgba(46,128,216,0.22)),
-                  0 0 32px var(--genre-glow, rgba(46,128,216,0.08)),
                   inset 0 0 0 1px rgba(255,255,255,0.10);
       background: var(--surface2);
+    }
+
+    /* Colored genre glow — on the parent containers so it has no overflow:hidden
+       and correctly follows border-radius without Safari compositing artifacts */
+    .card-stack::before,
+    #rec-card-container::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: var(--radius);
+      box-shadow: 0 0 14px var(--genre-glow, rgba(46,128,216,0.22)),
+                  0 0 32px var(--genre-glow, rgba(46,128,216,0.08));
+      pointer-events: none;
+      z-index: 0;
     }
     .anime-card:active { cursor: grabbing; }
     .anime-card.behind {
@@ -3392,6 +3406,9 @@ function buildCard(anime, isTop = true) {
   const genreColor = getGenreColor(anime.genres);
   const rgb = hexToRgb(genreColor);
   card.style.setProperty('--genre-color', genreColor);
+  // Set glow on parent so the ::before pseudo-element (no overflow:hidden) can inherit it
+  // This avoids the Safari compositing bug where overflow:hidden+will-change clips box-shadow corners
+  card.parentElement.style.setProperty('--genre-glow', `rgba(${rgb},0.28)`);
   card.style.setProperty('--genre-glow', `rgba(${rgb},0.28)`);
 
   // Each chip gets its own genre colour
@@ -5710,6 +5727,6 @@ else {
   }
 }
 </script>
-<div id="version-badge">v69</div>
+<div id="version-badge">v70</div>
 </body>
 </html>
