@@ -1729,6 +1729,21 @@
     }
     .anilist-disconnect-btn:active { color: var(--text); border-color: rgba(255,255,255,0.2); }
 
+    /* Version badge */
+    #version-badge {
+      position: fixed;
+      bottom: max(8px, env(safe-area-inset-bottom));
+      right: 10px;
+      font-size: 10px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.18);
+      letter-spacing: 0.3px;
+      pointer-events: none;
+      z-index: 9999;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
     /* ══════════════════════════════════════════════ */
     /*  SIGN-UP CTA SHEET                             */
     /* ══════════════════════════════════════════════ */
@@ -5279,5 +5294,6 @@ document.addEventListener('touchmove', e => {
 // Init taste engine
 engine = new NextArcEngine();
 </script>
+<div id="version-badge">v64</div>
 </body>
 </html>
