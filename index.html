@@ -5122,13 +5122,20 @@ function _alCheckOAuthRedirect() {
   _alFetchUser(token, expiry ? parseInt(expiry) : null);
 }
 
-// ── Fetch AniList viewer profile ───────────────────
+// ── Fetch AniList viewer profile + statistics ───────
 async function _alFetchUser(token, expiresIn) {
+  // Fetch profile AND pre-aggregated genre/tag statistics in one query
   const query = `query {
     Viewer {
       id name
       avatar { large }
-      statistics { anime { count } }
+      statistics {
+        anime {
+          count
+          genres { genre count meanScore }
+          tags   { tag { name isGeneralSpoiler isMediaSpoiler } count meanScore }
+        }
+      }
     }
   }`;
   try {
@@ -5147,29 +5154,79 @@ async function _alFetchUser(token, expiresIn) {
 
     const session = {
       token,
-      userId:     v.id,
-      username:   v.name,
-      avatarUrl:  v.avatar?.large || null,
-      animeCount: v.statistics?.anime?.count || 0,
-      connectedAt: Date.now(),
-      expiresAt:  expiresIn ? Date.now() + expiresIn * 1000 : null,
+      userId:        v.id,
+      username:      v.name,
+      avatarUrl:     v.avatar?.large || null,
+      animeCount:    v.statistics?.anime?.count || 0,
+      connectedAt:   Date.now(),
+      expiresAt:     expiresIn ? Date.now() + expiresIn * 1000 : null,
       importedCount: 0,
     };
     _alSaveSession(session);
     _alRenderSection();
 
-    // Kick off history import in background
-    _alImportHistory(token, v.id);
+    // Kick off full import — pass stats along to avoid a second query
+    _alImportHistory(token, v.id, v.statistics?.anime || null);
   } catch (e) {
     console.warn('[AniList] Failed to fetch viewer:', e);
   }
 }
 
-// ── Import watch history → seed engine + seen filter ─
-async function _alImportHistory(token, userId) {
+// ── Seed engine vectors directly from AniList statistics ─
+// Statistics give us the user's aggregate viewing picture cheaply
+// (no per-anime processing needed). We populate the same vector groups
+// the engine uses so these signals combine naturally with per-entry updates.
+function _alSeedFromStats(stats) {
+  if (!stats) return;
+
+  // ── Genre vectors ──────────────────────────────────────
+  const genres = stats.genres || [];
+  const maxGC  = Math.max(...genres.map(g => g.count), 1);
+  for (const g of genres) {
+    if (!g.genre || !g.meanScore) continue;
+    // Weight = normalised watch volume × quality signal, scaled to ~5 units
+    const w   = (g.count / maxGC) * (g.meanScore / 100) * 5;
+    const key = `genre:${g.genre}`;
+    engine.vectors.genre[key] = (engine.vectors.genre[key] || 0) + w;
+  }
+
+  // ── Tag vectors (routed to tone / archetype / tag groups) ─
+  const tags   = stats.tags || [];
+  const maxTC  = Math.max(...tags.map(t => t.count), 1);
+  for (const t of tags) {
+    if (!t.tag?.name || t.tag.isGeneralSpoiler || t.tag.isMediaSpoiler) continue;
+    if (!t.meanScore) continue;
+    const w       = (t.count / maxTC) * (t.meanScore / 100) * 5;
+    const tagName = t.tag.name;
+
+    // Primary: tag vector
+    const tagKey = `tag:${tagName}`;
+    engine.vectors.tag[tagKey] = (engine.vectors.tag[tagKey] || 0) + w;
+
+    // Secondary: route into tone group (60% weight — tags are weaker tone signals than per-anime)
+    for (const [tone, def] of Object.entries(TONE_DEFS)) {
+      if (def.tags.includes(tagName)) {
+        const tk = `tone:${tone}`;
+        engine.vectors.tone[tk] = (engine.vectors.tone[tk] || 0) + w * 0.6;
+      }
+    }
+
+    // Secondary: route into archetype group
+    for (const [arch, archTags] of Object.entries(ARCHETYPE_DEFS)) {
+      if (archTags.includes(tagName)) {
+        const ak = `archetype:${arch}`;
+        engine.vectors.archetype[ak] = (engine.vectors.archetype[ak] || 0) + w * 0.6;
+      }
+    }
+  }
+}
+
+// ── Import watch history → proper engine calibration ─
+async function _alImportHistory(token, userId, stats) {
   const query = `
     query ($userId: Int) {
-      MediaListCollection(userId: $userId, type: ANIME, status_in: [COMPLETED, CURRENT, PAUSED, DROPPED]) {
+      MediaListCollection(userId: $userId, type: ANIME,
+          status_in: [COMPLETED, CURRENT, PAUSED, DROPPED]) {
         lists {
           entries {
             score
@@ -5178,6 +5235,7 @@ async function _alImportHistory(token, userId) {
               id genres averageScore popularity episodes
               tags { name rank isMediaSpoiler }
               startDate { year }
+              studios { nodes { name } }
             }
           }
         }
@@ -5194,37 +5252,77 @@ async function _alImportHistory(token, userId) {
       },
       body: JSON.stringify({ query, variables: { userId } }),
     });
-    const json  = await res.json();
-    const lists = json?.data?.MediaListCollection?.lists || [];
+    const json    = await res.json();
+    const lists   = json?.data?.MediaListCollection?.lists || [];
     const entries = lists.flatMap(l => l.entries || []);
 
-    let imported = 0;
+    // ── Step 1: mark every watched anime as seen ──────
     for (const entry of entries) {
+      if (entry.media?.id) seenIds.add(entry.media.id);
+    }
+    const totalSeen = entries.filter(e => e.media?.id).length;
+
+    // ── Step 2: seed engine vectors from statistics ───
+    // This gives broad genre/tag signal without needing per-anime processing
+    _alSeedFromStats(stats);
+
+    // ── Step 3: normalise scores to a 0–10 scale ─────
+    // AniList supports multiple scoring formats; detect range automatically
+    const maxRaw = Math.max(...entries.map(e => e.score || 0), 0);
+    const scoreScale = maxRaw > 10 ? 10 : 1; // 100-point → divide by 10; 10-point → keep
+
+    // ── Step 4: bucket entries by signal strength ─────
+    const norm = e => (e.score || 0) / scoreScale;
+
+    const superLikes = entries.filter(e => norm(e) >= 9)
+                              .sort((a, b) => norm(b) - norm(a))
+                              .slice(0, 20);
+    const likes      = entries.filter(e => norm(e) >= 7 && norm(e) < 9)
+                              .sort((a, b) => norm(b) - norm(a))
+                              .slice(0, 25);
+    const neutrals   = entries.filter(e => norm(e) >= 5 && norm(e) < 7)
+                              .slice(0, 10);
+    const dislikes   = entries.filter(e =>
+                         (norm(e) > 0 && norm(e) <= 4) || e.status === 'DROPPED')
+                              .slice(0, 15);
+
+    // ── Step 5: feed entries into the engine ─────────
+    // engine.update(anime, action) handles all feature extraction internally.
+    // We strip spoiler tags so they don't pollute the feature space.
+    const feed = (entry, action) => {
       const media = entry.media;
-      if (!media?.id) continue;
+      if (!media?.id) return;
+      engine.update({
+        ...media,
+        tags: (media.tags || []).filter(t => !t.isMediaSpoiler),
+      }, action);
+    };
 
-      // Always mark as seen so it never shows as a recommendation
-      seenIds.add(media.id);
+    for (const e of superLikes) feed(e, 'superlike');
+    for (const e of likes)      feed(e, 'like');
+    for (const e of neutrals)   feed(e, 'like');   // mild positive
+    for (const e of dislikes)   feed(e, 'dislike');
 
-      // Feed scored entries into the taste engine for calibration
-      if (engine.onboarded && entry.score > 0) {
-        const isSuperLike = entry.score >= 9;
-        const isLike      = entry.score >= 7;
-        const isDislike   = entry.score <= 4;
-        if (isLike || isDislike) {
-          // Build a minimal features object the engine can consume
-          const fakeAnime = { ...media, id: media.id };
-          engine.update(fakeAnime, isLike, isSuperLike, isDislike);
-        }
-      }
-      imported++;
+    // ── Step 6: finish onboarding if we have enough data ─
+    // 20+ completed anime is more than enough to skip the taste swipe screen
+    const wasOnboarded = engine.onboarded;
+    if (totalSeen >= 20 && !engine.onboarded) {
+      engine.finishOnboarding();
+      // Silently pre-load recs in background; user can navigate when ready
+      loadRecQueue();
+      console.log('[AniList] Engine onboarded from watch history — onboarding skipped');
     }
 
-    console.log(`[AniList] Imported ${imported} anime from watch history`);
+    console.log(`[AniList] Import complete — ${totalSeen} seen, ` +
+      `${superLikes.length} superlikes, ${likes.length + neutrals.length} likes, ` +
+      `${dislikes.length} dislikes fed to engine`);
 
+    // ── Step 7: persist updated session ──────────────
     const session = _alGetSession();
     if (session) {
-      session.importedCount = imported;
+      session.importedCount  = totalSeen;
+      session.engineSeeded   = true;
+      session.onboardSkipped = !wasOnboarded && engine.onboarded;
       _alSaveSession(session);
       _alRenderSection();
     }
@@ -5301,6 +5399,6 @@ if (sessionStorage.getItem('nextarc_al_return')) {
   openProfileScreen();
 }
 </script>
-<div id="version-badge">v65</div>
+<div id="version-badge">v66</div>
 </body>
 </html>
