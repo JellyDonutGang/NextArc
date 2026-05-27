@@ -2919,6 +2919,88 @@ function updateGemBar(isGemShowing = false) {
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
+  // Persist so refresh lands back here
+  localStorage.setItem('nextarc_screen', id);
+}
+
+/* ─── Engine state persistence ──────────────────── */
+const _ENGINE_KEY = 'nextarc_engine_v1';
+
+function _saveEngineState() {
+  try {
+    const state = {
+      vectors:        engine.vectors,
+      dims:           engine.dims,
+      clusters:       engine.clusters.map(c => ({
+        ...c,
+        tones:      [...c.tones],
+        archetypes: [...c.archetypes],
+        visuals:    [...c.visuals],
+      })),
+      nextClusterId:  engine.nextClusterId,
+      pendingTests:   [...engine.pendingTests.entries()],
+      dimTestCounts:  engine.dimTestCounts,
+      dimCooldowns:   engine.dimCooldowns,
+      recentClusterIds: engine.recentClusterIds,
+      onboarded:      engine.onboarded,
+      totalSwipes:    engine.totalSwipes,
+      // App-level state
+      likeCount, dislikeCount, totalShown, gemsClaimed,
+      seenIds:        [...seenIds],
+    };
+    localStorage.setItem(_ENGINE_KEY, JSON.stringify(state));
+  } catch(e) {
+    console.warn('[State] Save failed:', e);
+  }
+}
+
+function _loadEngineState() {
+  try {
+    const raw = localStorage.getItem(_ENGINE_KEY);
+    if (!raw) return false;
+    const s = JSON.parse(raw);
+
+    engine.vectors          = s.vectors          || engine.vectors;
+    engine.dims             = s.dims             || engine.dims;
+    engine.nextClusterId    = s.nextClusterId    ?? engine.nextClusterId;
+    engine.dimTestCounts    = s.dimTestCounts    || engine.dimTestCounts;
+    engine.dimCooldowns     = s.dimCooldowns     || engine.dimCooldowns;
+    engine.recentClusterIds = s.recentClusterIds || [];
+    engine.onboarded        = s.onboarded        ?? false;
+    engine.totalSwipes      = s.totalSwipes      ?? 0;
+
+    // Restore clusters — re-inflate Sets from arrays
+    if (Array.isArray(s.clusters)) {
+      engine.clusters = s.clusters.map(c => ({
+        ...c,
+        tones:      new Set(c.tones      || []),
+        archetypes: new Set(c.archetypes || []),
+        visuals:    new Set(c.visuals    || []),
+      }));
+    }
+
+    // Restore pending boundary tests — re-inflate Map from entries
+    if (Array.isArray(s.pendingTests)) {
+      engine.pendingTests = new Map(s.pendingTests);
+    }
+
+    // Restore app-level counters
+    if (s.likeCount    != null) likeCount    = s.likeCount;
+    if (s.dislikeCount != null) dislikeCount = s.dislikeCount;
+    if (s.totalShown   != null) totalShown   = s.totalShown;
+    if (s.gemsClaimed  != null) gemsClaimed  = s.gemsClaimed;
+
+    // Restore seen IDs
+    if (Array.isArray(s.seenIds)) {
+      for (const id of s.seenIds) seenIds.add(id);
+    }
+
+    return true;
+  } catch(e) {
+    console.warn('[State] Load failed — starting fresh:', e);
+    localStorage.removeItem(_ENGINE_KEY);
+    return false;
+  }
 }
 function showOverlay(id) {
   document.getElementById(id).classList.add('visible');
@@ -3395,6 +3477,7 @@ function swipeTaste(card, index, action) {
       updateTasteBar();
       engine.update(anime, action);
       tasteIndex = index + 1;
+      _saveEngineState();
       renderTasteCard(tasteIndex);
     }
   });
@@ -3475,6 +3558,7 @@ function replaceSkippedCard(skipped, index) {
 
 function finishTaste() {
   engine.finishOnboarding();
+  _saveEngineState();
   loadRecQueue(); // preload in background while celebration plays
   launchUnlockCelebration();
 }
@@ -4151,6 +4235,7 @@ function recSwipe(card, anime, action) {
     if (action !== 'skip') engine.update(anime, action === 'supergood' ? 'superlike' : action);
     totalCardsSwiped++;
     localStorage.setItem('nextarc_cards', totalCardsSwiped);
+    _saveEngineState();
 
     // After 10 swipes without signing in, nudge once per session
     if (!_auth.currentUser && !_ctaSwipeNudgeDone && totalCardsSwiped === 10) {
@@ -5390,15 +5475,37 @@ document.addEventListener('touchmove', e => {
   }
 }, { passive: false });
 
-// Init taste engine
+// ── Init taste engine + restore persisted state ────
 engine = new NextArcEngine();
+const _hadSavedState = _loadEngineState();
 
 // ── Post-OAuth return: go straight to profile ──────
 if (sessionStorage.getItem('nextarc_al_return')) {
   sessionStorage.removeItem('nextarc_al_return');
   openProfileScreen();
 }
+// ── Restore last screen on refresh ────────────────
+else {
+  const _savedScreen = localStorage.getItem('nextarc_screen');
+  if (_savedScreen && _savedScreen !== 'screen-welcome') {
+    if (_savedScreen === 'screen-recs' && engine.onboarded) {
+      showScreen('screen-recs');
+      loadRecQueue();
+    } else if (_savedScreen === 'screen-profile') {
+      openProfileScreen();
+    } else if (_savedScreen === 'screen-swipe' && !engine.onboarded) {
+      // Restore mid-onboarding — reload the taste cards
+      showScreen('screen-swipe');
+      loadTasteAnime().then(() => {
+        document.getElementById('swipe-spinner').style.display = 'none';
+        updateTasteBar();
+        renderTasteCard(tasteIndex);
+      });
+    }
+    // Any other case (e.g. welcome screen or unknown): stay on welcome
+  }
+}
 </script>
-<div id="version-badge">v66</div>
+<div id="version-badge">v67</div>
 </body>
 </html>
