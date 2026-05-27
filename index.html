@@ -5255,8 +5255,7 @@ document.getElementById('btn-anilist-connect').addEventListener('click', () => {
     alert('AniList connection coming soon!\n\nTo enable it, register this app at anilist.co/settings/developer and add your client_id to the code.');
     return;
   }
-  const redirectUri = encodeURIComponent(window.location.origin + window.location.pathname);
-  window.location.href = `https://anilist.co/api/v2/oauth/authorize?client_id=${ANILIST_CLIENT_ID}&redirect_uri=${redirectUri}&response_type=token`;
+  window.location.href = `https://anilist.co/api/v2/oauth/authorize?client_id=${ANILIST_CLIENT_ID}&response_type=token`;
 });
 
 document.getElementById('btn-anilist-disconnect').addEventListener('click', () => {
