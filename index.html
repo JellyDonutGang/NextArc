@@ -1562,6 +1562,172 @@
     .recs-header-text { flex: 1; }
 
     /* ══════════════════════════════════════════════ */
+    /*  ANILIST CONNECT SECTION                       */
+    /* ══════════════════════════════════════════════ */
+    .anilist-section { margin-bottom: 32px; }
+
+    /* Not-connected card */
+    .anilist-connect-card {
+      background: linear-gradient(145deg, #0b1e30 0%, #0f2540 100%);
+      border: 1px solid rgba(2,169,255,0.22);
+      border-radius: 20px;
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+    .anilist-connect-card::before {
+      content: '';
+      position: absolute;
+      top: -40px; right: -40px;
+      width: 120px; height: 120px;
+      background: radial-gradient(circle, rgba(2,169,255,0.12) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    /* Header row: logo + title */
+    .anilist-card-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .anilist-logo-mark {
+      width: 40px; height: 40px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #02a9ff, #0156f5);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .anilist-logo-mark svg { width: 24px; height: 24px; }
+    .anilist-card-titles { flex: 1; }
+    .anilist-card-title {
+      font-size: 16px; font-weight: 800;
+      color: var(--text);
+      line-height: 1.2;
+    }
+    .anilist-card-sub {
+      font-size: 12px; color: rgba(2,169,255,0.8);
+      margin-top: 2px; font-weight: 500;
+    }
+
+    /* Benefits list */
+    .anilist-benefits-list {
+      display: flex;
+      flex-direction: column;
+      gap: 11px;
+      margin-bottom: 18px;
+    }
+    .anilist-benefit-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .anilist-benefit-icon {
+      width: 28px; height: 28px;
+      border-radius: 8px;
+      background: rgba(2,169,255,0.12);
+      border: 1px solid rgba(2,169,255,0.2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .anilist-benefit-text strong {
+      display: block;
+      font-size: 13px; font-weight: 700;
+      color: var(--text); line-height: 1.3;
+    }
+    .anilist-benefit-text span {
+      display: block;
+      font-size: 12px; color: var(--text-muted);
+      line-height: 1.5; margin-top: 1px;
+    }
+
+    /* Connect button */
+    .anilist-connect-btn {
+      width: 100%;
+      background: linear-gradient(135deg, #02a9ff, #0156f5);
+      border: none;
+      border-radius: 14px;
+      color: white;
+      font-family: inherit;
+      font-size: 15px; font-weight: 700;
+      padding: 14px 20px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      transition: opacity 0.15s, transform 0.12s;
+    }
+    .anilist-connect-btn:active {
+      opacity: 0.85;
+      transform: scale(0.98);
+    }
+    .anilist-connect-btn svg { width: 18px; height: 18px; flex-shrink: 0; }
+    .anilist-connect-note {
+      text-align: center;
+      font-size: 11px; color: var(--text-muted);
+      margin-top: 10px;
+      line-height: 1.4;
+    }
+
+    /* Connected card */
+    .anilist-connected-card {
+      background: linear-gradient(145deg, #0b1e30, #0f2540);
+      border: 1px solid rgba(2,169,255,0.3);
+      border-radius: 20px;
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .anilist-connected-avatar {
+      width: 46px; height: 46px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #02a9ff, #0156f5);
+      color: white;
+      font-size: 18px; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; overflow: hidden;
+      border: 2px solid rgba(2,169,255,0.4);
+    }
+    .anilist-connected-avatar img {
+      width: 100%; height: 100%; object-fit: cover; border-radius: 50%;
+    }
+    .anilist-connected-info { flex: 1; min-width: 0; }
+    .anilist-connected-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: rgba(2,169,255,0.12);
+      border: 1px solid rgba(2,169,255,0.25);
+      border-radius: 6px;
+      font-size: 10px; font-weight: 700;
+      color: #02a9ff;
+      padding: 2px 7px;
+      margin-bottom: 4px;
+      letter-spacing: 0.3px;
+    }
+    .anilist-connected-name {
+      font-size: 15px; font-weight: 700;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .anilist-connected-sub {
+      font-size: 12px; color: var(--text-muted);
+      margin-top: 2px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .anilist-disconnect-btn {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text-muted);
+      font-family: inherit;
+      font-size: 12px; font-weight: 600;
+      padding: 7px 11px;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .anilist-disconnect-btn:active { color: var(--text); border-color: rgba(255,255,255,0.2); }
+
+    /* ══════════════════════════════════════════════ */
     /*  SIGN-UP CTA SHEET                             */
     /* ══════════════════════════════════════════════ */
     #cta-sheet {
@@ -2016,6 +2182,71 @@
     <div class="profile-section">
       <div class="profile-section-title">✦ Gem Collection</div>
       <div class="saved-grid" id="gems-grid"></div>
+    </div>
+
+    <!-- AniList Connect -->
+    <div class="profile-section anilist-section">
+      <div class="profile-section-title">AniList Integration</div>
+
+      <!-- Not-connected state -->
+      <div class="anilist-connect-card" id="anilist-connect-card">
+        <div class="anilist-card-header">
+          <div class="anilist-logo-mark">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M6 20L12 4L18 20" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M8.5 14.5H15.5" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="anilist-card-titles">
+            <div class="anilist-card-title">Connect AniList</div>
+            <div class="anilist-card-sub">Supercharge your taste profile</div>
+          </div>
+        </div>
+
+        <div class="anilist-benefits-list">
+          <div class="anilist-benefit-item">
+            <div class="anilist-benefit-icon">📚</div>
+            <div class="anilist-benefit-text">
+              <strong>Import your watch history</strong>
+              <span>Instantly calibrate your taste from every anime you've already seen — no onboarding needed.</span>
+            </div>
+          </div>
+          <div class="anilist-benefit-item">
+            <div class="anilist-benefit-icon">🚫</div>
+            <div class="anilist-benefit-text">
+              <strong>Never re-recommend watched shows</strong>
+              <span>We'll filter out everything on your AniList so every swipe is something truly new.</span>
+            </div>
+          </div>
+          <div class="anilist-benefit-item">
+            <div class="anilist-benefit-icon">✦</div>
+            <div class="anilist-benefit-text">
+              <strong>Sharper recommendations from day one</strong>
+              <span>Your scores and history tell the engine exactly what you love — no guesswork.</span>
+            </div>
+          </div>
+        </div>
+
+        <button class="anilist-connect-btn" id="btn-anilist-connect">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M6 20L12 4L18 20" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M8.5 14.5H15.5" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+          </svg>
+          Connect AniList Account
+        </button>
+        <p class="anilist-connect-note">Free · No password shared · Revoke anytime on AniList</p>
+      </div>
+
+      <!-- Connected state -->
+      <div class="anilist-connected-card" id="anilist-connected-card" style="display:none">
+        <div class="anilist-connected-avatar" id="anilist-connected-avatar">AL</div>
+        <div class="anilist-connected-info">
+          <div class="anilist-connected-badge">✓ Connected</div>
+          <div class="anilist-connected-name" id="anilist-connected-name">AniList User</div>
+          <div class="anilist-connected-sub" id="anilist-connected-sub"></div>
+        </div>
+        <button class="anilist-disconnect-btn" id="btn-anilist-disconnect">Disconnect</button>
+      </div>
     </div>
 
   </div>
@@ -4839,6 +5070,201 @@ function _friendlyError(code) {
   };
   return map[code] || 'Something went wrong. Please try again.';
 }
+
+// ══════════════════════════════════════════════════
+//  ANILIST OAUTH INTEGRATION
+// ══════════════════════════════════════════════════
+// Register your app at: https://anilist.co/settings/developer
+// Set the Redirect URL to this app's URL, e.g. https://yourname.github.io/next-arc/
+// Then replace null below with your numeric client_id string.
+const ANILIST_CLIENT_ID = null; // ← set your AniList client_id here
+
+const _AL_STORAGE_KEY = 'nextarc_anilist_session';
+
+function _alGetSession() {
+  try { return JSON.parse(localStorage.getItem(_AL_STORAGE_KEY) || 'null'); }
+  catch { return null; }
+}
+function _alSaveSession(data) {
+  localStorage.setItem(_AL_STORAGE_KEY, JSON.stringify(data));
+}
+function _alClearSession() {
+  localStorage.removeItem(_AL_STORAGE_KEY);
+}
+
+// ── Check for OAuth token in URL hash on page load ─
+function _alCheckOAuthRedirect() {
+  const hash = window.location.hash;
+  if (!hash.includes('access_token=')) return;
+  const params = new URLSearchParams(hash.slice(1));
+  const token  = params.get('access_token');
+  const expiry = params.get('expires_in');
+  if (!token) return;
+  // Clean the hash from the URL immediately
+  history.replaceState(null, '', window.location.pathname + window.location.search);
+  _alFetchUser(token, expiry ? parseInt(expiry) : null);
+}
+
+// ── Fetch AniList viewer profile ───────────────────
+async function _alFetchUser(token, expiresIn) {
+  const query = `query {
+    Viewer {
+      id name
+      avatar { large }
+      statistics { anime { count } }
+    }
+  }`;
+  try {
+    const res = await fetch('https://graphql.anilist.co', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({ query }),
+    });
+    const json = await res.json();
+    const v = json?.data?.Viewer;
+    if (!v) return;
+
+    const session = {
+      token,
+      userId:     v.id,
+      username:   v.name,
+      avatarUrl:  v.avatar?.large || null,
+      animeCount: v.statistics?.anime?.count || 0,
+      connectedAt: Date.now(),
+      expiresAt:  expiresIn ? Date.now() + expiresIn * 1000 : null,
+      importedCount: 0,
+    };
+    _alSaveSession(session);
+    _alRenderSection();
+
+    // Kick off history import in background
+    _alImportHistory(token, v.id);
+  } catch (e) {
+    console.warn('[AniList] Failed to fetch viewer:', e);
+  }
+}
+
+// ── Import watch history → seed engine + seen filter ─
+async function _alImportHistory(token, userId) {
+  const query = `
+    query ($userId: Int) {
+      MediaListCollection(userId: $userId, type: ANIME, status_in: [COMPLETED, CURRENT, PAUSED, DROPPED]) {
+        lists {
+          entries {
+            score
+            status
+            media {
+              id genres averageScore popularity episodes
+              tags { name rank isMediaSpoiler }
+              startDate { year }
+            }
+          }
+        }
+      }
+    }
+  `;
+  try {
+    const res = await fetch('https://graphql.anilist.co', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({ query, variables: { userId } }),
+    });
+    const json  = await res.json();
+    const lists = json?.data?.MediaListCollection?.lists || [];
+    const entries = lists.flatMap(l => l.entries || []);
+
+    let imported = 0;
+    for (const entry of entries) {
+      const media = entry.media;
+      if (!media?.id) continue;
+
+      // Always mark as seen so it never shows as a recommendation
+      seenIds.add(media.id);
+
+      // Feed scored entries into the taste engine for calibration
+      if (engine.onboarded && entry.score > 0) {
+        const isSuperLike = entry.score >= 9;
+        const isLike      = entry.score >= 7;
+        const isDislike   = entry.score <= 4;
+        if (isLike || isDislike) {
+          // Build a minimal features object the engine can consume
+          const fakeAnime = { ...media, id: media.id };
+          engine.update(fakeAnime, isLike, isSuperLike, isDislike);
+        }
+      }
+      imported++;
+    }
+
+    console.log(`[AniList] Imported ${imported} anime from watch history`);
+
+    const session = _alGetSession();
+    if (session) {
+      session.importedCount = imported;
+      _alSaveSession(session);
+      _alRenderSection();
+    }
+  } catch (e) {
+    console.warn('[AniList] History import failed:', e);
+  }
+}
+
+// ── Render the section based on session state ──────
+function _alRenderSection() {
+  const session      = _alGetSession();
+  const connectCard  = document.getElementById('anilist-connect-card');
+  const connectedCard = document.getElementById('anilist-connected-card');
+  if (!connectCard || !connectedCard) return;
+
+  if (session?.token) {
+    connectCard.style.display   = 'none';
+    connectedCard.style.display = 'flex';
+
+    const avatarEl = document.getElementById('anilist-connected-avatar');
+    const nameEl   = document.getElementById('anilist-connected-name');
+    const subEl    = document.getElementById('anilist-connected-sub');
+
+    if (session.avatarUrl) {
+      avatarEl.innerHTML = `<img src="${session.avatarUrl}" alt="${session.username}">`;
+    } else {
+      avatarEl.textContent = (session.username || 'AL')[0].toUpperCase();
+    }
+    nameEl.textContent = session.username || 'AniList User';
+    const parts = [];
+    if (session.animeCount) parts.push(`${session.animeCount.toLocaleString()} anime watched`);
+    if (session.importedCount) parts.push(`${session.importedCount.toLocaleString()} imported`);
+    subEl.textContent = parts.join(' · ') || 'Connected';
+  } else {
+    connectCard.style.display   = 'block';
+    connectedCard.style.display = 'none';
+  }
+}
+
+// ── Button handlers ────────────────────────────────
+document.getElementById('btn-anilist-connect').addEventListener('click', () => {
+  if (!ANILIST_CLIENT_ID) {
+    alert('AniList connection coming soon!\n\nTo enable it, register this app at anilist.co/settings/developer and add your client_id to the code.');
+    return;
+  }
+  const redirectUri = encodeURIComponent(window.location.origin + window.location.pathname);
+  window.location.href = `https://anilist.co/api/v2/oauth/authorize?client_id=${ANILIST_CLIENT_ID}&redirect_uri=${redirectUri}&response_type=token`;
+});
+
+document.getElementById('btn-anilist-disconnect').addEventListener('click', () => {
+  _alClearSession();
+  _alRenderSection();
+});
+
+// ── Run on load ────────────────────────────────────
+_alCheckOAuthRedirect();
+_alRenderSection();
 
 // Init taste engine
 engine = new NextArcEngine();
