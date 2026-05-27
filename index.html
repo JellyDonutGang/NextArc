@@ -3961,58 +3961,169 @@ function _logo(svg) {
 
 const STREAMING_SITES = [
   {
-    // Orange circle, white C-ring open at top-right
     name: 'Crunchyroll',
     logo: _logo('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><circle cx="16" cy="16" r="16" fill="#F47521"/><circle cx="16" cy="16" r="9.5" fill="none" stroke="white" stroke-width="5.5" stroke-dasharray="44 15" stroke-linecap="round"/></svg>'),
     domains: ['crunchyroll']
   },
   {
-    // Red background, bold white N (two bars + diagonal)
     name: 'Netflix',
     logo: _logo('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="3" fill="#E50914"/><rect x="7" y="5" width="4" height="22" fill="white"/><rect x="21" y="5" width="4" height="22" fill="white"/><polygon points="11,5 15,5 21,27 17,27" fill="white"/></svg>'),
     domains: ['netflix']
   },
   {
-    // Green background, dark lowercase h (Hulu brand shape)
     name: 'Hulu',
     logo: _logo('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="4" fill="#1CE783"/><rect x="8" y="5" width="4" height="22" fill="#0A2E1F"/><rect x="20" y="14" width="4" height="13" fill="#0A2E1F"/><path d="M12,14 Q16,9 20,14" fill="none" stroke="#0A2E1F" stroke-width="4" stroke-linecap="round"/></svg>'),
     domains: ['hulu']
   },
   {
-    // Dark navy, white "prime" + blue smile arc
     name: 'Prime Video',
     logo: _logo('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="4" fill="#1A1A2E"/><text x="16" y="17" text-anchor="middle" font-size="7.5" font-weight="bold" fill="white" font-family="Arial,sans-serif">prime</text><path d="M8,23 Q16,29 24,23" stroke="#00A8E0" stroke-width="2.5" fill="none" stroke-linecap="round"/></svg>'),
     domains: ['amazon', 'primevideo']
   },
   {
-    // Red background, white rounded-rect frame + red play triangle
-    name: 'YouTube',
-    logo: _logo('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="4" fill="#FF0000"/><rect x="4" y="9" width="24" height="14" rx="4" fill="white"/><polygon points="13,13 13,19 21,16" fill="#FF0000"/></svg>'),
-    domains: ['youtube']
-  },
-  {
-    // Blue background, white H letterform
-    name: 'HIDIVE',
-    logo: _logo('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="4" fill="#00BAFF"/><rect x="7" y="9" width="4" height="14" fill="white"/><rect x="21" y="9" width="4" height="14" fill="white"/><rect x="11" y="14" width="10" height="4" fill="white"/></svg>'),
-    domains: ['hidive']
-  },
-  {
-    // Purple circle, white F letterform
-    name: 'Funimation',
-    logo: _logo('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><circle cx="16" cy="16" r="16" fill="#5B4BE1"/><rect x="10" y="8" width="3.5" height="16" fill="white"/><rect x="10" y="8" width="12" height="3.5" fill="white"/><rect x="10" y="15" width="9" height="3" fill="white"/></svg>'),
-    domains: ['funimation']
-  },
-  {
-    // Dark blue, white D letterform (bar + arc)
     name: 'Disney+',
     logo: _logo('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="4" fill="#1434CB"/><rect x="9" y="7" width="4" height="18" fill="white"/><path d="M13,7 Q22,7 22,16 Q22,25 13,25" fill="none" stroke="white" stroke-width="4" stroke-linecap="round"/></svg>'),
     domains: ['disney']
   },
   {
-    // Dark blue, white M letterform
     name: 'Max',
     logo: _logo('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="4" fill="#002BE7"/><polyline points="7,25 7,8 16,19 25,8 25,25" fill="none" stroke="white" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/></svg>'),
     domains: ['hbomax', 'max.com']
+  },
+  {
+    name: 'HIDIVE',
+    logo: _logo('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="4" fill="#00BAFF"/><rect x="7" y="9" width="4" height="14" fill="white"/><rect x="21" y="9" width="4" height="14" fill="white"/><rect x="11" y="14" width="10" height="4" fill="white"/></svg>'),
+    domains: ['hidive']
+  },
+  {
+    name: 'Funimation',
+    logo: _logo('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><circle cx="16" cy="16" r="16" fill="#5B4BE1"/><rect x="10" y="8" width="3.5" height="16" fill="white"/><rect x="10" y="8" width="12" height="3.5" fill="white"/><rect x="10" y="15" width="9" height="3" fill="white"/></svg>'),
+    domains: ['funimation']
+  },
+  {
+    name: 'YouTube',
+    logo: _logo('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="4" fill="#FF0000"/><rect x="4" y="9" width="24" height="14" rx="4" fill="white"/><polygon points="13,13 13,19 21,16" fill="#FF0000"/></svg>'),
+    domains: ['youtube']
+  },
+  {
+    // Red background, white TUBI wordmark bar
+    name: 'Tubi',
+    logo: _logo('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="4" fill="#FA2A00"/><rect x="5" y="10" width="22" height="4" fill="white"/><rect x="13" y="10" width="4" height="12" fill="white"/></svg>'),
+    domains: ['tubi']
+  },
+  {
+    // Blue-green background, white P peacock feather arc
+    name: 'Peacock',
+    logo: _logo('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="4" fill="#000000"/><polygon points="16,16 10,7 16,10" fill="#E8003D"/><polygon points="16,16 22,7 16,10" fill="#FFB900"/><polygon points="16,16 7,13 11,18" fill="#00B140"/><polygon points="16,16 25,13 21,18" fill="#0078D4"/><polygon points="16,16 10,25 14,20" fill="#FF6900"/><polygon points="16,16 22,25 18,20" fill="#9B4FCA"/><circle cx="16" cy="16" r="2.5" fill="white"/></svg>'),
+    domains: ['peacock']
+  },
+  {
+    // Blue mountain + star — Paramount+
+    name: 'Paramount+',
+    logo: _logo('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="4" fill="#0064FF"/><polygon points="16,5 20,17 28,17 22,24 24,31 16,26 8,31 10,24 4,17 12,17" fill="none" stroke="white" stroke-width="1.5"/><polygon points="16,8 18.5,15.5 27,15.5 20.5,20 23,27.5 16,23 9,27.5 11.5,20 5,15.5 13.5,15.5" fill="white"/></svg>'),
+    domains: ['paramount', 'paramountplus']
+  },
+  {
+    // Black background, white Apple-style play mark
+    name: 'Apple TV+',
+    logo: _logo('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="#1C1C1E"/><polygon points="11,9 11,23 25,16" fill="white"/></svg>'),
+    domains: ['apple.com/apple-tv', 'tv.apple']
+  },
+  {
+    // Dark purple, white VRV letters
+    name: 'VRV',
+    logo: _logo('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="4" fill="#FFD200"/><polygon points="6,9 11,23 16,13 21,23 26,9 22,9 19,17 16,11 13,17 10,9" fill="#1A1A1A"/></svg>'),
+    domains: ['vrv.co']
+  },
+  {
+    // Green eye — iQIYI
+    name: 'iQIYI',
+    logo: _logo('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="4" fill="#00BE06"/><ellipse cx="16" cy="16" rx="11" ry="7" fill="none" stroke="white" stroke-width="2.5"/><circle cx="16" cy="16" r="3.5" fill="white"/><circle cx="16" cy="16" r="1.5" fill="#00BE06"/></svg>'),
+    domains: ['iqiyi', 'iq.com']
+  },
+  {
+    // Purple gradient, white W — Wakanim
+    name: 'Wakanim',
+    logo: _logo('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="4" fill="#E4003A"/><polygon points="5,9 9,9 13,21 16,13 19,21 23,9 27,9 21,25 16,16 11,25" fill="white"/></svg>'),
+    domains: ['wakanim']
+  },
+  {
+    // Pink/blue Bilibili logo — two rabbit ears + screen
+    name: 'Bilibili',
+    logo: _logo('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="4" fill="#00A1D6"/><rect x="5" y="13" width="22" height="14" rx="3" fill="white"/><rect x="9" y="5" width="4" height="10" rx="2" fill="white"/><rect x="19" y="5" width="4" height="10" rx="2" fill="white"/><circle cx="12" cy="19" r="2" fill="#00A1D6"/><circle cx="20" cy="19" r="2" fill="#00A1D6"/><rect x="13" y="22" width="6" height="2" rx="1" fill="#00A1D6"/></svg>'),
+    domains: ['bilibili']
+  },
+  {
+    // Blue background, white ADN letters
+    name: 'ADN',
+    logo: _logo('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="4" fill="#00A2FF"/><text x="16" y="21" text-anchor="middle" font-size="11" font-weight="900" fill="white" font-family="Arial,sans-serif">ADN</text></svg>'),
+    domains: ['animedigitalnetwork', 'adn.']
+  },
+  {
+    // Dark purple, retro RC — Retrocrush
+    name: 'Retrocrush',
+    logo: _logo('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="4" fill="#2D0057"/><circle cx="16" cy="16" r="10" fill="none" stroke="#FF3EBF" stroke-width="2.5"/><polygon points="13,11 13,21 22,16" fill="#FF3EBF"/></svg>'),
+    domains: ['retrocrush']
+  },
+  {
+    // Red/dark — AnimeLab (Funimation AU)
+    name: 'AnimeLab',
+    logo: _logo('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="4" fill="#E60026"/><polygon points="8,24 16,8 24,24" fill="none" stroke="white" stroke-width="3" stroke-linejoin="round"/><rect x="10" y="18" width="12" height="3" fill="white"/></svg>'),
+    domains: ['animelab']
+  },
+  {
+    // Orange/yellow — Plex
+    name: 'Plex',
+    logo: _logo('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="4" fill="#E5A00D"/><polygon points="10,8 10,24 26,16" fill="#1F1F1F"/></svg>'),
+    domains: ['plex.tv', 'watch.plex']
+  },
+  {
+    // Blue — Pluto TV
+    name: 'Pluto TV',
+    logo: _logo('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="4" fill="#1B2B5E"/><circle cx="14" cy="15" r="7" fill="none" stroke="white" stroke-width="2.5"/><rect x="19" y="16" width="9" height="3" rx="1.5" fill="white" transform="rotate(-35 19 16)"/></svg>'),
+    domains: ['pluto.tv', 'plutotv']
+  },
+  {
+    // Red — Shahid
+    name: 'Shahid',
+    logo: _logo('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="4" fill="#CC0000"/><text x="16" y="21" text-anchor="middle" font-size="9" font-weight="bold" fill="white" font-family="Arial,sans-serif">shahid</text></svg>'),
+    domains: ['shahid']
+  },
+  {
+    // Purple — Viki
+    name: 'Viki',
+    logo: _logo('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="4" fill="#1DAFEC"/><polygon points="7,10 13,10 16,18 19,10 25,10 18,24 14,24" fill="white"/></svg>'),
+    domains: ['viki']
+  },
+  {
+    // Teal — Muse Asia
+    name: 'Muse Asia',
+    logo: _logo('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="4" fill="#00BFA5"/><polygon points="7,22 7,10 16,17 25,10 25,22 21,22 21,16 16,20 11,16 11,22" fill="white"/></svg>'),
+    domains: ['muse.asia', 'museasiayoutube']
+  },
+  {
+    // Dark teal — Ani-One
+    name: 'Ani-One',
+    logo: _logo('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="4" fill="#0D2137"/><polygon points="8,24 16,8 24,24" fill="none" stroke="#00C8FF" stroke-width="2.5" stroke-linejoin="round"/><circle cx="16" cy="16" r="2.5" fill="#00C8FF"/></svg>'),
+    domains: ['ani-one', 'anione']
+  },
+  {
+    // Dark — Bahamut Anime Crazy
+    name: 'Bahamut',
+    logo: _logo('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="4" fill="#1A1A2E"/><text x="16" y="21" text-anchor="middle" font-size="8" font-weight="bold" fill="#FFD700" font-family="Arial,sans-serif">巴哈</text></svg>'),
+    domains: ['gamer.com.tw', 'bahamut']
+  },
+  {
+    // Blue — Mewatch
+    name: 'meWATCH',
+    logo: _logo('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="4" fill="#0057B8"/><text x="16" y="19" text-anchor="middle" font-size="7" font-weight="bold" fill="white" font-family="Arial,sans-serif">meWATCH</text></svg>'),
+    domains: ['mewatch']
+  },
+  {
+    // Orange — WeTV
+    name: 'WeTV',
+    logo: _logo('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="4" fill="#FF6600"/><text x="16" y="21" text-anchor="middle" font-size="10" font-weight="900" fill="white" font-family="Arial,sans-serif">WeTV</text></svg>'),
+    domains: ['wetv']
   },
 ];
 
