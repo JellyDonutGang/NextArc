@@ -1073,6 +1073,33 @@
       padding: 0;
     }
 
+    .trailer-search-btn {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 14px 18px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 12px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 15px;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .trailer-search-btn:active { background: rgba(255,255,255,0.12); }
+    .trailer-search-icon {
+      width: 36px; height: 36px;
+      background: #ff0000;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
     .trailer-section-label {
       font-size: 11px;
       font-weight: 700;
@@ -2105,6 +2132,12 @@
         </div>
         <div class="trailer-label">Watch Trailer</div>
       </div>
+      <!-- Fallback when AniList has no trailer data -->
+      <a id="trailer-search-btn" href="#" target="_blank" rel="noopener noreferrer"
+         style="display:none" class="trailer-search-btn">
+        <span class="trailer-search-icon">▶</span>
+        Search trailer on YouTube
+      </a>
     </div>
     <div class="desc-section" id="desc-section" style="display:none">
       <div class="trailer-section-label">Description</div>
@@ -3991,10 +4024,20 @@ function openWatchSheet(anime) {
   trailerPlayBtn.style.display = '';
 
   const t = anime.trailer;
-  if (t && t.site === 'youtube' && t.id) {
+  const isYoutube      = t && t.id && t.site === 'youtube';
+  const isDailymotion  = t && t.id && t.site === 'dailymotion';
+  const searchBtn      = document.getElementById('trailer-search-btn');
+  const title          = anime.title?.english || anime.title?.romaji || '';
+  const searchQuery    = encodeURIComponent(`${title} trailer anime`);
+
+  if (isYoutube || isDailymotion) {
     trailerSection.style.display = 'block';
-    // Use hqdefault thumbnail (always exists); prefer the one AniList provides
-    trailerThumb.src = t.thumbnail || `https://img.youtube.com/vi/${t.id}/hqdefault.jpg`;
+    trailerWrap.style.display    = '';
+    searchBtn.style.display      = 'none';
+
+    // Thumbnail — AniList provides one for both platforms; fall back to YouTube's CDN
+    trailerThumb.src = t.thumbnail
+      || (isYoutube ? `https://img.youtube.com/vi/${t.id}/hqdefault.jpg` : '');
 
     // Tap thumbnail → swap to autoplay iframe
     trailerPlayBtn.onclick = () => {
@@ -4004,11 +4047,17 @@ function openWatchSheet(anime) {
       iframe.className = 'trailer-iframe';
       iframe.allow = 'autoplay; encrypted-media; picture-in-picture';
       iframe.allowFullscreen = true;
-      iframe.src = `https://www.youtube-nocookie.com/embed/${t.id}?autoplay=1&rel=0&modestbranding=1`;
+      iframe.src = isYoutube
+        ? `https://www.youtube-nocookie.com/embed/${t.id}?autoplay=1&rel=0&modestbranding=1`
+        : `https://www.dailymotion.com/embed/video/${t.id}?autoplay=1&mute=0`;
       trailerWrap.appendChild(iframe);
     };
   } else {
-    trailerSection.style.display = 'none';
+    // No trailer data — show YouTube search fallback instead
+    trailerSection.style.display = 'block';
+    trailerWrap.style.display    = 'none';
+    searchBtn.style.display      = 'flex';
+    searchBtn.href = `https://www.youtube.com/results?search_query=${searchQuery}`;
   }
 
   // ── Description ────────────────────────────────

@@ -6,7 +6,7 @@
  *   - Images (cover art): stale-while-revalidate
  */
 
-const CACHE_VERSION = 'nextarc-v55';
+const CACHE_VERSION = 'nextarc-v57';
 const APP_SHELL = [
   '/',
   '/index.html',
