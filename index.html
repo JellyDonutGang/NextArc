@@ -47,9 +47,10 @@
       font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
       overflow: hidden;
       overscroll-behavior: none;
-      /* iOS Safari nuclear option — prevents body scroll even when content overflows */
       position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
       width: 100%;
+      touch-action: none;
       user-select: none;
       -webkit-user-select: none;
       -webkit-font-smoothing: antialiased;
@@ -1263,6 +1264,7 @@
       justify-content: flex-start;
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
+      touch-action: pan-y;
       padding-top: max(0px, env(safe-area-inset-top));
       padding-bottom: max(32px, env(safe-area-inset-bottom));
       gap: 0;
@@ -5265,6 +5267,15 @@ document.getElementById('btn-anilist-disconnect').addEventListener('click', () =
 // ── Run on load ────────────────────────────────────
 _alCheckOAuthRedirect();
 _alRenderSection();
+
+// ── Block all page scroll on iOS Safari ────────────
+// Allow touchmove only inside elements that are meant to scroll.
+document.addEventListener('touchmove', e => {
+  const scrollable = e.target.closest('#screen-profile, .watch-sheet-body, #auth-sheet .auth-panel, #cta-sheet .cta-panel');
+  if (!scrollable) {
+    e.preventDefault();
+  }
+}, { passive: false });
 
 // Init taste engine
 engine = new NextArcEngine();
