@@ -848,64 +848,198 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 0;
       opacity: 0;
+      background: transparent;
     }
-    #unlock-overlay.playing {
-      pointer-events: all;
-    }
+    #unlock-overlay.playing { pointer-events: all; }
+
     #unlock-canvas {
       position: absolute;
       inset: 0;
       width: 100%;
       height: 100%;
+      pointer-events: none;
     }
-    #unlock-text {
+
+    /* Radial background glow */
+    #unlock-bg-glow {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 75% 55% at 50% 44%,
+        rgba(255,183,3,0.18) 0%,
+        rgba(46,128,216,0.08) 40%,
+        rgba(8,14,24,0.0) 70%);
+      opacity: 0;
+    }
+
+    /* Rotating sunburst behind trophy */
+    #unlock-rays {
+      position: absolute;
+      width: min(340px, 86vw);
+      height: min(340px, 86vw);
+      top: 50%; left: 50%;
+      transform: translate(-50%, -62%) rotate(0deg);
+      opacity: 0;
+    }
+    @keyframes raysRotate {
+      to { transform: translate(-50%, -62%) rotate(360deg); }
+    }
+
+    /* Trophy wrapper */
+    #unlock-trophy-wrap {
       position: relative;
-      z-index: 2;
+      z-index: 3;
+      display: flex; align-items: center; justify-content: center;
+      width: min(160px, 40vw);
+      height: min(160px, 40vw);
+      transform: translateY(-60px) scale(0);
+      opacity: 0;
+    }
+    #unlock-trophy-wrap svg { width: 100%; height: 100%; }
+
+    @keyframes trophyIn {
+      0%   { transform: translateY(-100px) scale(0.2); opacity: 0; }
+      55%  { transform: translateY(12px) scale(1.12); opacity: 1; }
+      72%  { transform: translateY(-6px) scale(0.95); }
+      86%  { transform: translateY(4px) scale(1.03); }
+      100% { transform: translateY(0) scale(1); opacity: 1; }
+    }
+    @keyframes trophyPulse {
+      0%, 100% { filter: drop-shadow(0 0 18px rgba(255,183,3,0.7))
+                         drop-shadow(0 0 40px rgba(255,183,3,0.3)); }
+      50%      { filter: drop-shadow(0 0 32px rgba(255,220,80,1.0))
+                         drop-shadow(0 0 70px rgba(255,183,3,0.5)); }
+    }
+    @keyframes trophyShine {
+      0%   { transform: translateX(-200%) skewX(-20deg); opacity: 0; }
+      10%  { opacity: 0.6; }
+      40%  { transform: translateX(250%) skewX(-20deg); opacity: 0; }
+      100% { transform: translateX(250%) skewX(-20deg); opacity: 0; }
+    }
+    .unlock-shine {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      border-radius: 50%;
+      pointer-events: none;
+    }
+    .unlock-shine::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 40%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.55), transparent);
+      transform: translateX(-200%) skewX(-20deg);
+    }
+    .unlock-shine.active::after {
+      animation: trophyShine 2.2s ease 0.9s infinite;
+    }
+
+    /* Ring */
+    #unlock-ring {
+      position: absolute;
+      width: calc(100% + 28px);
+      height: calc(100% + 28px);
+      border-radius: 50%;
+      border: 2px solid rgba(255,183,3,0.45);
+      box-shadow: 0 0 24px rgba(255,183,3,0.25), inset 0 0 20px rgba(255,183,3,0.12);
+      transform: scale(0.4);
+      opacity: 0;
+    }
+    @keyframes ringIn {
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    /* Ribbon banner */
+    #unlock-banner {
+      position: relative;
+      z-index: 3;
+      margin-top: 22px;
+      transform: translateY(30px) scale(0.85);
+      opacity: 0;
+    }
+    @keyframes bannerIn {
+      0%   { transform: translateY(30px) scale(0.85); opacity: 0; }
+      60%  { transform: translateY(-4px) scale(1.03); opacity: 1; }
+      80%  { transform: translateY(2px) scale(0.99); }
+      100% { transform: translateY(0) scale(1); opacity: 1; }
+    }
+    .unlock-ribbon-body {
+      background: linear-gradient(160deg, #ffd166 0%, #ffb703 45%, #f9a000 100%);
+      padding: 11px 28px 11px;
+      clip-path: polygon(14px 0%, calc(100% - 14px) 0%, 100% 50%, calc(100% - 14px) 100%, 14px 100%, 0% 50%);
       text-align: center;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 12px;
-      transform: scale(0);
-      opacity: 0;
     }
-    #unlock-emoji {
-      font-size: 72px;
-      filter: drop-shadow(0 0 30px rgba(46,128,216,0.9));
-      animation: none;
+    .unlock-ribbon-text {
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 3px;
+      color: #1a0800;
+      text-transform: uppercase;
+      white-space: nowrap;
     }
-    #unlock-headline {
-      font-size: 32px;
-      font-weight: 800;
-      letter-spacing: -0.5px;
-      background: linear-gradient(135deg, #2e80d8 0%, #5ba3f0 50%, #90c8f0 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      line-height: 1.1;
+    .unlock-ribbon-shadow {
+      height: 7px;
+      background: linear-gradient(160deg, #b87800, #9a6000, #b87800);
+      clip-path: polygon(14px 0%, calc(100% - 14px) 0%, calc(100% - 6px) 100%, 6px 100%);
+      margin: 0 5px;
     }
+    /* Notched flag ends */
+    #unlock-banner::before, #unlock-banner::after {
+      content: '';
+      position: absolute;
+      top: 0; bottom: 7px;
+      width: 16px;
+      background: rgba(0,0,0,0.28);
+      clip-path: polygon(0 0, 100% 0, 100% 50%, 0 100%);
+    }
+    #unlock-banner::before { left: -10px; }
+    #unlock-banner::after  { right: -10px; transform: scaleX(-1); }
+
+    /* Sub text */
     #unlock-sub {
-      font-size: 16px;
-      color: rgba(255,255,255,0.7);
+      z-index: 3;
+      margin-top: 14px;
+      font-size: 15px;
+      color: rgba(255,255,255,0.6);
       font-weight: 500;
+      text-align: center;
+      transform: translateY(16px);
+      opacity: 0;
     }
+    @keyframes subIn {
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    /* Discover button */
     #unlock-btn {
+      position: relative;
+      z-index: 3;
       margin-top: 28px;
-      background: linear-gradient(135deg, #2e80d8, #5ba3f0);
-      color: #fff;
+      background: linear-gradient(135deg, #ffd166 0%, #ffb703 50%, #ff9500 100%);
+      color: #1a0800;
       border: none;
-      border-radius: 14px;
+      border-radius: 18px;
+      font-family: inherit;
       font-size: 18px;
-      font-weight: 800;
-      padding: 18px 52px;
+      font-weight: 900;
+      padding: 18px 56px;
       cursor: pointer;
-      box-shadow: 0 0 40px rgba(46,128,216,0.6);
-      letter-spacing: 0.5px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      box-shadow: 0 6px 28px rgba(255,183,3,0.55),
+                  0 2px 6px rgba(0,0,0,0.35),
+                  inset 0 1px 0 rgba(255,255,255,0.3);
       transform: scale(0);
       opacity: 0;
     }
+    @keyframes btnIn {
+      0%   { transform: scale(0); opacity: 0; }
+      65%  { transform: scale(1.08); opacity: 1; }
+      82%  { transform: scale(0.96); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    #unlock-btn:active { transform: scale(0.95) !important; }
 
     /* First-card entrance animation */
     @keyframes cardSlam {
@@ -2051,12 +2185,83 @@
 <!-- ══════════════════════════════════════════════ -->
 <div id="unlock-overlay">
   <canvas id="unlock-canvas"></canvas>
-  <div id="unlock-text">
-    <div id="unlock-emoji">🎌</div>
-    <div id="unlock-headline">Your picks<br>are ready.</div>
-    <div id="unlock-sub">We found anime you'll actually love</div>
-    <button id="unlock-btn">Let's go →</button>
+  <div id="unlock-bg-glow"></div>
+
+  <!-- Rotating sunburst rays -->
+  <svg id="unlock-rays" viewBox="0 0 340 340" xmlns="http://www.w3.org/2000/svg">
+    <g transform="translate(170,170)">
+      <!-- 16 alternating long/short rays -->
+      <g opacity="0.22" fill="#ffb703">
+        <polygon points="-6,0 6,0 2,-155 -2,-155"/>
+        <polygon points="-4,0 4,0 1.5,-110 -1.5,-110" transform="rotate(22.5)"/>
+        <polygon points="-6,0 6,0 2,-155 -2,-155" transform="rotate(45)"/>
+        <polygon points="-4,0 4,0 1.5,-110 -1.5,-110" transform="rotate(67.5)"/>
+        <polygon points="-6,0 6,0 2,-155 -2,-155" transform="rotate(90)"/>
+        <polygon points="-4,0 4,0 1.5,-110 -1.5,-110" transform="rotate(112.5)"/>
+        <polygon points="-6,0 6,0 2,-155 -2,-155" transform="rotate(135)"/>
+        <polygon points="-4,0 4,0 1.5,-110 -1.5,-110" transform="rotate(157.5)"/>
+        <polygon points="-6,0 6,0 2,-155 -2,-155" transform="rotate(180)"/>
+        <polygon points="-4,0 4,0 1.5,-110 -1.5,-110" transform="rotate(202.5)"/>
+        <polygon points="-6,0 6,0 2,-155 -2,-155" transform="rotate(225)"/>
+        <polygon points="-4,0 4,0 1.5,-110 -1.5,-110" transform="rotate(247.5)"/>
+        <polygon points="-6,0 6,0 2,-155 -2,-155" transform="rotate(270)"/>
+        <polygon points="-4,0 4,0 1.5,-110 -1.5,-110" transform="rotate(292.5)"/>
+        <polygon points="-6,0 6,0 2,-155 -2,-155" transform="rotate(315)"/>
+        <polygon points="-4,0 4,0 1.5,-110 -1.5,-110" transform="rotate(337.5)"/>
+      </g>
+    </g>
+  </svg>
+
+  <!-- Trophy icon -->
+  <div id="unlock-trophy-wrap">
+    <div id="unlock-ring"></div>
+    <div class="unlock-shine"></div>
+    <svg viewBox="0 0 100 110" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="tg1" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%"   stop-color="#ffd166"/>
+          <stop offset="50%"  stop-color="#ffb703"/>
+          <stop offset="100%" stop-color="#d48000"/>
+        </linearGradient>
+        <linearGradient id="tg2" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%"   stop-color="#ffe599"/>
+          <stop offset="100%" stop-color="#ffb703"/>
+        </linearGradient>
+        <filter id="tglow">
+          <feGaussianBlur stdDeviation="2.5" result="blur"/>
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+      <!-- Cup body -->
+      <path d="M22 8 H78 L68 58 Q50 72 32 58 Z" fill="url(#tg1)" filter="url(#tglow)"/>
+      <!-- Highlight on cup -->
+      <path d="M28 12 H68 L63 38 Q50 48 37 38 Z" fill="url(#tg2)" opacity="0.35"/>
+      <!-- Left handle -->
+      <path d="M22 22 Q8 22 8 38 Q8 52 22 48" fill="none" stroke="url(#tg1)" stroke-width="5.5" stroke-linecap="round"/>
+      <!-- Right handle -->
+      <path d="M78 22 Q92 22 92 38 Q92 52 78 48" fill="none" stroke="url(#tg1)" stroke-width="5.5" stroke-linecap="round"/>
+      <!-- Stem -->
+      <rect x="43" y="58" width="14" height="18" rx="2" fill="#d48000"/>
+      <rect x="44" y="58" width="6" height="18" rx="2" fill="#ffb703" opacity="0.5"/>
+      <!-- Base -->
+      <rect x="28" y="74" width="44" height="9" rx="3.5" fill="url(#tg1)"/>
+      <rect x="28" y="74" width="44" height="4" rx="3.5" fill="#ffe599" opacity="0.35"/>
+      <!-- Star on cup -->
+      <polygon points="50,18 52.5,26 61,26 54.5,31 57,39 50,34 43,39 45.5,31 39,26 47.5,26"
+               fill="#fffbe6" opacity="0.9"/>
+    </svg>
   </div>
+
+  <!-- Ribbon banner -->
+  <div id="unlock-banner">
+    <div class="unlock-ribbon-body">
+      <div class="unlock-ribbon-text">Recommendations Unlocked</div>
+    </div>
+    <div class="unlock-ribbon-shadow"></div>
+  </div>
+
+  <div id="unlock-sub">Your taste profile is ready</div>
+  <button id="unlock-btn">Discover</button>
 </div>
 
 <section id="screen-recs" class="screen">
@@ -3628,11 +3833,31 @@ function finishTaste() {
   }
 
   window.launchUnlockCelebration = function () {
-    const overlay = document.getElementById('unlock-overlay');
-    const canvas  = document.getElementById('unlock-canvas');
-    const text    = document.getElementById('unlock-text');
-    const btn     = document.getElementById('unlock-btn');
-    const emoji   = document.getElementById('unlock-emoji');
+    const overlay    = document.getElementById('unlock-overlay');
+    const canvas     = document.getElementById('unlock-canvas');
+    const bgGlow     = document.getElementById('unlock-bg-glow');
+    const rays       = document.getElementById('unlock-rays');
+    const trophyWrap = document.getElementById('unlock-trophy-wrap');
+    const ring       = document.getElementById('unlock-ring');
+    const shine      = trophyWrap.querySelector('.unlock-shine');
+    const banner     = document.getElementById('unlock-banner');
+    const sub        = document.getElementById('unlock-sub');
+    const btn        = document.getElementById('unlock-btn');
+
+    // Reset all elements
+    [bgGlow, rays, ring, banner, sub].forEach(el => {
+      el.style.animation = 'none';
+      el.style.opacity   = '0';
+      el.style.transform = '';
+    });
+    trophyWrap.style.animation = 'none';
+    trophyWrap.style.opacity   = '0';
+    trophyWrap.style.transform = 'translateY(-60px) scale(0)';
+    trophyWrap.classList.remove('settled');
+    shine.classList.remove('active');
+    btn.style.animation = 'none';
+    btn.style.opacity   = '0';
+    btn.style.transform = 'scale(0)';
 
     // Size canvas
     canvas.width  = window.innerWidth;
@@ -3641,45 +3866,72 @@ function finishTaste() {
 
     // Show overlay
     overlay.classList.add('playing');
-    overlay.style.opacity = '1';
-    overlay.style.background = 'rgba(10,10,10,0.92)';
+    overlay.style.background = 'rgba(8,14,24,0.93)';
+    overlay.style.opacity    = '1';
 
-    // Blast particles
+    // Flash background glow in
+    bgGlow.style.transition = 'opacity 0.4s ease';
+    bgGlow.style.opacity    = '1';
+
+    // Burst particles immediately
     createParticles(canvas);
     if (rafId) cancelAnimationFrame(rafId);
-    const startTime = Date.now();
-    tick(canvas, ctx, startTime);
+    tick(canvas, ctx, Date.now());
 
-    // Slam text in
-    text.style.transform = 'scale(0)';
-    text.style.opacity   = '0';
-    text.style.transition = 'none';
-    btn.style.transform  = 'scale(0)';
-    btn.style.opacity    = '0';
-
+    // 1 — Rays spin up (slight delay)
     setTimeout(() => {
-      text.style.transition = 'transform 0.5s cubic-bezier(0.34,1.7,0.64,1), opacity 0.25s ease';
-      text.style.transform  = 'scale(1)';
-      text.style.opacity    = '1';
+      rays.style.opacity    = '1';
+      rays.style.transition = 'opacity 0.5s ease';
+      rays.style.animation  = 'raysRotate 10s linear infinite';
+    }, 80);
 
-      // Pulse emoji
-      emoji.style.animation = 'pulseGlow 1.4s ease-in-out 2';
+    // 2 — Trophy slams in
+    setTimeout(() => {
+      void trophyWrap.offsetWidth; // force reflow
+      trophyWrap.style.animation = 'trophyIn 0.65s cubic-bezier(0.34,1.5,0.64,1) forwards';
     }, 120);
 
-    // Pop button in with delay
+    // 3 — Ring expands
     setTimeout(() => {
-      btn.style.transition = 'transform 0.45s cubic-bezier(0.34,1.7,0.64,1), opacity 0.2s ease';
-      btn.style.transform  = 'scale(1)';
-      btn.style.opacity    = '1';
+      ring.style.transition = 'none';
+      void ring.offsetWidth;
+      ring.style.animation = 'ringIn 0.5s ease forwards';
+    }, 420);
+
+    // 4 — Trophy settles into pulse + shine starts
+    setTimeout(() => {
+      trophyWrap.classList.add('settled');
+      trophyWrap.style.filter = '';
+      shine.classList.add('active');
+    }, 820);
+
+    // 5 — Banner bounces up
+    setTimeout(() => {
+      banner.style.animation = 'bannerIn 0.55s cubic-bezier(0.34,1.4,0.64,1) forwards';
     }, 600);
+
+    // 6 — Sub text fades in
+    setTimeout(() => {
+      sub.style.animation = 'subIn 0.4s ease forwards';
+    }, 850);
+
+    // 7 — Discover button pops in
+    setTimeout(() => {
+      btn.style.animation = 'btnIn 0.55s cubic-bezier(0.34,1.7,0.64,1) forwards';
+    }, 1020);
+
+    // 8 — Second particle burst for extra celebration
+    setTimeout(() => createParticles(canvas), 700);
   };
 
   window.dismissUnlockCelebration = function () {
     const overlay = document.getElementById('unlock-overlay');
-    const text    = document.getElementById('unlock-text');
-    const btn     = document.getElementById('unlock-btn');
+    const rays    = document.getElementById('unlock-rays');
 
     if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+
+    // Stop the rotating rays so they don't keep animating in the background
+    if (rays) { rays.style.animation = 'none'; rays.style.opacity = '0'; }
 
     overlay.style.transition = 'opacity 0.35s ease';
     overlay.style.opacity = '0';
@@ -5458,6 +5710,6 @@ else {
   }
 }
 </script>
-<div id="version-badge">v68</div>
+<div id="version-badge">v69</div>
 </body>
 </html>
