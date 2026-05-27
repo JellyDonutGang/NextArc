@@ -35,6 +35,11 @@
       --card-h: min(72vh, 580px);
     }
 
+    html {
+      height: 100%;
+      overflow: hidden;
+      overscroll-behavior: none;
+    }
     html, body {
       height: 100%;
       background: var(--bg);
@@ -42,6 +47,9 @@
       font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
       overflow: hidden;
       overscroll-behavior: none;
+      /* iOS Safari nuclear option — prevents body scroll even when content overflows */
+      position: fixed;
+      width: 100%;
       user-select: none;
       -webkit-user-select: none;
       -webkit-font-smoothing: antialiased;
@@ -1078,6 +1086,7 @@
       align-items: center;
       gap: 10px;
       width: 100%;
+      box-sizing: border-box;
       padding: 14px 18px;
       background: rgba(255,255,255,0.06);
       border: 1px solid rgba(255,255,255,0.10);
