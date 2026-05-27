@@ -209,8 +209,8 @@
       touch-action: none;
       will-change: transform;
       box-shadow: 0 16px 48px rgba(0,0,0,0.6),
-                  0 0 10px var(--genre-glow, rgba(46,128,216,0.14)),
-                  0 0 20px var(--genre-glow, rgba(46,128,216,0.04)),
+                  0 0 14px var(--genre-glow, rgba(46,128,216,0.22)),
+                  0 0 32px var(--genre-glow, rgba(46,128,216,0.08)),
                   inset 0 0 0 1px rgba(255,255,255,0.10);
       background: var(--surface2);
     }
@@ -1986,23 +1986,7 @@
   <div class="gem-progress-wrap">
     <div class="gem-progress-track">
       <div class="gem-progress-fill" id="taste-progress-fill"></div>
-      <!-- Phase 1 lock/gem at 50% -->
-      <div class="gem-marker" id="taste-gem-marker-1" style="left:50%">
-        <div class="marker-lock">
-          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path d="M8 11V7a4 4 0 0 1 8 0v4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
-            <rect x="5" y="11" width="14" height="10" rx="2.5" fill="currentColor"/>
-            <circle cx="12" cy="16.5" r="1.5" fill="rgba(0,0,0,0.4)"/>
-          </svg>
-        </div>
-        <div class="gem-icon" id="taste-gem-icon-1">
-          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <polygon points="12,2 18,8 12,22 6,8" fill="currentColor" opacity="0.9"/>
-            <polygon points="12,2 18,8 12,10 6,8" fill="currentColor" opacity="0.5"/>
-          </svg>
-        </div>
-      </div>
-      <!-- Phase 2 lock/gem at 100% — unlocks recs -->
+      <!-- Single lock/gem at 100% — unlocks recs -->
       <div class="gem-marker" id="taste-gem-marker-2" style="left:100%">
         <div class="marker-lock">
           <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -3009,86 +2993,54 @@ function hideOverlay(id) {
   document.getElementById(id).classList.remove('visible');
 }
 
-/* ─── Onboarding two-phase power-up bar ─────────── */
+/* ─── Onboarding power-up bar (single lock at end) ── */
 function updateTasteBar() {
   const fill    = document.getElementById('taste-progress-fill');
-  const marker1 = document.getElementById('taste-gem-marker-1');
   const marker2 = document.getElementById('taste-gem-marker-2');
-  if (!fill || !marker1 || !marker2) return;
+  if (!fill || !marker2) return;
 
-  // ── Phase 1: 0 → 50% (reaching midpoint gem) ──
-  // Two paths: mixed (likes + dislikes) OR likes-only
+  // ── Phase 1 progress (internal, drives first half of bar) ──
   const p1Like    = Math.min(1, likeCount    / MIN_LIKES_P1);
   const p1Dislike = Math.min(1, dislikeCount / MIN_DISLIKES_P1);
   const p1Mixed   = (p1Like + p1Dislike) / 2;
   const p1Solo    = Math.min(1, likeCount / MIN_LIKES_P1_SOLO);
-  const phase1Pct = Math.max(p1Mixed, p1Solo);        // 0–1
+  const phase1Pct  = Math.max(p1Mixed, p1Solo);
   const phase1Done = (likeCount >= MIN_LIKES_P1 && dislikeCount >= MIN_DISLIKES_P1)
                   || likeCount >= MIN_LIKES_P1_SOLO;
 
-  // ── Phase 2: 50 → 100% (reaching unlock gem) ──
-  // Mixed path: likes + dislikes + total cards
+  // ── Phase 2 progress (internal, drives second half of bar) ──
   const p2Like    = Math.min(1, likeCount    / MIN_LIKES);
   const p2Dislike = Math.min(1, dislikeCount / MIN_DISLIKES);
   const p2Total   = Math.min(1, totalShown   / MIN_TOTAL_SHOWN);
   const p2Mixed   = (p2Like + p2Dislike + p2Total) / 3;
-  // Likes-only path: 75% likes weight, 25% total cards seen
   const p2Solo    = Math.min(1, likeCount / MIN_LIKES_SOLO) * 0.75
                   + Math.min(1, totalShown / MIN_TOTAL_SOLO) * 0.25;
-  const phase2Pct  = Math.max(p2Mixed, p2Solo);       // 0–1
+  const phase2Pct  = Math.max(p2Mixed, p2Solo);
   const phase2Done = (likeCount >= MIN_LIKES && dislikeCount >= MIN_DISLIKES && totalShown >= MIN_TOTAL_SHOWN)
                   || (likeCount >= MIN_LIKES_SOLO && totalShown >= MIN_TOTAL_SOLO);
 
-  // Bar width: first half fills during phase 1, second half during phase 2
+  // Single smooth bar: first half = phase 1, second half = phase 2
   const barPct = phase2Done ? 100
                : phase1Done ? Math.round(50 + phase2Pct * 50)
                : Math.round(phase1Pct * 50);
 
   fill.style.width = barPct + '%';
 
-  // ── Charging / trigger states ──
-  const towardP2 = phase1Done && !phase2Done;
-  // "how many more" — take the minimum across whichever path is closer
+  // ── Fill charge states (glow animation feedback) ──
+  const towardP2    = phase1Done && !phase2Done;
   const p2LeftMixed = Math.max(MIN_LIKES - likeCount, MIN_DISLIKES - dislikeCount, 0);
   const p2LeftSolo  = Math.max(MIN_LIKES_SOLO - likeCount, 0);
   const p2Left      = Math.min(p2LeftMixed, p2LeftSolo);
   const p1Left      = Math.max(
     Math.min(MIN_LIKES_P1 - likeCount, MIN_DISLIKES_P1 - dislikeCount),
-    MIN_LIKES_P1_SOLO - likeCount,
-    0
+    MIN_LIKES_P1_SOLO - likeCount, 0
   );
-
   const isCharging  = towardP2 ? p2Left <= 2 : (!phase1Done && p1Left <= 1);
-  const isTriggered = phase2Done;
 
-  fill.classList.toggle('charging',  isCharging && !isTriggered);
-  fill.classList.toggle('triggered', isTriggered);
+  fill.classList.toggle('charging',  isCharging && !phase2Done);
+  fill.classList.toggle('triggered', phase2Done);
 
-  // ── Gem 1 (midpoint) ──
-  if (phase1Done && !phase2Done) {
-    // Collected but bar is still going — show it as filled/glowing, not exploding
-    marker1.classList.remove('active', 'primed');
-    marker1.classList.add('filled');
-  } else if (phase1Done && phase2Done) {
-    marker1.classList.remove('active', 'primed');
-    marker1.classList.add('filled');
-  } else {
-    marker1.classList.remove('filled', 'active');
-    // Primed: 1 interaction away from midpoint
-    marker1.classList.toggle('primed', p1Left <= 1 && !phase1Done);
-  }
-
-  // Flash the midpoint gem the moment phase 1 completes (one-shot)
-  if (phase1Done && !marker1.dataset.flashed) {
-    marker1.dataset.flashed = '1';
-    marker1.classList.add('active');
-    setTimeout(() => {
-      marker1.classList.remove('active');
-      marker1.classList.add('filled');
-    }, 900);
-  }
-
-  // ── Gem 2 (unlock) ──
+  // ── Single end lock ──
   if (phase2Done) {
     marker2.classList.add('active');
   } else {
@@ -3235,7 +3187,7 @@ function buildCard(anime, isTop = true) {
   const genreColor = getGenreColor(anime.genres);
   const rgb = hexToRgb(genreColor);
   card.style.setProperty('--genre-color', genreColor);
-  card.style.setProperty('--genre-glow', `rgba(${rgb},0.18)`);
+  card.style.setProperty('--genre-glow', `rgba(${rgb},0.28)`);
 
   // Each chip gets its own genre colour
   const genreChips = genres.map(g => {
@@ -5506,6 +5458,6 @@ else {
   }
 }
 </script>
-<div id="version-badge">v67</div>
+<div id="version-badge">v68</div>
 </body>
 </html>
