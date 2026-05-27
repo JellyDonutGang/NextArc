@@ -5270,6 +5270,7 @@ document.getElementById('btn-anilist-connect').addEventListener('click', () => {
     alert('AniList connection coming soon!\n\nTo enable it, register this app at anilist.co/settings/developer and add your client_id to the code.');
     return;
   }
+  sessionStorage.setItem('nextarc_al_return', '1');
   window.location.href = `https://anilist.co/api/v2/oauth/authorize?client_id=${ANILIST_CLIENT_ID}&response_type=token`;
 });
 
@@ -5293,7 +5294,13 @@ document.addEventListener('touchmove', e => {
 
 // Init taste engine
 engine = new NextArcEngine();
+
+// ── Post-OAuth return: go straight to profile ──────
+if (sessionStorage.getItem('nextarc_al_return')) {
+  sessionStorage.removeItem('nextarc_al_return');
+  openProfileScreen();
+}
 </script>
-<div id="version-badge">v64</div>
+<div id="version-badge">v65</div>
 </body>
 </html>
