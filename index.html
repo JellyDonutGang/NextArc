@@ -3406,10 +3406,9 @@ function buildCard(anime, isTop = true) {
   const genreColor = getGenreColor(anime.genres);
   const rgb = hexToRgb(genreColor);
   card.style.setProperty('--genre-color', genreColor);
-  // Set glow on parent so the ::before pseudo-element (no overflow:hidden) can inherit it
-  // This avoids the Safari compositing bug where overflow:hidden+will-change clips box-shadow corners
-  card.parentElement.style.setProperty('--genre-glow', `rgba(${rgb},0.28)`);
   card.style.setProperty('--genre-glow', `rgba(${rgb},0.28)`);
+  // Store glow so call sites can apply it to the parent AFTER appending to DOM
+  card._genreGlow = `rgba(${rgb},0.28)`;
 
   // Each chip gets its own genre colour
   const genreChips = genres.map(g => {
@@ -3609,6 +3608,8 @@ function renderTasteCard(index, isReplacement = false) {
 
   const top = buildCard(tasteAnime[index], true);
   stack.appendChild(top);
+  // Apply glow to parent now that card is in DOM — fixes Safari square-corner bug
+  stack.style.setProperty('--genre-glow', top._genreGlow || 'rgba(46,128,216,0.22)');
 
   if (isReplacement) {
     const badge = document.createElement('div');
@@ -4382,6 +4383,8 @@ function showNextRec(firstCard = false) {
   }
 
   container.appendChild(card);
+  // Apply glow to parent now that card is in DOM — fixes Safari square-corner bug
+  container.style.setProperty('--genre-glow', card._genreGlow || 'rgba(46,128,216,0.22)');
 
   // Play overlay — appended to container (NOT card) so backdrop-filter works
   // (.anime-card has overflow:hidden which kills backdrop-filter on children)
@@ -5734,6 +5737,6 @@ else {
   }
 }
 </script>
-<div id="version-badge">v71</div>
+<div id="version-badge">v72</div>
 </body>
 </html>
