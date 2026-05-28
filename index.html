@@ -4887,7 +4887,7 @@ function openWatchSheet(anime) {
       iframe.allow = 'autoplay; encrypted-media; picture-in-picture';
       iframe.allowFullscreen = true;
       iframe.src = isYoutube
-        ? `https://www.youtube-nocookie.com/embed/${t.id}?autoplay=1&rel=0&modestbranding=1`
+        ? `https://www.youtube-nocookie.com/embed/${t.id}?autoplay=1&rel=0&modestbranding=1&cc_load_policy=1&cc_lang_pref=en`
         : `https://www.dailymotion.com/embed/video/${t.id}?autoplay=1&mute=0`;
       trailerWrap.appendChild(iframe);
     };
@@ -5899,6 +5899,6 @@ else {
   }
 }
 </script>
-<div id="version-badge">v75</div>
+<div id="version-badge">v76</div>
 </body>
 </html>
