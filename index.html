@@ -4745,6 +4745,10 @@ function showSaveToast() {
 }
 
 async function loadRecQueue() {
+  // Clear any stale card or error message from the container immediately
+  const container = document.getElementById('rec-card-container');
+  container.innerHTML = '';
+
   // Only show spinner if rec screen is already active
   const recScreen = document.getElementById('screen-recs');
   if (recScreen.classList.contains('active')) {
@@ -4768,9 +4772,9 @@ async function loadRecQueue() {
     container.innerHTML = `
       <div style="text-align:center;padding:40px 20px;color:var(--text-muted);font-size:15px;line-height:1.7">
         Couldn't load recommendations right now.<br>
-        <span style="color:var(--accent);cursor:pointer;font-weight:600"
-          onclick="loadRecQueue()">Tap to try again</span>
+        <span id="retry-recs-btn" style="color:var(--accent);cursor:pointer;font-weight:600">Tap to try again</span>
       </div>`;
+    document.getElementById('retry-recs-btn')?.addEventListener('click', () => loadRecQueue());
     return;
   }
   // Only auto-show next rec if we're already on the rec screen
@@ -6290,6 +6294,6 @@ else {
   }
 }
 </script>
-<div id="version-badge">v87</div>
+<div id="version-badge">v88</div>
 </body>
 </html>
