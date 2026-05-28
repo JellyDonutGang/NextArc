@@ -3833,8 +3833,9 @@ async function loadTasteAnime() {
     const pool = deduplicateByFranchise(raw);
     if (pool.length < 8) throw new Error('Seed pool too small, falling back');
 
-    // Mark all pool items as seen so they never appear in recommendations
-    pool.forEach(a => trackSeen(a));
+    // Do NOT mark the whole pool as seen — only track cards as they are
+    // actually shown/rated in renderTasteCard / swipeTaste. This lets
+    // pool items the user never reached appear in recommendations.
 
     // Diversity-select the initial active queue (what the user sees first)
     const initial = selectDiverseSeed(pool, Math.min(INITIAL_QUEUE_SIZE, pool.length));
@@ -3857,7 +3858,7 @@ async function loadTasteAnime() {
         ...(fb1.status === 'fulfilled' ? (fb1.value?.Page?.media || []) : []),
         ...(fb2.status === 'fulfilled' ? (fb2.value?.Page?.media || []) : []),
       ]).filter(a => a.coverImage?.large);
-      all.forEach(a => trackSeen(a));
+      // Same as above: don't bulk-mark — track as shown/rated
       const initial = selectDiverseSeed(all, Math.min(INITIAL_QUEUE_SIZE, all.length));
       tasteAnime = [...initial];
       const initialSet = new Set(initial.map(a => a.id));
@@ -3925,6 +3926,7 @@ function renderTasteCard(index, isReplacement = false) {
 
   updateTasteBar();
   engine.trackShown(tasteAnime[index]);
+  trackSeen(tasteAnime[index]); // mark as seen now that it's actually on screen
 
   // Refill reserve proactively when running low
   if (reservePool.length < RESERVE_LOW_THRESHOLD && !isLoadingReserve) {
@@ -3947,6 +3949,7 @@ function swipeTaste(card, index, action) {
               : 'right';
   flyCard(card, dir).then(() => {
     if (action === 'skip') {
+      seenIds.add(anime.id); // user saw this card — don't show it in recs
       replaceSkippedCard(anime, index);
     } else {
       if (action === 'like' || action === 'superlike') likeCount++;
@@ -4690,8 +4693,9 @@ function triggerGemReveal(card, container) {
   document.body.appendChild(veil);
   veil.addEventListener('animationend', () => veil.remove(), { once: true });
 
-  // 2 — Card entrance
+  // 2 — Card entrance (clear opacity:0 so gemCardEnter animation owns the fade-in)
   setTimeout(() => {
+    card.style.opacity = '';
     card.classList.add('gem-card-enter');
     card.addEventListener('animationend', () => card.classList.remove('gem-card-enter'), { once: true });
 
@@ -4920,6 +4924,9 @@ function showNextRec(firstCard = false) {
     card.appendChild(badge);
   }
 
+  // Gem cards start invisible — triggerGemReveal un-hides them at t=300ms
+  // so the veil is fully opaque before the card becomes visible (no flash)
+  if (isGem) card.style.opacity = '0';
   container.appendChild(card);
   // Apply glow to parent now that card is in DOM — fixes Safari square-corner bug
   container.style.setProperty('--genre-glow', card._genreGlow || 'rgba(46,128,216,0.22)');
@@ -6366,6 +6373,6 @@ else {
   }
 }
 </script>
-<div id="version-badge">v97</div>
+<div id="version-badge">v98</div>
 </body>
 </html>
