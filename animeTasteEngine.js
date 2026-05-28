@@ -298,6 +298,90 @@ const ARCHETYPE_DEFS = {
   chaotic:      ['Ensemble Cast', 'Eccentric Characters', 'Multiple Protagonists'],
 };
 
+/**
+ * EMOTIONAL EXPERIENCE BUCKETS
+ * Higher-level layer above raw genres/tags. Each bucket describes the
+ * emotional experience an anime delivers, not just what it's about.
+ * Scored from tone keys, archetype keys, and scalar dimensions.
+ * Exposed as `bucket:X` feature keys tracked in engine.vectors.emotionalBucket.
+ *
+ * Design rule: buckets must be orthogonal — minimal overlap so the engine
+ * can cleanly distinguish taste lanes rather than have everything score high.
+ */
+const EMOTIONAL_BUCKET_DEFS = {
+
+  // Moral ambiguity, psychological darkness, nihilism, complex villains
+  dark_complexity: {
+    label:      'dark moral complexity',
+    tones:      ['dark', 'philosophical', 'intense'],
+    archetypes: ['antihero', 'morallyGray', 'villain'],
+    scalars:    { darkness: 0.35, moralComplexity: 0.40, psychologicalDepth: 0.25 },
+  },
+
+  // Healing, iyashikei, gentle slice of life, zero stakes warmth
+  cozy_comfort: {
+    label:      'cozy comfort',
+    tones:      ['wholesome', 'relaxing'],
+    archetypes: [],
+    scalars:    { pacing: 0.45, emotionalWeight: 0.15 },
+    antiDims:   { darkness: 2.5, hype: 3.0 }, // darkness or high action kills cozy
+  },
+
+  // High-octane battles, power systems, tournaments, adrenaline
+  hype_energy: {
+    label:      'hype battle energy',
+    tones:      ['hype', 'intense'],
+    archetypes: ['overpowered', 'rivalry', 'underdog'],
+    scalars:    { hype: 0.55, violence: 0.20, worldbuilding: 0.15 },
+    antiDims:   { pacing: 7.0 }, // slow-paced anime can't be hype
+  },
+
+  // Tearjerker drama, romance, coming-of-age, bittersweet emotional journeys
+  emotional_depth: {
+    label:      'emotional depth and drama',
+    tones:      ['emotional', 'inspirational'],
+    archetypes: ['underdog'],
+    scalars:    { emotionalWeight: 0.45, romance: 0.25, characterDrama: 0.20 },
+    antiDims:   { darkness: 5.0 }, // deep darkness = dark_complexity, not emotional_depth
+  },
+
+  // Psychological thriller, unreliable narrators, existential mind benders
+  mind_games: {
+    label:      'psychological mind games',
+    tones:      ['philosophical', 'suspenseful'],
+    archetypes: [],
+    scalars:    { psychologicalDepth: 0.50, moralComplexity: 0.25, darkness: 0.15 },
+    antiDims:   { hype: 4.5 }, // action-heavy anime ≠ mind games
+  },
+
+  // Found family bonds, teamwork, ensemble warmth, belonging
+  found_family: {
+    label:      'found family warmth',
+    tones:      ['wholesome', 'inspirational'],
+    archetypes: ['foundFamily', 'chaotic'],
+    scalars:    { characterDrama: 0.45, humor: 0.15, worldbuilding: 0.15 },
+    antiDims:   { darkness: 4.5 },
+  },
+
+  // Surreal, avant-garde, late-night strangeness, niche experimental
+  weird_niche: {
+    label:      'weird niche atmosphere',
+    tones:      ['comedic', 'philosophical'],
+    archetypes: ['chaotic'],
+    scalars:    { niche: 0.50, humor: 0.20, psychologicalDepth: 0.15 },
+  },
+
+  // Visually stunning, atmospheric slow burn, art-driven storytelling
+  cinematic: {
+    label:      'cinematic atmosphere',
+    tones:      ['relaxing', 'suspenseful'],
+    archetypes: [],
+    scalars:    { worldbuilding: 0.30, pacing: 0.30, emotionalWeight: 0.20 },
+    visualMatch: 'cinematic',
+    antiDims:   { hype: 5.5 },
+  },
+};
+
 
 /* ═══════════════════════════════════════════════════════════════════════════
    FEATURE EXTRACTION
@@ -390,6 +474,30 @@ function extractFeatures(anime) {
     else                   visualKeys.push('era:1990s');
   }
 
+  // ── Emotional bucket keys ───────────────────────────────────────────────
+  // Higher-level experience layer. Scored from tone/archetype/scalar signals.
+  // Anti-dims apply a 0.30× penalty if a conflicting scalar is too high,
+  // keeping buckets orthogonal (e.g. high darkness suppresses cozy_comfort).
+  const bucketKeys = [];
+  for (const [bucket, def] of Object.entries(EMOTIONAL_BUCKET_DEFS)) {
+    let score = 0;
+    for (const tone of def.tones) {
+      if (toneKeys.includes(`tone:${tone}`)) score += 2.5;
+    }
+    for (const arch of (def.archetypes || [])) {
+      if (archetypeKeys.includes(`archetype:${arch}`)) score += 1.5;
+    }
+    for (const [dim, w] of Object.entries(def.scalars || {})) {
+      score += (scalars[dim] || 0) * w;
+    }
+    if (def.visualMatch && visualKeys.includes(`visual:${def.visualMatch}`)) score += 2.0;
+    let penalty = 1.0;
+    for (const [dim, ceiling] of Object.entries(def.antiDims || {})) {
+      if ((scalars[dim] || 0) > ceiling) { penalty = 0.30; break; }
+    }
+    if (score * penalty >= 1.5) bucketKeys.push(`bucket:${bucket}`);
+  }
+
   const tagKeys = tags
     .filter(t => (t.rank || 0) >= 55)
     .slice(0, 16)
@@ -403,7 +511,8 @@ function extractFeatures(anime) {
   return {
     scalars,
     keys: { tone: toneKeys, archetype: archetypeKeys, visual: visualKeys,
-            tag: tagKeys, genre: genreKeys, studio: studioKeys },
+            tag: tagKeys, genre: genreKeys, studio: studioKeys,
+            emotionalBucket: bucketKeys },
   };
 }
 
@@ -426,9 +535,9 @@ function defaultDims() {
   };
 }
 
-/** Default empty 6-group vector set. */
+/** Default empty 7-group vector set (6 original + emotionalBucket layer). */
 function defaultVectors() {
-  return { tone: {}, archetype: {}, visual: {}, tag: {}, genre: {}, studio: {} };
+  return { tone: {}, archetype: {}, visual: {}, tag: {}, genre: {}, studio: {}, emotionalBucket: {} };
 }
 
 

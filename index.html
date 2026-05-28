@@ -345,6 +345,14 @@
       box-shadow: 0 2px 6px rgba(0,0,0,0.3);
       border: none;
     }
+    .card-explanation {
+      font-size: 11px;
+      font-style: italic;
+      color: rgba(255,255,255,0.48);
+      line-height: 1.45;
+      margin-top: 7px;
+      letter-spacing: 0.05px;
+    }
 
     /* Swipe stamps */
     .stamp {
@@ -3390,7 +3398,7 @@ function hexToRgb(hex) {
 }
 
 /* ─── Build a card element ─────────────────────── */
-function buildCard(anime, isTop = true) {
+function buildCard(anime, isTop = true, explanation = null) {
   const card = document.createElement('div');
   card.className = 'anime-card ' + (isTop ? 'top' : 'behind');
   card.dataset.id = anime.id;
@@ -3431,6 +3439,7 @@ function buildCard(anime, isTop = true) {
       <div class="card-title">${title}</div>
       <div class="card-meta">${metaLine}</div>
       <div class="genre-chips">${genreChips}</div>
+      ${explanation ? `<div class="card-explanation">${explanation}</div>` : ''}
     </div>
     <div class="card-corner-frame"></div>`;
 
@@ -4186,6 +4195,150 @@ async function prefetchNextBatch() {
   isPrefetching = false;
 }
 
+/* ─── Recommendation Explanation System ─────────── */
+
+// Human-readable phrase for each emotional bucket (used in explanation copy)
+const BUCKET_MATCH_PHRASES = {
+  dark_complexity:  'dark moral complexity and psychological weight',
+  cozy_comfort:     'cozy, low-stakes comfort anime',
+  hype_energy:      'high-energy action and hype moments',
+  emotional_depth:  'emotionally resonant storytelling',
+  mind_games:       'psychological tension and mind-bending depth',
+  found_family:     'found family warmth and character bonds',
+  weird_niche:      'weird, atmospheric niche storytelling',
+  cinematic:        'cinematic atmosphere and visual artistry',
+};
+
+// Bridging phrases for emotionally adjacent picks (animeB → userA)
+const BUCKET_ADJACENCY = {
+  dark_complexity: {
+    mind_games:      'the psychological intensity connects them',
+    emotional_depth: 'the emotional weight lives under the darkness',
+    cinematic:       'the atmospheric intensity bridges both',
+  },
+  cozy_comfort: {
+    found_family:    'the warmth and low-stakes feel overlap',
+    emotional_depth: 'the gentle emotional resonance carries over',
+    weird_niche:     'the offbeat low-pressure charm connects them',
+  },
+  hype_energy: {
+    found_family:    'team energy and high-stakes camaraderie',
+    dark_complexity: 'the intensity, just channeled into action',
+    weird_niche:     'chaotic unpredictable energy',
+  },
+  emotional_depth: {
+    dark_complexity: 'raw emotional stakes at the core',
+    found_family:    'the human connection and bonds',
+    cinematic:       'visual emotional storytelling',
+  },
+  mind_games: {
+    dark_complexity: 'psychological depth and dark themes run through both',
+    weird_niche:     'unconventional cerebral storytelling',
+    cinematic:       'the slow-burn atmospheric tension',
+  },
+  found_family: {
+    emotional_depth: 'bonds and belonging at the heart',
+    cozy_comfort:    'warmth and low-stakes comfort',
+    hype_energy:     'team spirit and shared goals',
+  },
+  weird_niche: {
+    mind_games:      'unconventional, cerebral storytelling',
+    cozy_comfort:    'offbeat charm and atmosphere',
+    hype_energy:     'chaotic, unpredictable energy',
+  },
+  cinematic: {
+    dark_complexity: 'atmospheric intensity',
+    emotional_depth: 'visual emotional storytelling',
+    mind_games:      'slow-burn cerebral atmosphere',
+  },
+};
+
+const BOUNDARY_DIM_LABELS = {
+  darkness:           'darker content',
+  violence:           'more intense violence',
+  romance:            'more romance',
+  hype:               'higher-octane action',
+  psychologicalDepth: 'deeper psychological themes',
+  moralComplexity:    'more moral complexity',
+  humor:              'more comedy',
+  emotionalWeight:    'heavier emotional stakes',
+  characterDrama:     'deeper character drama',
+  worldbuilding:      'richer worldbuilding',
+};
+
+/**
+ * Generate a one-line emotional explanation for a rec card.
+ * Returns null if there isn't enough taste data yet to say anything meaningful.
+ */
+function generateRecExplanation(anime) {
+  if (!engine.onboarded) return null;
+
+  // Anime's emotional buckets
+  const features = extractFeatures(anime);
+  const animeBuckets = (features.keys.emotionalBucket || [])
+    .map(k => k.replace('bucket:', ''));
+
+  if (animeBuckets.length === 0) return null;
+
+  // User's top emotional bucket preferences from the engine
+  const userBucketVec = engine.vectors.emotionalBucket || {};
+  const sorted = Object.entries(userBucketVec)
+    .filter(([, v]) => v > 0)
+    .sort(([, a], [, b]) => b - a);
+
+  if (sorted.length === 0) return null;
+
+  const userTopBuckets = sorted.slice(0, 3).map(([k]) => k.replace('bucket:', ''));
+  const metaType = anime._meta?.type;
+
+  // ── Hidden gem ────────────────────────────────────────────────────────
+  if (currentRecIsGem) {
+    const topMatch = animeBuckets.find(b => userTopBuckets.includes(b)) || animeBuckets[0];
+    const phrase   = BUCKET_MATCH_PHRASES[topMatch];
+    return phrase
+      ? `A hidden gem for your ${phrase} side.`
+      : 'A rare hidden gem picked just for you.';
+  }
+
+  // ── Boundary probe ────────────────────────────────────────────────────
+  if (metaType === 'boundary') {
+    const label = BOUNDARY_DIM_LABELS[anime._meta?.dimension] || 'a new direction';
+    return `Testing if you're open to ${label} — based on what you've liked.`;
+  }
+
+  // ── Wildcard ──────────────────────────────────────────────────────────
+  if (metaType === 'wildcard') {
+    const phrase = BUCKET_MATCH_PHRASES[animeBuckets[0]];
+    return phrase
+      ? `A stretch pick that explores ${phrase}.`
+      : 'An exploratory pick outside your usual lanes.';
+  }
+
+  // ── Strong match — find bucket overlap ────────────────────────────────
+  const matches = animeBuckets.filter(b => userTopBuckets.includes(b));
+
+  if (matches.length > 0) {
+    const primary = matches[0];
+    const phrase  = BUCKET_MATCH_PHRASES[primary];
+    if (!phrase) return null;
+    const rank = userTopBuckets.indexOf(primary);
+    if (rank === 0) return `Strong match for your love of ${phrase}.`;
+    if (rank === 1) return `Fits your taste for ${phrase}.`;
+    return `Because you seem into ${phrase}.`;
+  }
+
+  // ── Emotionally adjacent — find bridge between anime and user taste ───
+  const animePrimary = animeBuckets[0];
+  const userPrimary  = userTopBuckets[0];
+  const bridge = BUCKET_ADJACENCY[animePrimary]?.[userPrimary]
+              || BUCKET_ADJACENCY[userPrimary]?.[animePrimary];
+
+  if (bridge) return `A stretch pick — ${bridge}.`;
+
+  const phrase = BUCKET_MATCH_PHRASES[animePrimary];
+  return phrase ? `Explores ${phrase} — a different lane worth trying.` : null;
+}
+
 /* ─── Hidden Gem helpers ────────────────────────── */
 
 async function fetchGems() {
@@ -4367,7 +4520,9 @@ function showNextRec(firstCard = false) {
   trackSeen(anime);
   updateGemBar(isGem);
 
-  const card = buildCard(anime, true);
+  // Generate emotional explanation after currentRecIsGem is set (needed inside the function)
+  const explanation = generateRecExplanation(anime);
+  const card = buildCard(anime, true, explanation);
 
   // Update stamps for discovery mode
   card.querySelector('.stamp-like').textContent    = 'WATCH';
@@ -4415,13 +4570,13 @@ function showNextRec(firstCard = false) {
       const user = _auth.currentUser;
       if (user) _syncToCloud(user);
     } else {
-      // Not yet saved
+      // Not yet saved — heart always goes to Saved (not Gems), pass false
       const user = _auth.currentUser;
       if (!user) {
-        openCtaSheet(anime, isGem);
+        openCtaSheet(anime, false);
         return;
       }
-      saveAnime(anime, isGem);
+      saveAnime(anime, false);
       heartBtn.classList.add('saved');
       _syncToCloud(user);
       // Signed-in save → advance card like a like swipe after brief visual feedback
@@ -4467,6 +4622,12 @@ function recSwipe(card, anime, action) {
       setTimeout(() => {
         if (!_auth.currentUser) openCtaSheet();
       }, 600);
+    }
+
+    // Auto-save hidden gems to the gem collection unless the user said nope
+    const wasGem = currentRecIsGem;
+    if (wasGem && action !== 'dislike' && !isAnimeSaved(anime.id)) {
+      saveAnime(anime, true);
     }
 
     // Gem cards don't consume from recQueue — only advance recPos for normal recs
@@ -5737,6 +5898,6 @@ else {
   }
 }
 </script>
-<div id="version-badge">v72</div>
+<div id="version-badge">v74</div>
 </body>
 </html>
