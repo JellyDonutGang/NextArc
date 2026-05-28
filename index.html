@@ -457,36 +457,35 @@
     /* Don't Like — explicit red-tinted negative */
     .btn-dislike {
       width: 62px; height: 62px;
-      font-size: 22px;
-      background: #c0392b;
+      background: var(--accent);
       border: none;
       color: #fff;
     }
 
-    /* Skip — blue, smallest, middle */
     .btn-skip {
       width: 52px; height: 52px;
-      font-size: 18px;
-      background: #2e80d8;
+      background: var(--accent);
       border: none;
       color: #fff;
     }
 
-    /* Like — green, most prominent */
     .btn-like {
       width: 72px; height: 72px;
-      font-size: 28px;
-      background: #27ae60;
+      background: var(--accent);
       color: #fff;
     }
 
-    /* Super Good — gold, swipes up */
     .btn-supergood {
       width: 62px; height: 62px;
-      font-size: 22px;
-      background: linear-gradient(135deg, #b45309, #d97706);
+      background: var(--accent);
       color: #fff;
       border: none;
+    }
+
+    /* Icon sizing inside buttons */
+    .action-btn svg {
+      display: block;
+      pointer-events: none;
     }
 
     /* ── Hidden Gem card — Legendary treatment ───── */
@@ -746,10 +745,7 @@
       font-weight: 700;
       letter-spacing: 0.3px;
     }
-    .btn-text.btn-dislike   { width: 72px; height: 44px; }
-    .btn-text.btn-skip      { width: 60px; height: 38px; font-size: 13px; }
-    .btn-text.btn-supergood { width: 74px; height: 44px; font-size: 13px; font-weight: 800; letter-spacing: 0.1px; }
-    .btn-text.btn-like      { width: 72px; height: 44px; font-size: 14px; }
+    /* btn-text overrides removed — buttons now use icons */
 
     /* ── Recommendations Screen ────────────────────── */
     #screen-recs {
@@ -2324,10 +2320,18 @@
   </div>
 
   <div class="action-buttons">
-    <button class="action-btn btn-dislike    btn-text" id="btn-dislike">Bad</button>
-    <button class="action-btn btn-skip       btn-text" id="btn-skip">Skip</button>
-    <button class="action-btn btn-supergood  btn-text" id="btn-supergood">★ Super</button>
-    <button class="action-btn btn-like       btn-text" id="btn-like">Good</button>
+    <button class="action-btn btn-dislike" id="btn-dislike" aria-label="Bad">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.8" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <button class="action-btn btn-skip" id="btn-skip" aria-label="Skip">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+    </button>
+    <button class="action-btn btn-supergood" id="btn-supergood" aria-label="Super like">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="white"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+    </button>
+    <button class="action-btn btn-like" id="btn-like" aria-label="Good">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+    </button>
   </div>
 </section>
 
@@ -2496,10 +2500,18 @@
   </div>
 
   <div class="action-buttons">
-    <button class="action-btn btn-dislike    btn-text" id="btn-rec-dislike">Bad</button>
-    <button class="action-btn btn-skip       btn-text" id="btn-rec-skip">Skip</button>
-    <button class="action-btn btn-supergood  btn-text" id="btn-rec-supergood">★ Super</button>
-    <button class="action-btn btn-like       btn-text" id="btn-rec-like">Good</button>
+    <button class="action-btn btn-dislike" id="btn-rec-dislike" aria-label="Bad">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.8" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <button class="action-btn btn-skip" id="btn-rec-skip" aria-label="Skip">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+    </button>
+    <button class="action-btn btn-supergood" id="btn-rec-supergood" aria-label="Super like">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="white"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+    </button>
+    <button class="action-btn btn-like" id="btn-rec-like" aria-label="Good">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+    </button>
   </div>
 </section>
 
@@ -6363,6 +6375,6 @@ else {
   }
 }
 </script>
-<div id="version-badge">v95</div>
+<div id="version-badge">v96</div>
 </body>
 </html>
