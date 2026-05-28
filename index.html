@@ -519,6 +519,110 @@
       50%      { background-position: -20% center; }
     }
 
+    /* ══ Hidden Gem Reveal Animation ═══════════════ */
+
+    /* Full-screen veil that dims everything before the card appears */
+    .gem-reveal-veil {
+      position: fixed;
+      inset: 0;
+      z-index: 160;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      background: radial-gradient(ellipse 70% 60% at 50% 48%,
+        rgba(255,183,3,0.18) 0%,
+        rgba(10,8,20,0.88)   55%,
+        rgba(5,4,14,0.97)   100%
+      );
+      animation: gemVeilAnim 0.68s ease-out forwards;
+    }
+    @keyframes gemVeilAnim {
+      0%   { opacity: 0; }
+      18%  { opacity: 1; }
+      62%  { opacity: 1; }
+      100% { opacity: 0; }
+    }
+
+    /* "✦ HIDDEN GEM ✦" label on the veil */
+    .gem-reveal-label {
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: #ffb703;
+      text-shadow: 0 0 18px rgba(255,183,3,0.9), 0 0 40px rgba(255,183,3,0.5);
+      animation: gemLabelIn 0.35s 0.08s cubic-bezier(0.22,1,0.36,1) both;
+    }
+    .gem-reveal-icon {
+      font-size: 36px;
+      line-height: 1;
+      filter: drop-shadow(0 0 16px rgba(255,183,3,1)) drop-shadow(0 0 40px rgba(255,183,3,0.6));
+      animation: gemIconIn 0.4s 0.05s cubic-bezier(0.22,1,0.36,1) both;
+    }
+    @keyframes gemLabelIn {
+      from { opacity: 0; transform: translateY(8px) scale(0.88); }
+      to   { opacity: 1; transform: none; }
+    }
+    @keyframes gemIconIn {
+      from { opacity: 0; transform: scale(0.5); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+
+    /* Card entrance — rises with overshoot + brightness flash */
+    @keyframes gemCardEnter {
+      0%   { transform: translateY(52px) scale(0.88); opacity: 0; filter: brightness(2.2); }
+      55%  { transform: translateY(-14px) scale(1.045); opacity: 1; filter: brightness(1.2); }
+      78%  { transform: translateY(5px) scale(0.982); filter: brightness(1); }
+      100% { transform: none; opacity: 1; filter: none; }
+    }
+    .gem-card-enter {
+      animation: gemCardEnter 0.58s cubic-bezier(0.22,1,0.36,1) both;
+    }
+
+    /* Expanding ring that pulses outward from the card border */
+    .gem-ring {
+      position: absolute;
+      inset: -3px;
+      border-radius: var(--radius);
+      border: 2.5px solid rgba(255,183,3,0.85);
+      pointer-events: none;
+      z-index: 12;
+      animation: gemRingExpand 0.55s ease-out forwards;
+    }
+    @keyframes gemRingExpand {
+      0%   { transform: scale(0.9);  opacity: 1; }
+      100% { transform: scale(1.65); opacity: 0; }
+    }
+
+    /* Sparkle particles flying outward */
+    @keyframes gemSparkFly {
+      0%   { transform: translate(0,0) scale(1);   opacity: 1; }
+      100% { transform: translate(var(--tx),var(--ty)) scale(0); opacity: 0; }
+    }
+    .gem-spark {
+      position: absolute;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 20;
+      animation: gemSparkFly var(--dur,0.55s) var(--delay,0s) ease-out forwards;
+    }
+
+    /* Gem badge — starts hidden, bounces in after card settles */
+    .gem-badge.badge-hidden { opacity: 0 !important; animation: none !important; }
+    @keyframes gemBadgeEnter {
+      0%   { transform: translateX(-10px) scale(0.7); opacity: 0; }
+      65%  { transform: translateX(3px)   scale(1.1); opacity: 1; }
+      100% { transform: none;                         opacity: 1; }
+    }
+    .gem-badge.badge-enter {
+      animation: gemBadgeEnter 0.38s cubic-bezier(0.22,1,0.36,1) forwards,
+                 badge-shine 2.4s ease-in-out 0.38s infinite,
+                 gemPulse 2.4s ease-in-out 0.38s infinite;
+    }
+
     /* ── Card heart save button ───────────────────── */
     .card-heart-btn {
       position: absolute;
@@ -4360,6 +4464,78 @@ function generateRecExplanation(anime) {
   return phrase ? `Explores ${phrase} — a different lane worth trying.` : null;
 }
 
+/* ─── Hidden Gem reveal animation ──────────────── */
+
+function launchGemParticles(container, count, delay) {
+  const rect = container.getBoundingClientRect();
+  const cx = rect.left + rect.width  / 2;
+  const cy = rect.top  + rect.height / 2;
+
+  for (let i = 0; i < count; i++) {
+    const spark = document.createElement('div');
+    spark.className = 'gem-spark';
+
+    // Random direction + distance
+    const angle  = Math.random() * 2 * Math.PI;
+    const dist   = 60 + Math.random() * 90;
+    const tx     = Math.cos(angle) * dist;
+    const ty     = Math.sin(angle) * dist;
+    const dur    = 0.45 + Math.random() * 0.3;
+    const dlay   = delay + Math.random() * 0.12;
+
+    spark.style.cssText = `
+      left: ${cx}px;
+      top:  ${cy}px;
+      --tx: ${tx}px;
+      --ty: ${ty}px;
+      --dur: ${dur}s;
+      --delay: ${dlay}s;
+    `;
+
+    document.body.appendChild(spark);
+    spark.addEventListener('animationend', () => spark.remove(), { once: true });
+  }
+}
+
+function triggerGemReveal(card, container) {
+  // 1 — Full-screen veil
+  const veil = document.createElement('div');
+  veil.className = 'gem-reveal-veil';
+  veil.innerHTML = `
+    <div class="gem-reveal-icon">✦</div>
+    <div class="gem-reveal-label">HIDDEN GEM</div>
+  `;
+  document.body.appendChild(veil);
+  veil.addEventListener('animationend', () => veil.remove(), { once: true });
+
+  // 2 — Card entrance
+  setTimeout(() => {
+    card.classList.add('gem-card-enter');
+    card.addEventListener('animationend', () => card.classList.remove('gem-card-enter'), { once: true });
+
+    // 3 — Expanding ring
+    const ring = document.createElement('div');
+    ring.className = 'gem-ring';
+    container.appendChild(ring);
+    ring.addEventListener('animationend', () => ring.remove(), { once: true });
+
+    // 4 — Primary particles burst
+    launchGemParticles(container, 16, 0);
+  }, 300);
+
+  // 5 — Secondary particle ripple
+  setTimeout(() => launchGemParticles(container, 10, 0), 480);
+
+  // 6 — Badge bounces in
+  setTimeout(() => {
+    const badge = card.querySelector('.gem-badge');
+    if (badge) {
+      badge.classList.remove('badge-hidden');
+      badge.classList.add('badge-enter');
+    }
+  }, 450);
+}
+
 /* ─── Hidden Gem helpers ────────────────────────── */
 
 async function fetchGems() {
@@ -4553,7 +4729,8 @@ function showNextRec(firstCard = false) {
   if (isGem) {
     card.classList.add('is-gem');
     const badge = document.createElement('div');
-    badge.className   = 'gem-badge';
+    // Start hidden — triggerGemReveal will remove badge-hidden at t=450ms
+    badge.className   = 'gem-badge badge-hidden';
     badge.textContent = '✦ Hidden Gem';
     card.appendChild(badge);
   }
@@ -4561,6 +4738,9 @@ function showNextRec(firstCard = false) {
   container.appendChild(card);
   // Apply glow to parent now that card is in DOM — fixes Safari square-corner bug
   container.style.setProperty('--genre-glow', card._genreGlow || 'rgba(46,128,216,0.22)');
+
+  // Fire reveal animation after card + glow are in place
+  if (isGem) triggerGemReveal(card, container);
 
   // Play overlay — appended to container (NOT card) so backdrop-filter works
   // (.anime-card has overflow:hidden which kills backdrop-filter on children)
@@ -5968,6 +6148,6 @@ else {
   }
 }
 </script>
-<div id="version-badge">v79</div>
+<div id="version-badge">v80</div>
 </body>
 </html>
