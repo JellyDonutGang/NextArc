@@ -3556,19 +3556,33 @@ function buildCard(anime, isTop = true, explanation = null) {
   // Store glow so call sites can apply it to the parent AFTER appending to DOM
   card._genreGlow = `rgba(${rgb},0.28)`;
 
-  // Primary genre chip (colored) + up to 2 emotional vibe chips (frosted)
-  const primaryChip = primaryGenre
-    ? `<span class="chip" style="background:${GENRE_COLORS[primaryGenre] || '#2e80d8'}">${primaryGenre}</span>`
-    : '';
+  // Emotional vibe chips (frosted) — up to 2 buckets, then fill to 3 with top AniList tags
   const bucketKeys = extractFeatures(anime).keys.emotionalBucket || [];
-  const vibeChips = bucketKeys
+  const vibeLabels = bucketKeys
     .slice(0, 2)
-    .map(k => {
-      const name = k.replace('bucket:', '');
-      const label = BUCKET_SHORT_LABELS[name];
-      return label ? `<span class="vibe-chip">${label}</span>` : '';
-    })
-    .filter(Boolean)
+    .map(k => BUCKET_SHORT_LABELS[k.replace('bucket:', '')])
+    .filter(Boolean);
+
+  // High-rank AniList tags to fill remaining slots (cap at 3 total chips)
+  // Exclude tags that just echo the genre pill or are too generic/spoilery
+  const GENRE_ECHO_TAGS = new Set([
+    'Action','Adventure','Comedy','Drama','Fantasy','Horror','Mystery',
+    'Romance','Sci-Fi','Slice of Life','Sports','Supernatural','Thriller',
+    'Anime','Manga','Based on a Manga','Based on a Light Novel',
+    'Short Episodes','Full CGI','Anthropomorphism',
+  ]);
+  const slotsLeft = 3 - vibeLabels.length;
+  const topTags = slotsLeft > 0
+    ? (anime.tags || [])
+        .filter(t => t.rank >= 70 && !t.isMediaSpoiler && !GENRE_ECHO_TAGS.has(t.name))
+        .sort((a, b) => b.rank - a.rank)
+        .slice(0, slotsLeft)
+        .map(t => t.name)
+    : [];
+
+  const allChipLabels = [...vibeLabels, ...topTags];
+  const vibeChips = allChipLabels
+    .map(label => `<span class="vibe-chip">${label}</span>`)
     .join('');
 
   const metaLine = [score, year, eps].filter(Boolean).join(' · ');
@@ -3586,7 +3600,7 @@ function buildCard(anime, isTop = true, explanation = null) {
     <div class="card-info">
       <div class="card-title">${title}</div>
       <div class="card-meta">${metaLine}</div>
-      <div class="genre-chips">${primaryChip}${vibeChips}</div>
+      <div class="genre-chips">${vibeChips}</div>
       ${explanation ? `<div class="card-explanation">${explanation}</div>` : ''}
     </div>
     <div class="card-corner-frame"></div>`;
@@ -6189,6 +6203,6 @@ else {
   }
 }
 </script>
-<div id="version-badge">v82</div>
+<div id="version-badge">v83</div>
 </body>
 </html>
