@@ -455,31 +455,22 @@
     .action-btn:active { transform: scale(0.92); }
 
     /* Don't Like — explicit red-tinted negative */
-    .btn-dislike {
-      width: 62px; height: 62px;
+    /* Primary actions — same size */
+    .btn-dislike,
+    .btn-like {
+      width: 66px; height: 66px;
       background: var(--accent);
       border: none;
       color: #fff;
     }
 
-    .btn-skip {
+    /* Secondary actions — same size, slightly smaller */
+    .btn-skip,
+    .btn-supergood {
       width: 52px; height: 52px;
       background: var(--accent);
       border: none;
       color: #fff;
-    }
-
-    .btn-like {
-      width: 72px; height: 72px;
-      background: var(--accent);
-      color: #fff;
-    }
-
-    .btn-supergood {
-      width: 62px; height: 62px;
-      background: var(--accent);
-      color: #fff;
-      border: none;
     }
 
     /* Icon sizing inside buttons */
@@ -6375,6 +6366,6 @@ else {
   }
 }
 </script>
-<div id="version-badge">v96</div>
+<div id="version-badge">v97</div>
 </body>
 </html>
