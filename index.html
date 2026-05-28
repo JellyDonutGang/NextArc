@@ -3712,8 +3712,8 @@ function buildCard(anime, isTop = true, explanation = null) {
   const metaLine  = starRating + metaSep + metaParts;
 
   card.innerHTML = `
-    <div class="stamp stamp-like">LIKE</div>
-    <div class="stamp stamp-dislike">NOPE</div>
+    <div class="stamp stamp-like">GOOD</div>
+    <div class="stamp stamp-dislike">BAD</div>
     <div class="stamp stamp-up">SUPER</div>
     <div class="stamp stamp-down">SKIP</div>
     ${imgSrc
@@ -4906,10 +4906,6 @@ function showNextRec(firstCard = false) {
   // Generate emotional explanation after currentRecIsGem is set (needed inside the function)
   const explanation = generateRecExplanation(anime);
   const card = buildCard(anime, true, explanation);
-
-  // Update stamps for discovery mode
-  card.querySelector('.stamp-like').textContent    = 'WATCH';
-  card.querySelector('.stamp-dislike').textContent = 'NOPE';
 
   // Hidden Gem treatment
   if (isGem) {
@@ -6367,6 +6363,6 @@ else {
   }
 }
 </script>
-<div id="version-badge">v93</div>
+<div id="version-badge">v94</div>
 </body>
 </html>
