@@ -3926,7 +3926,6 @@ function renderTasteCard(index, isReplacement = false) {
 
   updateTasteBar();
   engine.trackShown(tasteAnime[index]);
-  trackSeen(tasteAnime[index]); // mark as seen now that it's actually on screen
 
   // Refill reserve proactively when running low
   if (reservePool.length < RESERVE_LOW_THRESHOLD && !isLoadingReserve) {
@@ -3949,7 +3948,6 @@ function swipeTaste(card, index, action) {
               : 'right';
   flyCard(card, dir).then(() => {
     if (action === 'skip') {
-      seenIds.add(anime.id); // user saw this card — don't show it in recs
       replaceSkippedCard(anime, index);
     } else {
       if (action === 'like' || action === 'superlike') likeCount++;
@@ -6373,6 +6371,6 @@ else {
   }
 }
 </script>
-<div id="version-badge">v98</div>
+<div id="version-badge">v99</div>
 </body>
 </html>
