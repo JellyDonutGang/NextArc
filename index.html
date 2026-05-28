@@ -3660,6 +3660,7 @@ function swipeTaste(card, index, action) {
       totalShown++;
       updateTasteBar();
       engine.update(anime, action);
+      seenIds.add(anime.id); // exclude from rec queue — already rated during onboarding
       tasteIndex = index + 1;
       _saveEngineState();
       renderTasteCard(tasteIndex);
@@ -5898,6 +5899,6 @@ else {
   }
 }
 </script>
-<div id="version-badge">v74</div>
+<div id="version-badge">v75</div>
 </body>
 </html>
