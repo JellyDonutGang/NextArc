@@ -1281,8 +1281,20 @@
     .sheet-anime-name {
       font-size: 20px;
       font-weight: 800;
-      margin-bottom: 20px;
+      margin-bottom: 8px;
     }
+    .sheet-anime-meta {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+      font-size: 13px;
+      color: rgba(255,255,255,0.6);
+    }
+    .sheet-anime-meta .star-rating { font-size: 14px; }
+    .sheet-anime-meta .stars-filled { color: #FFB703; }
+    .sheet-anime-meta .stars-empty  { color: rgba(255,255,255,0.2); }
     /* ── Trailer Player ───────────────────────────── */
     .trailer-wrap {
       position: relative;
@@ -2730,6 +2742,7 @@
     <div class="sheet-handle"></div>
     <div class="sheet-title">Now Watching</div>
     <div class="sheet-anime-name" id="sheet-anime-name"></div>
+    <div class="sheet-anime-meta" id="sheet-anime-meta"></div>
     <div id="trailer-section" style="display:none">
       <div class="trailer-section-label">Trailer</div>
       <div class="trailer-wrap" id="trailer-wrap">
@@ -5221,6 +5234,29 @@ function openWatchSheet(anime) {
   document.getElementById('sheet-anime-name').textContent =
     anime.title?.english || anime.title?.romaji || 'Unknown';
 
+  // ── Meta line (stars · year · episodes) ────────
+  const _metaEl = document.getElementById('sheet-anime-meta');
+  const _stars = anime.averageScore
+    ? `<span class="star-rating">
+        <span class="stars-empty">★★★★★</span>
+        <span class="stars-filled" style="width:${anime.averageScore}%">★★★★★</span>
+       </span>`
+    : '';
+  const _voteCount = (() => {
+    const n = anime.popularity || 0;
+    if (!n) return '';
+    if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1).replace(/\.0$/, '')}m`;
+    if (n >= 1_000)     return `${Math.round(n / 1_000)}k`;
+    return String(n);
+  })();
+  const _year = anime.startDate?.year ? String(anime.startDate.year) : '';
+  const _eps  = anime.episodes        ? `${anime.episodes} eps`      : '';
+  const _metaParts = [_year, _eps].filter(Boolean).join(' · ');
+  const _metaSep   = _stars && _metaParts ? '<span style="opacity:0.35"> · </span>' : '';
+  _metaEl.innerHTML = _stars
+    + (_voteCount ? `<span style="font-size:12px">${_voteCount}</span>` : '')
+    + _metaSep + _metaParts;
+
   // ── Trailer ────────────────────────────────────
   const trailerSection = document.getElementById('trailer-section');
   const trailerWrap    = document.getElementById('trailer-wrap');
@@ -6319,6 +6355,6 @@ else {
   }
 }
 </script>
-<div id="version-badge">v90</div>
+<div id="version-badge">v91</div>
 </body>
 </html>
