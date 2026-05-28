@@ -253,6 +253,13 @@ const TONE_DEFS = {
     genres: ['Psychological'],
     min: 0.30,
   },
+  romantic: {
+    tags:   ['Romance', 'Love Triangle', 'Unrequited Love', 'First Love',
+             'Childhood Friend Romance', 'Forbidden Love', 'Arranged Marriage',
+             'Breakup', 'School Romance'],
+    genres: ['Romance'],
+    min: 0.35,
+  },
 };
 
 const VISUAL_DEFS = {

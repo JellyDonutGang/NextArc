@@ -2853,6 +2853,11 @@ const SEED_POOL_IDS = [
   // ── Romantic Comedy (fun romance, no tragedy) ─────
   101921, // Kaguya-sama        — competitive rom-com, pure fun, zero sadness
   132405, // My Dress-Up Darling— wholesome romance + fan service, warm, cozy
+  // ── Pure Romance (broad spectrum) ────────────────
+  124080, // Horimiya           — wholesome school romance, warm, fast-paced
+  100526, // Fruits Basket 2019 — emotional supernatural romance, redemption
+  9989,   // AnoHana            — bittersweet emotional romance, grief, short
+  6045,   // Kimi ni Todoke     — slow-burn school romance, shy protagonist
 ];
 
 // ── Onboarding signal thresholds ──────────────────
@@ -2882,29 +2887,43 @@ function selectDiverseSeed(pool, n) {
 
   const DIMS = [
     'fanService','violence','darkness','romance',
-    'humor','emotionalIntensity','pacing','niche',
+    'humor','emotionalWeight','pacing','niche',
   ];
 
-  // Pre-compute scalar profiles once
-  const profiles = pool.map(a => ({ anime: a, s: extractScalars(a) }));
+  // Pre-compute scalar profiles using the engine's extractFeatures
+  // (extractScalars was a placeholder — extractFeatures is the real function)
+  const profiles = pool.map(a => ({ anime: a, s: extractFeatures(a).scalars }));
 
   // Squared Euclidean distance in 8D scalar space
   function dist2(a, b) {
-    return DIMS.reduce((sum, d) => sum + (a.s[d] - b.s[d]) ** 2, 0);
+    return DIMS.reduce((sum, d) => sum + ((a.s[d] || 0) - (b.s[d] || 0)) ** 2, 0);
   }
 
-  // Start with a random anime
-  const selected = [profiles[Math.floor(Math.random() * profiles.length)]];
-  const remaining = profiles.filter(p => p !== selected[0]);
+  // ── Guaranteed genre anchors ────────────────────────────────────────────
+  // Romance is consistently crushed by max-distance diversity because romance
+  // shows cluster together in scalar space and the greedy algo picks at most one.
+  // Pre-select 2 romance anchors so they always make the initial queue.
+  const ROMANCE_FLOOR = 2;
+  const romanceProfiles = profiles
+    .filter(p => (p.anime.genres || []).includes('Romance') || (p.s.romance || 0) >= 2.5)
+    .sort(() => Math.random() - 0.5);
 
-  // Greedy: always add the point furthest from all already-selected points
-  while (selected.length < n && remaining.length > 0) {
+  const anchors  = romanceProfiles.slice(0, Math.min(ROMANCE_FLOOR, romanceProfiles.length));
+  const anchorIds = new Set(anchors.map(p => p.anime.id));
+  const remaining = profiles.filter(p => !anchorIds.has(p.anime.id));
+
+  // ── Greedy farthest-point sampling for the rest ─────────────────────────
+  // Start from the anchors so subsequent picks maximise distance from them too
+  const selected = [...anchors];
+  const pool2    = [...remaining];
+
+  while (selected.length < n && pool2.length > 0) {
     let bestIdx = 0, bestMinDist = -1;
-    for (let i = 0; i < remaining.length; i++) {
-      const minDist = Math.min(...selected.map(s => dist2(remaining[i], s)));
+    for (let i = 0; i < pool2.length; i++) {
+      const minDist = Math.min(...selected.map(s => dist2(pool2[i], s)));
       if (minDist > bestMinDist) { bestMinDist = minDist; bestIdx = i; }
     }
-    selected.push(remaining.splice(bestIdx, 1)[0]);
+    selected.push(pool2.splice(bestIdx, 1)[0]);
   }
 
   // Shuffle so the card order feels random, not algorithmic
@@ -5900,6 +5919,6 @@ else {
   }
 }
 </script>
-<div id="version-badge">v77</div>
+<div id="version-badge">v78</div>
 </body>
 </html>
