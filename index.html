@@ -329,6 +329,29 @@
       color: rgba(255,255,255,0.65);
       margin-bottom: 10px;
       letter-spacing: 0.2px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      flex-wrap: wrap;
+    }
+    .star-rating {
+      position: relative;
+      display: inline-block;
+      line-height: 1;
+      font-size: 13px;
+      letter-spacing: 2px;
+    }
+    .stars-empty {
+      color: rgba(255,255,255,0.22);
+    }
+    .stars-filled {
+      position: absolute;
+      top: 0;
+      left: 0;
+      overflow: hidden;
+      white-space: nowrap;
+      color: #FFB703;
+      letter-spacing: 2px;
     }
     .genre-chips {
       display: flex;
@@ -346,11 +369,11 @@
       border: none;
     }
     .card-explanation {
-      font-size: 11px;
-      font-style: italic;
-      color: rgba(255,255,255,0.48);
+      font-size: 12px;
+      color: rgba(255,255,255,0.73);
       line-height: 1.45;
-      margin-top: 7px;
+      margin-top: 5px;
+      margin-bottom: 8px;
       letter-spacing: 0.05px;
     }
     /* Emotional vibe chips — frosted outline style, distinct from genre chips */
@@ -3542,11 +3565,18 @@ function buildCard(anime, isTop = true, explanation = null) {
 
   const imgSrc = anime.coverImage?.extraLarge || anime.coverImage?.large || '';
   const title = anime.title?.english || anime.title?.romaji || 'Unknown';
-  const score = anime.averageScore ? `⭐ ${(anime.averageScore / 10).toFixed(1)}` : '';
   const year  = anime.startDate?.year ? String(anime.startDate.year) : '';
   const eps   = anime.episodes ? `${anime.episodes} eps` : '';
   const genres = anime.genres || [];
   const primaryGenre = genres[0] || '';
+
+  // 5-star rating: AniList score is 0-100, fill % maps directly to 5 stars
+  const starRating = anime.averageScore
+    ? `<span class="star-rating">
+        <span class="stars-empty">★★★★★</span>
+        <span class="stars-filled" style="width:${anime.averageScore}%">★★★★★</span>
+       </span>`
+    : '';
 
   // Apply genre colour theme via CSS variables
   const genreColor = getGenreColor(genres);
@@ -3585,7 +3615,9 @@ function buildCard(anime, isTop = true, explanation = null) {
     .map(label => `<span class="vibe-chip">${label}</span>`)
     .join('');
 
-  const metaLine = [score, year, eps].filter(Boolean).join(' · ');
+  const metaParts = [year, eps].filter(Boolean).join(' · ');
+  const metaSep   = starRating && metaParts ? '<span style="opacity:0.4"> · </span>' : '';
+  const metaLine  = starRating + metaSep + metaParts;
 
   card.innerHTML = `
     <div class="stamp stamp-like">LIKE</div>
@@ -3599,9 +3631,9 @@ function buildCard(anime, isTop = true, explanation = null) {
     ${primaryGenre ? `<div class="genre-pill">${primaryGenre}</div>` : ''}
     <div class="card-info">
       <div class="card-title">${title}</div>
+      ${explanation ? `<div class="card-explanation">${explanation}</div>` : ''}
       <div class="card-meta">${metaLine}</div>
       <div class="genre-chips">${vibeChips}</div>
-      ${explanation ? `<div class="card-explanation">${explanation}</div>` : ''}
     </div>
     <div class="card-corner-frame"></div>`;
 
@@ -6203,6 +6235,6 @@ else {
   }
 }
 </script>
-<div id="version-badge">v83</div>
+<div id="version-badge">v85</div>
 </body>
 </html>
