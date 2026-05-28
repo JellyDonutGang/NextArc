@@ -4988,18 +4988,20 @@ function openWatchSheet(anime) {
   });
 
   document.getElementById('watch-sheet').classList.add('open');
+  document.getElementById('sheet-backdrop').onclick = closeWatchSheet;
+}
 
-  // Close sheet: stop video, show next rec
-  document.getElementById('sheet-backdrop').onclick = () => {
-    // Kill iframe (stops video/audio immediately)
-    const iframe = trailerWrap.querySelector('.trailer-iframe');
-    if (iframe) iframe.src = '';
-    // Reset description collapse state
-    document.getElementById('desc-text').classList.remove('expanded');
-    document.getElementById('desc-toggle').textContent = 'More ▾';
-    document.getElementById('watch-sheet').classList.remove('open');
-    // Stay on current rec — user decides with Good/Bad buttons
-  };
+function closeWatchSheet() {
+  const trailerWrap = document.getElementById('trailer-wrap');
+  const iframe = trailerWrap?.querySelector('.trailer-iframe');
+  if (iframe) iframe.src = '';
+  document.getElementById('desc-text').classList.remove('expanded');
+  document.getElementById('desc-toggle').textContent = 'More ▾';
+  document.getElementById('watch-sheet').classList.remove('open');
+  // Reset any drag transform left over
+  const content = document.querySelector('#watch-sheet .sheet-content');
+  content.style.transform = '';
+  content.style.transition = '';
 }
 
 /* ─── App boot ──────────────────────────────────── */
@@ -5016,6 +5018,53 @@ document.getElementById('btn-start').addEventListener('click', () => {
 document.getElementById('btn-start-taste').addEventListener('click', () => {
   hideOverlay('overlay-taste');
 });
+
+/* ─── Watch sheet swipe-down-to-close ───────────────
+   Attach to the handle bar so it doesn't conflict
+   with scrolling the sheet body below it.
+────────────────────────────────────────────────── */
+(function () {
+  const handle  = document.querySelector('#watch-sheet .sheet-handle');
+  const content = document.querySelector('#watch-sheet .sheet-content');
+  const CLOSE_THRESHOLD = 80; // px downward drag needed to dismiss
+
+  let dragStartY = 0;
+  let dragDY     = 0;
+  let dragging   = false;
+
+  handle.addEventListener('touchstart', e => {
+    dragStartY = e.touches[0].clientY;
+    dragDY     = 0;
+    dragging   = true;
+    content.style.transition = 'none';
+  }, { passive: true });
+
+  // non-passive so we can call preventDefault and block the scroll
+  handle.addEventListener('touchmove', e => {
+    if (!dragging) return;
+    dragDY = e.touches[0].clientY - dragStartY;
+    if (dragDY <= 0) { content.style.transform = ''; return; }
+    e.preventDefault();
+    content.style.transform = `translateY(${dragDY}px)`;
+  }, { passive: false });
+
+  handle.addEventListener('touchend', () => {
+    if (!dragging) return;
+    dragging = false;
+
+    if (dragDY > CLOSE_THRESHOLD) {
+      // Snap sheet off screen then close
+      content.style.transition = 'transform 0.25s cubic-bezier(0.32, 0.72, 0, 1)';
+      content.style.transform  = 'translateY(110%)';
+      setTimeout(() => closeWatchSheet(), 240);
+    } else {
+      // Spring back into place
+      content.style.transition = 'transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)';
+      content.style.transform  = 'translateY(0)';
+      setTimeout(() => { content.style.transition = ''; content.style.transform = ''; }, 300);
+    }
+  }, { passive: true });
+})();
 
 document.getElementById('btn-start-recs').addEventListener('click', () => {
   hideOverlay('overlay-recs');
@@ -5919,6 +5968,6 @@ else {
   }
 }
 </script>
-<div id="version-badge">v78</div>
+<div id="version-badge">v79</div>
 </body>
 </html>
