@@ -353,6 +353,19 @@
       margin-top: 7px;
       letter-spacing: 0.05px;
     }
+    /* Emotional vibe chips — frosted outline style, distinct from genre chips */
+    .vibe-chip {
+      border-radius: 50px;
+      padding: 4px 10px;
+      font-size: 10.5px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.88);
+      background: rgba(255,255,255,0.10);
+      border: 1px solid rgba(255,255,255,0.28);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      letter-spacing: 0.3px;
+    }
 
     /* Swipe stamps */
     .stamp {
@@ -3532,21 +3545,31 @@ function buildCard(anime, isTop = true, explanation = null) {
   const score = anime.averageScore ? `⭐ ${(anime.averageScore / 10).toFixed(1)}` : '';
   const year  = anime.startDate?.year ? String(anime.startDate.year) : '';
   const eps   = anime.episodes ? `${anime.episodes} eps` : '';
-  const genres = (anime.genres || []).slice(0, 4);
+  const genres = anime.genres || [];
+  const primaryGenre = genres[0] || '';
 
   // Apply genre colour theme via CSS variables
-  const genreColor = getGenreColor(anime.genres);
+  const genreColor = getGenreColor(genres);
   const rgb = hexToRgb(genreColor);
   card.style.setProperty('--genre-color', genreColor);
   card.style.setProperty('--genre-glow', `rgba(${rgb},0.28)`);
   // Store glow so call sites can apply it to the parent AFTER appending to DOM
   card._genreGlow = `rgba(${rgb},0.28)`;
 
-  // Each chip gets its own genre colour
-  const genreChips = genres.map(g => {
-    const c = GENRE_COLORS[g] || '#2e80d8';
-    return `<span class="chip" style="background:${c}">${g}</span>`;
-  }).join('');
+  // Primary genre chip (colored) + up to 2 emotional vibe chips (frosted)
+  const primaryChip = primaryGenre
+    ? `<span class="chip" style="background:${GENRE_COLORS[primaryGenre] || '#2e80d8'}">${primaryGenre}</span>`
+    : '';
+  const bucketKeys = extractFeatures(anime).keys.emotionalBucket || [];
+  const vibeChips = bucketKeys
+    .slice(0, 2)
+    .map(k => {
+      const name = k.replace('bucket:', '');
+      const label = BUCKET_SHORT_LABELS[name];
+      return label ? `<span class="vibe-chip">${label}</span>` : '';
+    })
+    .filter(Boolean)
+    .join('');
 
   const metaLine = [score, year, eps].filter(Boolean).join(' · ');
 
@@ -3559,10 +3582,11 @@ function buildCard(anime, isTop = true, explanation = null) {
       ? `<img class="card-img" src="${imgSrc}" alt="${title}" loading="lazy" />`
       : `<div class="card-img-placeholder">🎌</div>`}
     <div class="card-gradient"></div>
+    ${primaryGenre ? `<div class="genre-pill">${primaryGenre}</div>` : ''}
     <div class="card-info">
       <div class="card-title">${title}</div>
       <div class="card-meta">${metaLine}</div>
-      <div class="genre-chips">${genreChips}</div>
+      <div class="genre-chips">${primaryChip}${vibeChips}</div>
       ${explanation ? `<div class="card-explanation">${explanation}</div>` : ''}
     </div>
     <div class="card-corner-frame"></div>`;
@@ -4328,6 +4352,18 @@ async function prefetchNextBatch() {
 /* ─── Recommendation Explanation System ─────────── */
 
 // Human-readable phrase for each emotional bucket (used in explanation copy)
+// Short display labels for emotional vibe chips on cards
+const BUCKET_SHORT_LABELS = {
+  dark_complexity:  'Dark & Complex',
+  cozy_comfort:     'Cozy Vibes',
+  hype_energy:      'Hype Energy',
+  emotional_depth:  'Emotional',
+  mind_games:       'Mind Games',
+  found_family:     'Found Family',
+  weird_niche:      'Weird & Niche',
+  cinematic:        'Cinematic',
+};
+
 const BUCKET_MATCH_PHRASES = {
   dark_complexity:  'dark moral complexity and psychological weight',
   cozy_comfort:     'cozy, low-stakes comfort anime',
@@ -6153,6 +6189,6 @@ else {
   }
 }
 </script>
-<div id="version-badge">v81</div>
+<div id="version-badge">v82</div>
 </body>
 </html>
