@@ -3609,21 +3609,26 @@ function attachSwipe(card, onLike, onDislike, onSuperGood, onSkipDown, onTap) {
       else        stampDislike.style.opacity = progress;
     }
   }
-  function onEnd() {
+  function onEnd(e) {
     if (!dragging) return;
     dragging = false;
     card.style.transition = 'transform 0.3s ease';
     clearStamps();
     const isVertical = Math.abs(dy) > Math.abs(dx) + 10;
-    if      (isVertical && dy < -80 && onSuperGood) { onSuperGood(); }
-    else if (isVertical && dy >  80 && onSkipDown)  { onSkipDown(); }
-    else if (dx > 80)                               { onLike(); }
-    else if (dx < -80)                              { onDislike(); }
+    let realSwipe = false;
+    if      (isVertical && dy < -80 && onSuperGood) { onSuperGood(); realSwipe = true; }
+    else if (isVertical && dy >  80 && onSkipDown)  { onSkipDown();  realSwipe = true; }
+    else if (dx > 80)                               { onLike();      realSwipe = true; }
+    else if (dx < -80)                              { onDislike();   realSwipe = true; }
     else {
       card.style.transform = '';
       // Genuine tap (no meaningful drag) — fire play overlay
       if (Math.abs(dx) < 10 && Math.abs(dy) < 10 && onTap) onTap();
     }
+    // Prevent the browser's synthetic ~300ms-delayed click that fires after touchend.
+    // Without this, a swipe can trigger click handlers on elements beneath the finger
+    // (heart button, play button) once the swiped card has flown away.
+    if (realSwipe && e) e.preventDefault();
     dx = 0; dy = 0;
   }
 
@@ -6148,6 +6153,6 @@ else {
   }
 }
 </script>
-<div id="version-badge">v80</div>
+<div id="version-badge">v81</div>
 </body>
 </html>
