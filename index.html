@@ -3198,7 +3198,21 @@ let isGemFetching     = false;
 let _gemFetchPromise  = null;
 let recsSinceGem      = 0;       // recs shown since last gem
 let currentRecIsGem   = false;   // true while a gem card is on screen
-const GEM_INTERVAL    = 8;       // show 1 gem every N regular recs
+let nextGemInterval   = 8;       // cards until the next gem (variable after gem #2)
+
+// After gem #2 the interval becomes random so it never feels mechanical.
+// Weighted toward 7–9 with occasional early (5–6) or late (10–12) surprises.
+function pickNextGemInterval() {
+  if (gemsClaimed < 2) return 8;   // first two gems are predictable (teaches the mechanic)
+  const roll = Math.random();
+  if (roll < 0.12) return 5;        // 12% — early surprise
+  if (roll < 0.25) return 6;        // 13% — slightly early
+  if (roll < 0.50) return 7;        // 25% — just under original
+  if (roll < 0.72) return 8;        // 22% — original anchor
+  if (roll < 0.87) return 9;        // 15% — a little longer
+  if (roll < 0.95) return 10;       //  8% — noticeable wait
+  return 11 + Math.floor(Math.random() * 2); // 5% — 11–12 (long build-up)
+}
 const GEM_SCORE_MIN   = 75;      // must be genuinely good
 const GEM_POP_MAX     = 60000;   // niche but not totally obscure (sweet spot: 10k–60k)
 
@@ -3224,22 +3238,22 @@ function updateGemBar(isGemShowing = false) {
   const inSecondHalf = (gemsClaimed % 2 === 1);
 
   // Bar position —————————————————————————————
-  // Gem1 shows at 50%, gem2 shows at 100%.  Between gems, fill normally.
+  // Each gem is its own 0→100% window based on nextGemInterval.
+  // Gem markers sit at 50% and 100% of the visual bar as fixed landmarks.
   let barPct;
   if (gem1Active) {
     barPct = 50;
   } else if (gem2Active) {
     barPct = 100;
   } else {
-    const cyclePos = inSecondHalf
-      ? GEM_INTERVAL + recsSinceGem   // 8→16 heading to gem2
-      : recsSinceGem;                 // 0→8  heading to gem1
-    barPct = Math.min((cyclePos / (GEM_INTERVAL * 2)) * 100, 100);
+    // Each half-cycle is one gem interval. Map recsSinceGem → 0–50% or 50–100%.
+    const halfOffset = inSecondHalf ? 50 : 0;
+    barPct = halfOffset + Math.min((recsSinceGem / nextGemInterval) * 50, 50);
   }
   fill.style.width = barPct + '%';
 
   // Charge intensity ——————————————————————————
-  const cardsLeft = GEM_INTERVAL - recsSinceGem;
+  const cardsLeft = nextGemInterval - recsSinceGem;
   const isCharging = !isGemShowing && cardsLeft <= 2 && recsSinceGem > 0;
 
   fill.classList.toggle('charging', isCharging);
@@ -3316,7 +3330,7 @@ function _saveEngineState() {
       onboarded:      engine.onboarded,
       totalSwipes:    engine.totalSwipes,
       // App-level state
-      likeCount, dislikeCount, totalShown, gemsClaimed,
+      likeCount, dislikeCount, totalShown, gemsClaimed, nextGemInterval,
       seenIds:        [...seenIds],
     };
     localStorage.setItem(_ENGINE_KEY, JSON.stringify(state));
@@ -3359,7 +3373,8 @@ function _loadEngineState() {
     if (s.likeCount    != null) likeCount    = s.likeCount;
     if (s.dislikeCount != null) dislikeCount = s.dislikeCount;
     if (s.totalShown   != null) totalShown   = s.totalShown;
-    if (s.gemsClaimed  != null) gemsClaimed  = s.gemsClaimed;
+    if (s.gemsClaimed     != null) gemsClaimed     = s.gemsClaimed;
+    if (s.nextGemInterval != null) nextGemInterval = s.nextGemInterval;
 
     // Restore seen IDs
     if (Array.isArray(s.seenIds)) {
@@ -4838,10 +4853,11 @@ function showNextRec(firstCard = false) {
   }
 
   // ── Hidden Gem injection ────────────────────────
-  // Every GEM_INTERVAL regular recs, surface a taste-matched hidden gem
+  // Surface a gem every nextGemInterval cards. Interval is fixed at 8 for
+  // the first two gems (teaches the mechanic), then randomised after that.
   let isGem = false;
   let anime;
-  if (recsSinceGem >= GEM_INTERVAL && gemPos < gemQueue.length) {
+  if (recsSinceGem >= nextGemInterval && gemPos < gemQueue.length) {
     const candidate = gemQueue[gemPos];
     if (candidate && !seenIds.has(candidate.id)) {
       anime     = candidate;
@@ -4849,6 +4865,8 @@ function showNextRec(firstCard = false) {
       gemPos++;
       recsSinceGem = 0;
       gemsClaimed++;
+      // Pick the next interval now that this gem has fired
+      nextGemInterval = pickNextGemInterval();
       // Refill gem queue in background if running low
       if (gemQueue.length - gemPos < 3 && !isGemFetching) fetchGems();
     } else {
@@ -6301,6 +6319,6 @@ else {
   }
 }
 </script>
-<div id="version-badge">v89</div>
+<div id="version-badge">v90</div>
 </body>
 </html>
