@@ -1119,10 +1119,11 @@
       bottom: 0; left: 0; right: 0;
       background: var(--surface);
       border-radius: 28px 28px 0 0;
-      padding: 20px 24px max(24px, env(safe-area-inset-bottom));
-      max-height: 82vh;
+      padding: 20px 24px max(32px, env(safe-area-inset-bottom));
+      max-height: 92vh;
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
     }
     .sheet-handle {
       width: 40px; height: 4px;
@@ -5862,7 +5863,7 @@ _alRenderSection();
 // ── Block all page scroll on iOS Safari ────────────
 // Allow touchmove only inside elements that are meant to scroll.
 document.addEventListener('touchmove', e => {
-  const scrollable = e.target.closest('#screen-profile, .watch-sheet-body, #auth-sheet .auth-panel, #cta-sheet .cta-panel');
+  const scrollable = e.target.closest('#screen-profile, .sheet-content, #auth-sheet .auth-panel, #cta-sheet .cta-panel');
   if (!scrollable) {
     e.preventDefault();
   }
@@ -5899,6 +5900,6 @@ else {
   }
 }
 </script>
-<div id="version-badge">v76</div>
+<div id="version-badge">v77</div>
 </body>
 </html>
