@@ -443,34 +443,36 @@
       justify-content: center;
     }
     .action-btn {
-      border-radius: 12px;
-      border: none;
+      border-radius: 16px;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: transform 0.15s, box-shadow 0.15s;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.35);
+      transition: transform 0.15s, box-shadow 0.15s, background 0.15s;
+      /* Glassmorphic — matches card-play-overlay */
+      background: rgba(255, 255, 255, 0.13);
+      backdrop-filter: blur(20px) saturate(160%) brightness(1.08);
+      -webkit-backdrop-filter: blur(20px) saturate(160%) brightness(1.08);
+      border: 1.5px solid rgba(255, 255, 255, 0.28);
+      box-shadow:
+        0 8px 28px rgba(0, 0, 0, 0.42),
+        0 1.5px 0 rgba(255, 255, 255, 0.2) inset;
     }
-    .action-btn:active { transform: scale(0.92); }
+    .action-btn:active {
+      transform: scale(0.92);
+      background: rgba(255, 255, 255, 0.2);
+    }
 
-    /* Don't Like — explicit red-tinted negative */
     /* Primary actions — same size */
     .btn-dislike,
     .btn-like {
       width: 66px; height: 66px;
-      background: var(--accent);
-      border: none;
-      color: #fff;
     }
 
     /* Secondary actions — same size, slightly smaller */
     .btn-skip,
     .btn-supergood {
       width: 52px; height: 52px;
-      background: var(--accent);
-      border: none;
-      color: #fff;
     }
 
     /* Icon sizing inside buttons */
@@ -2312,16 +2314,16 @@
 
   <div class="action-buttons">
     <button class="action-btn btn-dislike" id="btn-dislike" aria-label="Bad">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.8" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#ff5252" stroke-width="2.8" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </button>
     <button class="action-btn btn-skip" id="btn-skip" aria-label="Skip">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffd93d" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
     </button>
     <button class="action-btn btn-supergood" id="btn-supergood" aria-label="Super like">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="white"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="#5ba4ff"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
     </button>
     <button class="action-btn btn-like" id="btn-like" aria-label="Good">
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="#4dcc6a"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
     </button>
   </div>
 </section>
@@ -2492,16 +2494,16 @@
 
   <div class="action-buttons">
     <button class="action-btn btn-dislike" id="btn-rec-dislike" aria-label="Bad">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.8" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#ff5252" stroke-width="2.8" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </button>
     <button class="action-btn btn-skip" id="btn-rec-skip" aria-label="Skip">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffd93d" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
     </button>
     <button class="action-btn btn-supergood" id="btn-rec-supergood" aria-label="Super like">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="white"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="#5ba4ff"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
     </button>
     <button class="action-btn btn-like" id="btn-rec-like" aria-label="Good">
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="#4dcc6a"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
     </button>
   </div>
 </section>
@@ -6371,6 +6373,6 @@ else {
   }
 }
 </script>
-<div id="version-badge">v99</div>
+<div id="version-badge">v100</div>
 </body>
 </html>
