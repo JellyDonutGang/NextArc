@@ -1,12 +1,14 @@
 /**
  * Next Arc Service Worker
  * Strategy:
- *   - App shell (HTML, JS, manifest, icons): cache-first
+ *   - HTML navigation (index.html, /): network-first so a refresh always
+ *     fetches the latest build; falls back to cache when offline
+ *   - JS / CSS / manifest / icons: cache-first (fast; busted by CACHE_VERSION bump)
  *   - AniList API (graphql.anilist.co): network-first, fallback to cache
  *   - Images (cover art): stale-while-revalidate
  */
 
-const CACHE_VERSION = 'nextarc-v100';
+const CACHE_VERSION = 'nextarc-v101';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -40,7 +42,7 @@ self.addEventListener('activate', event => {
     ).then(() => self.clients.claim())
      .then(() => {
        // After claiming, tell every open tab to reload so it picks up
-       // the new version cleanly — avoids old HTML running under new SW
+       // the new JS/CSS cleanly — avoids old sub-resources under new SW
        return self.clients.matchAll({ type: 'window' }).then(clients => {
          clients.forEach(client => client.postMessage({ type: 'SW_UPDATED' }));
        });
@@ -65,7 +67,18 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // 3. App shell → cache-first
+  // 3. HTML navigation → network-first
+  //    request.mode === 'navigate' catches the browser's top-level page load
+  //    (manual refresh, address-bar Enter, link click). This ensures a refresh
+  //    always fetches the latest index.html from the server rather than serving
+  //    a stale cached copy; the cache is only used when offline.
+  if (request.mode === 'navigate') {
+    event.respondWith(networkFirst(request, CACHE_VERSION));
+    return;
+  }
+
+  // 4. JS / CSS / manifest / icons → cache-first (fast; invalidated by
+  //    CACHE_VERSION bump which pre-caches fresh copies on each deploy)
   if (request.method === 'GET') {
     event.respondWith(cacheFirst(request, CACHE_VERSION));
   }
