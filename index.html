@@ -314,7 +314,7 @@
       position: absolute;
       bottom: 0; left: 0; right: 0;
       padding: 20px;
-      padding-bottom: 53px; /* 20px normal + 33px to clear the button overlap */
+      padding-bottom: 56px; /* 20px normal + 36px to clear the button overlap */
     }
     .card-title {
       font-size: 21px;
@@ -439,13 +439,12 @@
     .action-buttons {
       display: flex;
       gap: 12px;
-      /* Pull buttons up so they sit half-on / half-off the card bottom.
-         33px = half the tallest button (66px). position+z-index ensures
-         they paint on top of the card rather than behind it. */
-      margin-top: -33px;
+      /* Pull buttons up so they sit on the card bottom edge.
+         36px = half the play button height (72px). */
+      margin-top: -36px;
       position: relative;
       z-index: 10;
-      align-items: center;
+      align-items: flex-start; /* each button positioned from its own top */
       justify-content: center;
     }
     .action-btn {
@@ -455,7 +454,7 @@
       align-items: center;
       justify-content: center;
       transition: transform 0.15s, box-shadow 0.15s, background 0.15s;
-      /* Glassmorphic — matches card-play-overlay */
+      /* Glassmorphic */
       background: rgba(255, 255, 255, 0.13);
       backdrop-filter: blur(20px) saturate(160%) brightness(1.08);
       -webkit-backdrop-filter: blur(20px) saturate(160%) brightness(1.08);
@@ -469,16 +468,27 @@
       background: rgba(255, 255, 255, 0.2);
     }
 
-    /* Primary actions — same size */
+    /* Primary actions — vertically centred with the play button (72px) */
     .btn-dislike,
     .btn-like {
       width: 66px; height: 66px;
+      margin-top: 3px; /* (72 - 66) / 2 */
     }
 
-    /* Secondary actions — same size, slightly smaller */
+    /* Secondary actions — top edge sits at play button's halfway point */
     .btn-skip,
     .btn-supergood {
       width: 52px; height: 52px;
+      margin-top: 36px; /* 72 / 2 */
+    }
+
+    /* Play button — circular, tallest, anchors the row */
+    .btn-play {
+      width: 72px; height: 72px;
+      border-radius: 50%;
+      margin-top: 0;
+      font-size: 26px;
+      color: #fff;
     }
 
     /* Icon sizing inside buttons */
@@ -2325,6 +2335,9 @@
     <button class="action-btn btn-skip" id="btn-skip" aria-label="Skip">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffd93d" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
     </button>
+    <button class="action-btn btn-play" id="btn-play" aria-label="Watch">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="white"><polygon points="6,3 20,12 6,21"/></svg>
+    </button>
     <button class="action-btn btn-supergood" id="btn-supergood" aria-label="Super like">
       <svg width="24" height="24" viewBox="0 0 24 24" fill="#5ba4ff"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
     </button>
@@ -2504,6 +2517,9 @@
     </button>
     <button class="action-btn btn-skip" id="btn-rec-skip" aria-label="Skip">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffd93d" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+    </button>
+    <button class="action-btn btn-play" id="btn-rec-play" aria-label="Watch">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="white"><polygon points="6,3 20,12 6,21"/></svg>
     </button>
     <button class="action-btn btn-supergood" id="btn-rec-supergood" aria-label="Super like">
       <svg width="24" height="24" viewBox="0 0 24 24" fill="#5ba4ff"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
@@ -4316,6 +4332,10 @@ document.getElementById('btn-dislike').addEventListener('click', () => {
   const card = document.querySelector('#card-stack .anime-card.top');
   if (card) swipeTaste(card, tasteIndex, 'dislike');
 });
+document.getElementById('btn-play').addEventListener('click', () => {
+  const anime = tasteAnime[tasteIndex];
+  if (anime) openWatchSheet(anime);
+});
 
 /* ─── RECOMMENDATIONS FLOW ──────────────────────── */
 
@@ -4956,17 +4976,6 @@ function showNextRec(firstCard = false) {
   // Fire reveal animation after card + glow are in place
   if (isGem) triggerGemReveal(card, container);
 
-  // Play overlay — appended to container (NOT card) so backdrop-filter works
-  // (.anime-card has overflow:hidden which kills backdrop-filter on children)
-  const playBtn = document.createElement('button');
-  playBtn.className = 'card-play-overlay';
-  playBtn.innerHTML = '▶';
-  playBtn.addEventListener('click', e => {
-    e.stopPropagation();
-    openWatchSheet(anime);
-  });
-  container.appendChild(playBtn);
-
   // Heart save button — sibling of card so backdrop-filter works
   const heartBtn = document.createElement('button');
   heartBtn.className = 'card-heart-btn';
@@ -5016,7 +5025,7 @@ function showNextRec(firstCard = false) {
     () => { recSwipe(card, anime, 'dislike'); },
     () => { recSwipe(card, anime, 'supergood'); },
     () => { recSwipe(card, anime, 'skip'); },
-    () => { const pb = container.querySelector('.card-play-overlay'); if (pb) pb.click(); }
+    null /* card tap no longer opens watch sheet — use the play button */
   );
 
   document.getElementById('recs-subtitle').textContent =
@@ -5089,7 +5098,9 @@ document.getElementById('btn-rec-like').addEventListener('click', () => {
   const card = document.querySelector('#rec-card-container .anime-card');
   if (card && currentRecAnime) recSwipe(card, currentRecAnime, 'like');
 });
-// btn-rec-watch removed from DOM — play button is now a card overlay
+document.getElementById('btn-rec-play').addEventListener('click', () => {
+  if (currentRecAnime) openWatchSheet(currentRecAnime);
+});
 
 /* ─── Watch Bottom Sheet ────────────────────────── */
 function _logo(svg) {
@@ -6395,6 +6406,6 @@ else {
   }
 }
 </script>
-<div id="version-badge">v105</div>
+<div id="version-badge">v106</div>
 </body>
 </html>
