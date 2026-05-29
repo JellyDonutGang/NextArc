@@ -438,7 +438,12 @@
     .action-buttons {
       display: flex;
       gap: 12px;
-      margin-top: 20px;
+      /* Pull buttons up so they sit half-on / half-off the card bottom.
+         33px = half the tallest button (66px). position+z-index ensures
+         they paint on top of the card rather than behind it. */
+      margin-top: -33px;
+      position: relative;
+      z-index: 10;
       align-items: center;
       justify-content: center;
     }
@@ -6373,6 +6378,6 @@ else {
   }
 }
 </script>
-<div id="version-badge">v101</div>
+<div id="version-badge">v102</div>
 </body>
 </html>
