@@ -3954,6 +3954,15 @@ function swipeTaste(card, index, action) {
               : action === 'skip'      ? 'down'
               : action === 'superlike' ? 'up'
               : 'right';
+
+  // Scale the peek card up to full size in sync with the fly (0.38s),
+  // so it's already at scale(1) when renderTasteCard fires — no snap.
+  const behind = document.querySelector('#card-stack .anime-card.behind');
+  if (behind) {
+    behind.style.transition = 'transform 0.38s cubic-bezier(0.4,0,0.2,1)';
+    behind.classList.remove('behind');
+  }
+
   flyCard(card, dir).then(() => {
     if (action === 'skip') {
       replaceSkippedCard(anime, index);
@@ -6379,6 +6388,6 @@ else {
   }
 }
 </script>
-<div id="version-badge">v103</div>
+<div id="version-badge">v104</div>
 </body>
 </html>
