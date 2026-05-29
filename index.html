@@ -3955,12 +3955,19 @@ function swipeTaste(card, index, action) {
               : action === 'superlike' ? 'up'
               : 'right';
 
-  // Scale the peek card up to full size in sync with the fly (0.38s),
-  // so it's already at scale(1) when renderTasteCard fires — no snap.
   const behind = document.querySelector('#card-stack .anime-card.behind');
   if (behind) {
-    behind.style.transition = 'transform 0.38s cubic-bezier(0.4,0,0.2,1)';
-    behind.classList.remove('behind');
+    if (action === 'skip') {
+      // Skip swaps the behind card for a similar pick — fade it out so it
+      // doesn't flash at full size before the replacement arrives
+      behind.style.transition = 'opacity 0.18s ease';
+      behind.style.opacity = '0';
+    } else {
+      // For all other actions, scale the peek card up in sync with the fly
+      // so it's already full size when renderTasteCard fires — no snap
+      behind.style.transition = 'transform 0.38s cubic-bezier(0.4,0,0.2,1)';
+      behind.classList.remove('behind');
+    }
   }
 
   flyCard(card, dir).then(() => {
@@ -6388,6 +6395,6 @@ else {
   }
 }
 </script>
-<div id="version-badge">v104</div>
+<div id="version-badge">v105</div>
 </body>
 </html>
