@@ -314,7 +314,7 @@
       position: absolute;
       bottom: 0; left: 0; right: 0;
       padding: 20px;
-      padding-bottom: 56px; /* 20px normal + 36px to clear the button overlap */
+      padding-bottom: 82px; /* 20px normal + 62px to clear the button overlap */
     }
     .card-title {
       font-size: 21px;
@@ -439,9 +439,10 @@
     .action-buttons {
       display: flex;
       gap: 12px;
-      /* Pull buttons up so they sit on the card bottom edge.
-         36px = half the play button height (72px). */
-      margin-top: -36px;
+      /* Pull buttons up so the card bottom aligns with the centres of the
+         four action buttons. Centres are at 62px from row top (skip/supergood
+         at margin-top:36 + half-height:26, X/heart at margin-top:29 + half:33). */
+      margin-top: -62px;
       position: relative;
       z-index: 10;
       align-items: flex-start; /* each button positioned from its own top */
@@ -6406,6 +6407,6 @@ else {
   }
 }
 </script>
-<div id="version-badge">v108</div>
+<div id="version-badge">v109</div>
 </body>
 </html>
