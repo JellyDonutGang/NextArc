@@ -439,14 +439,25 @@
     .action-buttons {
       display: flex;
       gap: 12px;
-      /* Pull buttons up so the card bottom aligns with the centres of the
-         four action buttons. Centres are at 62px from row top (skip/supergood
-         at margin-top:36 + half-height:26, X/heart at margin-top:29 + half:33). */
+      /* Pull the row up so the card bottom sits at the play button's centre.
+         Play centre = 36px from container top → overlap = 62 − 36 = 26px into card. */
       margin-top: -62px;
       position: relative;
       z-index: 10;
-      align-items: flex-start; /* each button positioned from its own top */
+      align-items: flex-start;
       justify-content: center;
+    }
+    /* Centre column: play apex, skip + supergood base */
+    .action-center {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+    /* Bottom row of the triangle */
+    .action-sub-row {
+      display: flex;
+      gap: 20px;
     }
     .action-btn {
       border-radius: 16px;
@@ -469,18 +480,18 @@
       background: rgba(255, 255, 255, 0.2);
     }
 
-    /* Primary actions — centres at 62px (same as skip/supergood) */
+    /* Primary actions — centres align with play button centre (36px from top) */
     .btn-dislike,
     .btn-like {
       width: 66px; height: 66px;
-      margin-top: 29px; /* 62 - 33 = centres align with skip/supergood */
+      margin-top: 3px; /* (72 − 66) / 2 = 3px → centres at 36px, same as play */
     }
 
-    /* Secondary actions — top at play's halfway (36px), centre at 62px */
+    /* Secondary actions — live in .action-sub-row, no margin needed */
     .btn-skip,
     .btn-supergood {
       width: 52px; height: 52px;
-      margin-top: 36px;
+      margin-top: 0;
     }
 
     /* Play button — circular, tallest, anchors the row */
@@ -2383,16 +2394,20 @@
     <button class="action-btn btn-dislike" id="btn-dislike" aria-label="Bad">
       <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#ff5252" stroke-width="2.8" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </button>
-    <button class="action-btn btn-skip" id="btn-skip" aria-label="Skip">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffd93d" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-    </button>
-    <button class="action-btn btn-play" id="btn-play" aria-label="Watch">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="white"><polygon points="6,3 20,12 6,21"/></svg>
-      <span class="btn-lock-badge" aria-hidden="true">🔒</span>
-    </button>
-    <button class="action-btn btn-supergood" id="btn-supergood" aria-label="Super like">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="#5ba4ff"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-    </button>
+    <div class="action-center">
+      <button class="action-btn btn-play" id="btn-play" aria-label="Watch">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="white"><polygon points="6,3 20,12 6,21"/></svg>
+        <span class="btn-lock-badge" aria-hidden="true">🔒</span>
+      </button>
+      <div class="action-sub-row">
+        <button class="action-btn btn-skip" id="btn-skip" aria-label="Skip">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffd93d" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+        </button>
+        <button class="action-btn btn-supergood" id="btn-supergood" aria-label="Super like">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="#5ba4ff"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        </button>
+      </div>
+    </div>
     <button class="action-btn btn-like" id="btn-like" aria-label="Good">
       <svg width="26" height="26" viewBox="0 0 24 24" fill="#4dcc6a"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
     </button>
@@ -6487,6 +6502,6 @@ else {
   }
 }
 </script>
-<div id="version-badge">v110</div>
+<div id="version-badge">v111</div>
 </body>
 </html>
