@@ -11,7 +11,43 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
-  <title>Next Arc</title>
+  <title>Next Arc — Discover Your Next Anime</title>
+
+  <!-- SEO -->
+  <meta name="description" content="Swipe through anime tailored to your taste. Next Arc learns what you love and surfaces personalized recommendations — including hidden gems you'd never find on your own." />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://discoveranime.com" />
+
+  <!-- Open Graph (social sharing) -->
+  <meta property="og:type"        content="website" />
+  <meta property="og:url"         content="https://discoveranime.com" />
+  <meta property="og:site_name"   content="Next Arc" />
+  <meta property="og:title"       content="Next Arc — Discover Your Next Anime" />
+  <meta property="og:description" content="Swipe through anime tailored to your taste. Next Arc learns what you love and surfaces personalized recommendations — including hidden gems you'd never find on your own." />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card"        content="summary" />
+  <meta name="twitter:title"       content="Next Arc — Discover Your Next Anime" />
+  <meta name="twitter:description" content="Swipe through anime tailored to your taste. Next Arc learns what you love and surfaces personalized recommendations — including hidden gems you'd never find on your own." />
+
+  <!-- Structured data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Next Arc",
+    "url": "https://discoveranime.com",
+    "description": "Swipe-based anime discovery app that learns your taste and recommends shows — including hidden gems.",
+    "applicationCategory": "EntertainmentApplication",
+    "operatingSystem": "Any",
+    "inLanguage": "en",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    }
+  }
+  </script>
   <!-- Firebase v10 compat (no build step needed) -->
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
@@ -6505,6 +6541,6 @@ else {
   }
 }
 </script>
-<div id="version-badge">v113</div>
+<div id="version-badge">v114</div>
 </body>
 </html>
