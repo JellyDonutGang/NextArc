@@ -16,6 +16,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics-compat.js"></script>
   <style>
     /* ── Reset & Base ─────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -5639,11 +5640,13 @@ const _FB_CONFIG = {
   storageBucket:     "next-arc-b091b.firebasestorage.app",
   messagingSenderId: "488355535109",
   appId:             "1:488355535109:web:40d86bfeae685d3dba3f6c",
+  measurementId:     "G-9BBRKHQHDE",
 };
 
 firebase.initializeApp(_FB_CONFIG);
-const _auth = firebase.auth();
-const _db   = firebase.firestore();
+const _auth      = firebase.auth();
+const _db        = firebase.firestore();
+const _analytics = firebase.analytics();
 
 // ── Auth state listener ────────────────────────────
 _auth.onAuthStateChanged(user => {
@@ -6502,6 +6505,6 @@ else {
   }
 }
 </script>
-<div id="version-badge">v111</div>
+<div id="version-badge">v112</div>
 </body>
 </html>
