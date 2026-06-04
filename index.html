@@ -490,6 +490,7 @@
       margin-top: 0;
       font-size: 26px;
       color: #fff;
+      position: relative;
     }
 
     /* Icon sizing inside buttons */
@@ -720,8 +721,57 @@
       text-shadow: 0 1px 3px rgba(0,0,0,0.35);
       box-shadow: 0 2px 8px rgba(0,0,0,0.4);
     }
-    /* Never show the heart outside the active recs screen */
+    /* Never show the real heart outside the active recs screen */
     #screen-recs:not(.active) .card-heart-btn { display: none; }
+
+    /* Lock badge overlaid on the play button during onboarding */
+    .btn-lock-badge {
+      position: absolute;
+      top: -3px;
+      right: -3px;
+      font-size: 13px;
+      line-height: 1;
+      pointer-events: none;
+    }
+    .recs-unlocked .btn-lock-badge { display: none; }
+
+    /* Locked heart shown on onboarding cards (inside card, top-right) */
+    .locked-heart-btn {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      width: 40px;
+      height: 40px;
+      border: none;
+      background: transparent;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 6;
+      padding: 0;
+    }
+    .locked-heart-btn .heart-svg {
+      width: 26px;
+      height: 26px;
+      overflow: visible;
+      filter: drop-shadow(0 2px 6px rgba(0,0,0,0.7));
+    }
+    .locked-heart-btn .heart-svg path {
+      fill: none;
+      stroke: rgba(255,255,255,0.65);
+      stroke-width: 1.5;
+      stroke-linejoin: round;
+    }
+    .locked-heart-btn .lock-mini {
+      position: absolute;
+      bottom: 3px;
+      right: 1px;
+      font-size: 10px;
+      line-height: 1;
+      pointer-events: none;
+    }
+    .recs-unlocked .locked-heart-btn { display: none; }
 
     /* ── Save toast ───────────────────────────────── */
     .save-toast {
@@ -2338,6 +2388,7 @@
     </button>
     <button class="action-btn btn-play" id="btn-play" aria-label="Watch">
       <svg width="24" height="24" viewBox="0 0 24 24" fill="white"><polygon points="6,3 20,12 6,21"/></svg>
+      <span class="btn-lock-badge" aria-hidden="true">🔒</span>
     </button>
     <button class="action-btn btn-supergood" id="btn-supergood" aria-label="Super like">
       <svg width="24" height="24" viewBox="0 0 24 24" fill="#5ba4ff"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
@@ -3238,6 +3289,9 @@ const RERANK_THRESHOLD   = 8;    // re-rank remaining queue every N swipes
 // ── Lifetime stats (persisted to localStorage) ────
 let totalCardsSwiped = parseInt(localStorage.getItem('nextarc_cards') || '0');
 
+// ── Onboarding lock state ─────────────────────────
+let recsUnlocked = false;        // true once dismissUnlockCelebration fires
+
 // ── Hidden Gem state ──────────────────────────────
 let gemQueue          = [];      // taste-matched low-popularity high-score picks
 let gemPos            = 0;       // cursor into gemQueue
@@ -3757,7 +3811,39 @@ function buildCard(anime, isTop = true, explanation = null) {
     </div>
     <div class="card-corner-frame"></div>`;
 
+  // During onboarding, show a visible-but-locked heart so users know saves are coming
+  if (!recsUnlocked) {
+    const lockedHeart = document.createElement('button');
+    lockedHeart.className = 'locked-heart-btn';
+    lockedHeart.setAttribute('aria-label', 'Saves unlock soon');
+    lockedHeart.innerHTML = `
+      <svg class="heart-svg" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"/>
+      </svg>
+      <span class="lock-mini" aria-hidden="true">🔒</span>`;
+    lockedHeart.addEventListener('click', e => {
+      e.stopPropagation();
+      showLockNudge();
+    });
+    card.appendChild(lockedHeart);
+  }
+
   return card;
+}
+
+/* ─── Lock nudge toast ─────────────────────────── */
+function showLockNudge() {
+  let toast = document.getElementById('lock-nudge-toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'lock-nudge-toast';
+    toast.className = 'save-toast';
+    toast.textContent = '🔒 Saves unlock when your recs are ready';
+    document.body.appendChild(toast);
+  }
+  toast.classList.add('show');
+  clearTimeout(toast._hideTimer);
+  toast._hideTimer = setTimeout(() => toast.classList.remove('show'), 2400);
 }
 
 /* ─── Swipe gesture engine ─────────────────────── */
@@ -4302,6 +4388,10 @@ function finishTaste() {
     setTimeout(() => {
       overlay.classList.remove('playing');
     }, 350);
+
+    // Unlock the lock badges — removes lock from play button and heart icons
+    recsUnlocked = true;
+    document.body.classList.add('recs-unlocked');
 
     // Show recs screen
     showScreen('screen-recs');
@@ -5047,16 +5137,6 @@ function recSwipe(card, anime, action) {
     const wasGem = currentRecIsGem;
     if (wasGem && !isAnimeSaved(anime.id)) {
       saveAnime(anime, true);
-    }
-
-    // After 10 swipes without signing in, nudge once per session.
-    // Skip if this was a gem swipe — the gem was just auto-saved, so the
-    // sign-up nudge would be confusing and feel like a "save popup."
-    if (!wasGem && !_auth.currentUser && !_ctaSwipeNudgeDone && totalCardsSwiped === 10) {
-      _ctaSwipeNudgeDone = true;
-      setTimeout(() => {
-        if (!_auth.currentUser) openCtaSheet();
-      }, 600);
     }
 
     // Gem cards don't consume from recQueue — only advance recPos for normal recs
@@ -6407,6 +6487,6 @@ else {
   }
 }
 </script>
-<div id="version-badge">v109</div>
+<div id="version-badge">v110</div>
 </body>
 </html>
