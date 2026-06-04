@@ -187,8 +187,9 @@
     .overlay-card h2 { font-size: 22px; font-weight: 700; letter-spacing: -0.3px; }
     .overlay-card p { font-size: 15px; color: var(--text-muted); line-height: 1.65; max-width: 300px; font-weight: 400; }
     .hint-row {
-      display: flex;
-      gap: 16px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
       align-items: flex-start;
       justify-content: center;
       margin: 4px 0;
@@ -209,9 +210,10 @@
       justify-content: center;
       font-size: 22px;
     }
-    .hint-icon.skip    { background: rgba(255,255,255,0.08); }
-    .hint-icon.neutral { background: rgba(255,255,255,0.06); }
-    .hint-icon.watch   { background: rgba(46,128,216,0.18); }
+    .hint-icon.bad       { background: rgba(255,82,82,0.15); }
+    .hint-icon.skip      { background: rgba(255,217,61,0.15); }
+    .hint-icon.liked     { background: rgba(77,204,106,0.15); }
+    .hint-icon.superlike { background: rgba(91,164,255,0.15); }
 
     /* ── Swipe Screen ──────────────────────────────── */
     #screen-swipe {
@@ -2361,16 +2363,28 @@
     <p>Rate anime as they appear and we'll build your personal taste profile in real time.</p>
     <div class="hint-row">
       <div class="hint-item">
-        <div class="hint-icon skip">👈</div>
-        <span>Didn't like it</span>
+        <div class="hint-icon bad">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ff5252" stroke-width="2.8" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </div>
+        <span>Bad</span>
       </div>
       <div class="hint-item">
-        <div class="hint-icon neutral">🤷</div>
-        <span>Haven't seen it</span>
-      </div>
-      <div class="hint-item">
-        <div class="hint-icon watch">👉</div>
+        <div class="hint-icon liked">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="#4dcc6a"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        </div>
         <span>Liked it</span>
+      </div>
+      <div class="hint-item">
+        <div class="hint-icon skip">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffd93d" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+        </div>
+        <span>Skip</span>
+      </div>
+      <div class="hint-item">
+        <div class="hint-icon superlike">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="#5ba4ff"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        </div>
+        <span>Loved it</span>
       </div>
     </div>
     <button class="btn-primary" id="btn-start-taste">Start Swiping</button>
@@ -6528,6 +6542,6 @@ else {
   }
 }
 </script>
-<div id="version-badge">v117</div>
+<div id="version-badge">v118</div>
 </body>
 </html>
