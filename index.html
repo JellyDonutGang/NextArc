@@ -3884,15 +3884,15 @@ function buildCard(anime, isTop = true, explanation = null) {
 }
 
 /* ─── Lock nudge toast ─────────────────────────── */
-function showLockNudge() {
+function showLockNudge(msg = '🔒 Saves unlock when your recs are ready') {
   let toast = document.getElementById('lock-nudge-toast');
   if (!toast) {
     toast = document.createElement('div');
     toast.id = 'lock-nudge-toast';
     toast.className = 'save-toast';
-    toast.textContent = '🔒 Saves unlock when your recs are ready';
     document.body.appendChild(toast);
   }
+  toast.textContent = msg;
   toast.classList.add('show');
   clearTimeout(toast._hideTimer);
   toast._hideTimer = setTimeout(() => toast.classList.remove('show'), 2400);
@@ -4476,6 +4476,7 @@ document.getElementById('btn-dislike').addEventListener('click', () => {
   if (card) swipeTaste(card, tasteIndex, 'dislike');
 });
 document.getElementById('btn-play').addEventListener('click', () => {
+  if (!recsUnlocked) { showLockNudge('🔒 Watch unlocks when your recs are ready'); return; }
   const anime = tasteAnime[tasteIndex];
   if (anime) openWatchSheet(anime);
 });
@@ -6541,6 +6542,6 @@ else {
   }
 }
 </script>
-<div id="version-badge">v114</div>
+<div id="version-badge">v116</div>
 </body>
 </html>
