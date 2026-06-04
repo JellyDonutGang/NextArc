@@ -772,16 +772,11 @@
     /* Never show the real heart outside the active recs screen */
     #screen-recs:not(.active) .card-heart-btn { display: none; }
 
-    /* Lock badge overlaid on the play button during onboarding */
-    .btn-lock-badge {
-      position: absolute;
-      top: -3px;
-      right: -3px;
-      font-size: 13px;
-      line-height: 1;
-      pointer-events: none;
+    /* Play button dims during onboarding to signal it's not yet active */
+    body:not(.recs-unlocked) .btn-play {
+      opacity: 0.42;
+      filter: saturate(0.3);
     }
-    .recs-unlocked .btn-lock-badge { display: none; }
 
     /* Locked heart shown on onboarding cards (inside card, top-right) */
     .locked-heart-btn {
@@ -798,6 +793,7 @@
       cursor: pointer;
       z-index: 6;
       padding: 0;
+      opacity: 0.38;
     }
     .locked-heart-btn .heart-svg {
       width: 26px;
@@ -807,17 +803,9 @@
     }
     .locked-heart-btn .heart-svg path {
       fill: none;
-      stroke: rgba(255,255,255,0.65);
+      stroke: rgba(255,255,255,0.9);
       stroke-width: 1.5;
       stroke-linejoin: round;
-    }
-    .locked-heart-btn .lock-mini {
-      position: absolute;
-      bottom: 3px;
-      right: 1px;
-      font-size: 10px;
-      line-height: 1;
-      pointer-events: none;
     }
     .recs-unlocked .locked-heart-btn { display: none; }
 
@@ -2434,7 +2422,6 @@
     <div class="action-center">
       <button class="action-btn btn-play" id="btn-play" aria-label="Watch">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="white"><polygon points="6,3 20,12 6,21"/></svg>
-        <span class="btn-lock-badge" aria-hidden="true">🔒</span>
       </button>
       <div class="action-sub-row">
         <button class="action-btn btn-skip" id="btn-skip" aria-label="Skip">
@@ -3871,8 +3858,7 @@ function buildCard(anime, isTop = true, explanation = null) {
     lockedHeart.innerHTML = `
       <svg class="heart-svg" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
         <path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"/>
-      </svg>
-      <span class="lock-mini" aria-hidden="true">🔒</span>`;
+      </svg>`;
     lockedHeart.addEventListener('click', e => {
       e.stopPropagation();
       showLockNudge();
@@ -6542,6 +6528,6 @@ else {
   }
 }
 </script>
-<div id="version-badge">v116</div>
+<div id="version-badge">v117</div>
 </body>
 </html>
