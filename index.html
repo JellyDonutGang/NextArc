@@ -2373,6 +2373,326 @@
       font-family: inherit; cursor: pointer; padding: 4px;
       text-align: center;
     }
+
+    /* ══════════════════════════════════════════════
+       WELCOME SCREEN — ATMOSPHERE + MASCOT
+    ══════════════════════════════════════════════ */
+    #welcome-canvas {
+      position: absolute; inset: 0;
+      pointer-events: none; z-index: 0; opacity: 0.55;
+    }
+    #screen-welcome > *:not(#welcome-canvas) { position: relative; z-index: 1; }
+    .mascot-wrap {
+      width: 130px; height: 130px; position: relative;
+      filter: drop-shadow(0 0 24px rgba(46,128,216,0.45));
+      animation: mascotFloat 3.2s ease-in-out infinite;
+    }
+    @keyframes mascotFloat {
+      0%, 100% { transform: translateY(0px) rotate(-1deg); }
+      50%       { transform: translateY(-10px) rotate(1deg); }
+    }
+
+    /* ══════════════════════════════════════════════
+       GACHA GEM PULL — FULL CINEMATIC
+    ══════════════════════════════════════════════ */
+    #gacha-overlay {
+      position: fixed; inset: 0; z-index: 975;
+      pointer-events: all;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      background: #030308;
+      opacity: 0;
+      animation: gachaFadeIn 0.28s ease forwards;
+    }
+    @keyframes gachaFadeIn { to { opacity:1; } }
+    @keyframes gachaFadeOut { to { opacity:0; } }
+    #gacha-overlay.dismissing {
+      animation: gachaFadeOut 0.4s ease forwards;
+      pointer-events: none;
+    }
+
+    /* Pulsing void background orb */
+    .gacha-bg-orb {
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse 80% 55% at 50% 50%,
+        rgba(255,183,3,0.07) 0%, rgba(124,58,237,0.05) 40%, transparent 70%);
+      animation: gachaOrbPulse 2.2s ease-in-out infinite;
+    }
+    @keyframes gachaOrbPulse {
+      0%,100% { opacity:0.6; transform: scale(1); }
+      50%     { opacity:1;   transform: scale(1.1); }
+    }
+
+    /* Thin light beam from top */
+    .gacha-beam {
+      position: absolute; top: 0; left: 50%;
+      transform: translateX(-50%);
+      width: 2px; height: 0;
+      background: linear-gradient(to bottom, rgba(255,220,80,0), rgba(255,220,80,0.95) 50%, rgba(255,220,80,0));
+      filter: blur(1px);
+      animation: gachaBeamGrow 0.65s 0.28s ease-out forwards; opacity: 0;
+    }
+    .gacha-beam-wide {
+      position: absolute; top: 0; left: 50%;
+      transform: translateX(-50%);
+      width: 90px; height: 0;
+      background: linear-gradient(to bottom, rgba(255,220,80,0.12), rgba(255,220,80,0.03) 75%, transparent);
+      animation: gachaBeamGrow 0.65s 0.28s ease-out forwards; opacity: 0;
+    }
+    @keyframes gachaBeamGrow {
+      0%  { height:0; opacity:0; }
+      30% { opacity:1; }
+      100% { height:62vh; opacity:1; }
+    }
+
+    /* Main crystal gem (center) */
+    .gacha-crystal {
+      position: relative; z-index: 2;
+      width: 96px; height: 96px;
+      opacity: 0;
+      animation: gachaCrystalIn 0.52s 0.6s cubic-bezier(0.34,1.56,0.64,1) forwards;
+      filter: drop-shadow(0 0 32px rgba(255,183,3,0.95)) drop-shadow(0 0 70px rgba(255,183,3,0.45));
+    }
+    .gacha-crystal.pulsing {
+      animation: gachaCrystalIn 0.52s 0.6s cubic-bezier(0.34,1.56,0.64,1) forwards,
+                 gachaCrystalPulse 1.4s 1.2s ease-in-out infinite;
+    }
+    @keyframes gachaCrystalIn {
+      0%  { opacity:0; transform:scale(0.1) rotate(-30deg); filter:drop-shadow(0 0 80px white); }
+      55% { opacity:1; transform:scale(1.18) rotate(6deg); }
+      100% { opacity:1; transform:scale(1) rotate(0deg); }
+    }
+    @keyframes gachaCrystalPulse {
+      0%,100% { filter:drop-shadow(0 0 22px rgba(255,183,3,0.85)) drop-shadow(0 0 55px rgba(255,183,3,0.35)); transform:scale(1) rotate(0deg); }
+      50%     { filter:drop-shadow(0 0 44px rgba(255,220,80,1)) drop-shadow(0 0 90px rgba(255,183,3,0.65)); transform:scale(1.08) rotate(4deg); }
+    }
+
+    /* Orbiting rings */
+    .gacha-ring {
+      position: absolute; border-radius: 50%;
+      border: 1.5px solid rgba(255,183,3,0.35);
+      opacity: 0;
+    }
+    .gacha-ring-1 {
+      width: 148px; height: 148px;
+      top:50%; left:50%; margin:-74px 0 0 -74px;
+      animation: gachaRingOrbit1 5s 1.15s linear infinite;
+    }
+    .gacha-ring-2 {
+      width: 210px; height: 210px;
+      top:50%; left:50%; margin:-105px 0 0 -105px;
+      border-color: rgba(124,58,237,0.28);
+      animation: gachaRingOrbit2 8s 1.3s linear infinite;
+    }
+    @keyframes gachaRingOrbit1 {
+      0%  { opacity:0; transform:rotate(0deg) scaleX(0.35); }
+      8%  { opacity:1; }
+      100% { opacity:0.6; transform:rotate(360deg) scaleX(0.35); }
+    }
+    @keyframes gachaRingOrbit2 {
+      0%  { opacity:0; transform:rotate(0deg) scaleX(0.35); }
+      8%  { opacity:1; }
+      100% { opacity:0.45; transform:rotate(-360deg) scaleX(0.35); }
+    }
+
+    /* ✦ HIDDEN GEM ✦ label */
+    .gacha-title {
+      position: relative; z-index: 2;
+      font-size: 10px; font-weight: 900; letter-spacing: 0.38em;
+      text-transform: uppercase; color: #ffb703;
+      text-shadow: 0 0 22px rgba(255,183,3,0.95), 0 0 55px rgba(255,183,3,0.4);
+      margin-top: 24px;
+      opacity: 0;
+      animation: gachaTitleIn 0.45s 0.95s ease forwards;
+    }
+    @keyframes gachaTitleIn {
+      from { opacity:0; transform:translateY(10px) scale(0.9); letter-spacing:0.52em; }
+      to   { opacity:1; transform:none; letter-spacing:0.38em; }
+    }
+    .gacha-subtitle {
+      position: relative; z-index: 2;
+      font-size: 13px; font-weight: 600;
+      color: rgba(255,255,255,0.55); margin-top: 8px;
+      opacity: 0;
+      animation: gachaTitleIn 0.4s 1.25s ease forwards;
+    }
+
+    /* Particle canvas */
+    #gacha-canvas {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%;
+      pointer-events: none; z-index: 3;
+    }
+
+    /* Screen flash on reveal */
+    .gacha-flash {
+      position: absolute; inset: 0; z-index: 10;
+      pointer-events: none;
+      background: white;
+      animation: gachaFlash 0.28s ease-out forwards;
+    }
+    @keyframes gachaFlash {
+      0%  { opacity: 0.92; }
+      100% { opacity: 0; }
+    }
+
+    /* ══════════════════════════════════════════════
+       GENRE IDENTITY SHIFT
+    ══════════════════════════════════════════════ */
+    /* Identity shift flash overlay */
+    #identity-flash {
+      position: fixed; inset: 0; z-index: 960;
+      pointer-events: none; opacity: 0;
+      transition: opacity 0.35s ease;
+    }
+
+    /* Cluster banner toast */
+    .cluster-banner {
+      position: fixed;
+      top: max(56px, calc(env(safe-area-inset-top) + 56px));
+      left: 50%;
+      transform: translateX(-50%) translateY(-72px);
+      display: flex; align-items: center; gap: 8px;
+      background: rgba(8,14,24,0.92);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--cluster-border, rgba(46,128,216,0.5));
+      border-radius: 50px;
+      padding: 10px 18px 10px 12px;
+      font-size: 12px; font-weight: 700;
+      color: var(--cluster-color, var(--accent));
+      white-space: nowrap; z-index: 970;
+      pointer-events: none;
+      transition: transform 0.45s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s;
+      opacity: 0;
+      box-shadow: 0 4px 28px rgba(0,0,0,0.5);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .cluster-banner.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+    .cluster-banner-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--cluster-color, var(--accent));
+      box-shadow: 0 0 8px var(--cluster-color, var(--accent));
+      flex-shrink: 0;
+      animation: clusterDotPulse 1.2s ease-in-out infinite;
+    }
+    @keyframes clusterDotPulse {
+      0%,100% { transform:scale(1); opacity:1; }
+      50%     { transform:scale(1.5); opacity:0.7; }
+    }
+
+    /* ══════════════════════════════════════════════
+       COMBO DISPLAY
+    ══════════════════════════════════════════════ */
+    #combo-display {
+      position: fixed;
+      top: 35%; left: 50%;
+      transform: translate(-50%,-50%) scale(0);
+      z-index: 600; pointer-events: none;
+      text-align: center; opacity: 0;
+    }
+    #combo-display.fire {
+      animation: comboIn 0.55s cubic-bezier(0.22,1,0.36,1) forwards;
+    }
+    #combo-display.dismiss {
+      animation: comboOut 0.32s ease-in forwards;
+    }
+    .combo-flames { font-size: 30px; line-height:1; filter: drop-shadow(0 0 10px rgba(255,120,0,0.8)); }
+    .combo-label  { font-size:10px; font-weight:900; letter-spacing:0.3em; color:rgba(255,255,255,0.6); margin:4px 0; }
+    .combo-count  {
+      font-size: 58px; line-height:1; font-weight:900;
+      color: #ffd700;
+      text-shadow: 0 0 18px rgba(255,215,0,0.85), 0 0 55px rgba(255,183,3,0.5);
+      animation: comboCountPop 0.3s ease-out;
+    }
+    .combo-word {
+      font-size: 14px; font-weight: 900; letter-spacing: 0.1em;
+      color: #ffb703;
+      text-shadow: 0 0 12px rgba(255,183,3,0.8);
+    }
+    @keyframes comboIn {
+      0%  { opacity:0; transform:translate(-50%,-50%) scale(0.4) rotate(-10deg); }
+      60% { opacity:1; transform:translate(-50%,-50%) scale(1.14) rotate(3deg); }
+      80% { transform:translate(-50%,-50%) scale(0.97) rotate(-1deg); }
+      100% { opacity:1; transform:translate(-50%,-50%) scale(1) rotate(0deg); }
+    }
+    @keyframes comboOut {
+      to { opacity:0; transform:translate(-50%,-50%) scale(1.35); }
+    }
+    @keyframes comboCountPop {
+      0%  { transform:scale(0.5); }
+      70% { transform:scale(1.18); }
+      100% { transform:scale(1); }
+    }
+
+    /* ══════════════════════════════════════════════
+       ANIMATED RADAR CHART
+    ══════════════════════════════════════════════ */
+    .radar-ring {
+      animation: radarRingIn 0.5s ease both;
+    }
+    .radar-spoke {
+      stroke-dasharray: 200;
+      stroke-dashoffset: 200;
+      animation: radarLineIn 0.55s ease-out both;
+    }
+    .radar-polygon-fill {
+      opacity: 0;
+      animation: radarFillIn 0.7s ease-out both;
+    }
+    .radar-polygon-stroke {
+      stroke-dasharray: 1200;
+      stroke-dashoffset: 1200;
+      animation: radarPolyIn 0.9s ease-out both;
+    }
+    .radar-dot {
+      animation: radarDotIn 0.5s cubic-bezier(0.34,1.56,0.64,1) both;
+    }
+    .radar-label {
+      opacity: 0;
+      animation: radarLabelIn 0.4s ease both;
+    }
+    @keyframes radarRingIn {
+      from { opacity:0; transform:scale(0.6); transform-box:fill-box; transform-origin:center; }
+      to   { opacity:1; transform:scale(1); }
+    }
+    @keyframes radarLineIn {
+      to { stroke-dashoffset: 0; }
+    }
+    @keyframes radarPolyIn {
+      to { stroke-dashoffset: 0; }
+    }
+    @keyframes radarFillIn {
+      to { opacity:1; }
+    }
+    @keyframes radarDotIn {
+      from { opacity:0; transform:scale(0); transform-box:fill-box; transform-origin:center; }
+      to   { opacity:1; transform:scale(1); }
+    }
+    @keyframes radarLabelIn {
+      from { opacity:0; }
+      to   { opacity:1; }
+    }
+    /* Subtle breathing for active radar */
+    @keyframes radarBreath {
+      0%,100% { transform:scale(1); transform-box:fill-box; transform-origin:170px 162px; }
+      50%     { transform:scale(1.025); }
+    }
+    .radar-breath {
+      animation: radarBreath 3.5s ease-in-out infinite;
+    }
+    /* Axis tip glow dots */
+    .radar-tip {
+      animation: radarTipPulse 2.5s ease-in-out infinite both;
+    }
+    @keyframes radarTipPulse {
+      0%,100% { opacity:0.15; r:2; }
+      50%     { opacity:0.55; r:3; }
+    }
   </style>
 </head>
 <body>
@@ -2381,7 +2701,79 @@
 <!--  WELCOME SCREEN                               -->
 <!-- ══════════════════════════════════════════════ -->
 <section id="screen-welcome" class="screen active">
-  <div class="welcome-art">🎌</div>
+  <canvas id="welcome-canvas"></canvas>
+  <!-- Mascot: floating chibi scout character -->
+  <div class="mascot-wrap">
+    <svg viewBox="0 0 130 130" xmlns="http://www.w3.org/2000/svg" width="130" height="130">
+      <defs>
+        <radialGradient id="mg1" cx="50%" cy="40%" r="55%">
+          <stop offset="0%" stop-color="#5ba4ff"/>
+          <stop offset="100%" stop-color="#2e80d8"/>
+        </radialGradient>
+        <radialGradient id="mg2" cx="50%" cy="30%" r="60%">
+          <stop offset="0%" stop-color="#ffe0b2"/>
+          <stop offset="100%" stop-color="#ffb74d"/>
+        </radialGradient>
+        <linearGradient id="mg3" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stop-color="#1e3a5c"/>
+          <stop offset="100%" stop-color="#0f1b2d"/>
+        </linearGradient>
+      </defs>
+      <!-- Body / cloak -->
+      <ellipse cx="65" cy="96" rx="30" ry="22" fill="url(#mg3)" opacity="0.9"/>
+      <path d="M42 88 Q65 110 88 88 Q82 106 65 112 Q48 106 42 88Z" fill="#0f1b2d"/>
+      <!-- Scarf -->
+      <path d="M50 78 Q65 84 80 78 Q78 86 65 90 Q52 86 50 78Z" fill="#2e80d8" opacity="0.85"/>
+      <!-- Head -->
+      <ellipse cx="65" cy="58" rx="22" ry="20" fill="url(#mg2)"/>
+      <!-- Cat ears -->
+      <polygon points="46,44 50,32 56,44" fill="#ffb74d"/>
+      <polygon points="48,43 51,35 55,43" fill="#f9a0a0" opacity="0.6"/>
+      <polygon points="74,44 78,32 84,44" fill="#ffb74d"/>
+      <polygon points="75,43 78,35 82,43" fill="#f9a0a0" opacity="0.6"/>
+      <!-- Hair (dark, with blue highlight) -->
+      <ellipse cx="65" cy="50" rx="22" ry="14" fill="#1a1a2e"/>
+      <path d="M44 54 Q48 42 58 40 Q65 38 72 40 Q82 42 86 54" fill="#1a1a2e"/>
+      <!-- Fringe strands -->
+      <path d="M50 50 Q52 44 56 47" fill="none" stroke="#2e80d8" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+      <path d="M80 50 Q78 44 74 47" fill="none" stroke="#2e80d8" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+      <!-- Eyes (large, sparkly) -->
+      <ellipse cx="57" cy="60" rx="6" ry="7" fill="#1a1a2e"/>
+      <ellipse cx="73" cy="60" rx="6" ry="7" fill="#1a1a2e"/>
+      <ellipse cx="57" cy="60" rx="4.5" ry="5.5" fill="url(#mg1)"/>
+      <ellipse cx="73" cy="60" rx="4.5" ry="5.5" fill="url(#mg1)"/>
+      <circle cx="59" cy="58" r="1.5" fill="white" opacity="0.9"/>
+      <circle cx="75" cy="58" r="1.5" fill="white" opacity="0.9"/>
+      <circle cx="55.5" cy="62" r="0.8" fill="white" opacity="0.5"/>
+      <circle cx="71.5" cy="62" r="0.8" fill="white" opacity="0.5"/>
+      <!-- Tiny nose + mouth -->
+      <circle cx="65" cy="65" r="1.2" fill="#d4956a" opacity="0.7"/>
+      <path d="M62 69 Q65 71.5 68 69" fill="none" stroke="#d4956a" stroke-width="1.2" stroke-linecap="round" opacity="0.8"/>
+      <!-- Cheek blush -->
+      <ellipse cx="51" cy="66" rx="5" ry="3" fill="#f9a0a0" opacity="0.4"/>
+      <ellipse cx="79" cy="66" rx="5" ry="3" fill="#f9a0a0" opacity="0.4"/>
+      <!-- Scroll in hands -->
+      <rect x="30" y="85" width="22" height="14" rx="3" fill="#e8d5a0" opacity="0.9"/>
+      <rect x="30" y="85" width="4" height="14" rx="2" fill="#c4a060"/>
+      <rect x="48" y="85" width="4" height="14" rx="2" fill="#c4a060"/>
+      <line x1="36" y1="90" x2="46" y2="90" stroke="#8b6830" stroke-width="1" opacity="0.6"/>
+      <line x1="36" y1="93" x2="44" y2="93" stroke="#8b6830" stroke-width="1" opacity="0.6"/>
+      <line x1="36" y1="96" x2="46" y2="96" stroke="#8b6830" stroke-width="0.8" opacity="0.6"/>
+      <!-- Stars floating around -->
+      <circle cx="28" cy="48" r="2" fill="#ffb703" opacity="0.8">
+        <animate attributeName="opacity" values="0.8;0.2;0.8" dur="1.8s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="104" cy="52" r="1.5" fill="#5ba4ff" opacity="0.7">
+        <animate attributeName="opacity" values="0.7;0.2;0.7" dur="2.2s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="95" cy="38" r="1" fill="#ffb703" opacity="0.6">
+        <animate attributeName="opacity" values="0.6;0.1;0.6" dur="1.5s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="35" cy="35" r="1.2" fill="#a855f7" opacity="0.6">
+        <animate attributeName="opacity" values="0.6;0.15;0.6" dur="2.5s" repeatCount="indefinite"/>
+      </circle>
+    </svg>
+  </div>
   <div class="logo">Next Arc</div>
   <p class="tagline">Discover anime you'll actually love, one swipe at a time.</p>
   <button class="btn-primary" id="btn-start">Discover →</button>
@@ -3781,6 +4173,255 @@ const GENRE_COLORS = {
   'Shoujo':          '#fb7185',
   'Mahou Shoujo':    '#f9a8d4',
 };
+
+// ════════════════════════════════════════════════════════════════════════════
+//  HAPTICS
+// ════════════════════════════════════════════════════════════════════════════
+function haptic(pattern) {
+  if (!navigator.vibrate) return;
+  navigator.vibrate(Array.isArray(pattern) ? pattern : [pattern]);
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+//  GENRE IDENTITY SHIFT
+// ════════════════════════════════════════════════════════════════════════════
+const CLUSTER_PALETTES = {
+  'Action':        { accent:'#f97316', green:'#fb923c', name:'Action Mode',      emoji:'⚔️'  },
+  'Adventure':     { accent:'#f59e0b', green:'#fbbf24', name:'Adventure Mode',   emoji:'🗺️'  },
+  'Romance':       { accent:'#f472b6', green:'#fb7185', name:'Romance Mode',     emoji:'💕'  },
+  'Horror':        { accent:'#dc2626', green:'#f87171', name:'Horror Mode',      emoji:'🩸'  },
+  'Fantasy':       { accent:'#a855f7', green:'#c084fc', name:'Fantasy Mode',     emoji:'✨'  },
+  'Sci-Fi':        { accent:'#38bdf8', green:'#67e8f9', name:'Sci-Fi Mode',      emoji:'🚀'  },
+  'Science Fiction':{ accent:'#38bdf8', green:'#67e8f9', name:'Sci-Fi Mode',     emoji:'🚀'  },
+  'Mecha':         { accent:'#60a5fa', green:'#93c5fd', name:'Mecha Mode',       emoji:'🤖'  },
+  'Slice of Life': { accent:'#fbbf24', green:'#fde68a', name:'Slice of Life',    emoji:'☕'  },
+  'Comedy':        { accent:'#a3e635', green:'#bef264', name:'Comedy Mode',      emoji:'😂'  },
+  'Mystery':       { accent:'#2dd4bf', green:'#5eead4', name:'Mystery Mode',     emoji:'🔍'  },
+  'Thriller':      { accent:'#0891b2', green:'#22d3ee', name:'Thriller Mode',    emoji:'😱'  },
+  'Drama':         { accent:'#e11d48', green:'#fb7185', name:'Drama Mode',       emoji:'🎭'  },
+  'Sports':        { accent:'#22c55e', green:'#4ade80', name:'Sports Mode',      emoji:'⚡'  },
+  'Supernatural':  { accent:'#818cf8', green:'#a5b4fc', name:'Supernatural',     emoji:'👻'  },
+  'Psychological': { accent:'#7c3aed', green:'#a78bfa', name:'Psychological',    emoji:'🧠'  },
+  'Music':         { accent:'#c084fc', green:'#d8b4fe', name:'Music Mode',       emoji:'🎵'  },
+  'Shounen':       { accent:'#ea580c', green:'#fb923c', name:'Shōnen Mode',      emoji:'🔥'  },
+  'Shoujo':        { accent:'#fb7185', green:'#fda4af', name:'Shōjo Mode',       emoji:'🌸'  },
+};
+
+let _currentIdentityGenre = null;
+let _clusterBannerTimeout = null;
+let _recentGenres = [];   // rolling window of last 8 card genres
+
+function detectAndApplyIdentityShift(anime) {
+  const genre = anime?.genres?.[0];
+  if (!genre) return;
+
+  // Track rolling window
+  _recentGenres.push(genre);
+  if (_recentGenres.length > 8) _recentGenres.shift();
+
+  // Dominant genre in the window
+  const freq = {};
+  for (const g of _recentGenres) freq[g] = (freq[g] || 0) + 1;
+  const dominant = Object.entries(freq).sort((a, b) => b[1] - a[1])[0]?.[0];
+
+  if (!dominant || dominant === _currentIdentityGenre) return;
+  if ((freq[dominant] || 0) < 3) return;   // need at least 3 of 8 to shift
+
+  _currentIdentityGenre = dominant;
+  applyIdentityShift(dominant);
+}
+
+function applyIdentityShift(genre) {
+  const palette = CLUSTER_PALETTES[genre];
+  if (!palette) return;
+
+  // Tween CSS variables
+  tweenCssColor('--accent', palette.accent, 1200);
+  tweenCssColor('--green',  palette.green,  1200);
+
+  // Identity flash overlay
+  const flash = document.getElementById('identity-flash');
+  if (flash) {
+    flash.style.background = `radial-gradient(ellipse 80% 60% at 50% 50%,
+      ${palette.accent}18 0%, transparent 70%)`;
+    flash.style.opacity = '1';
+    setTimeout(() => { flash.style.opacity = '0'; }, 1200);
+  }
+
+  // Show cluster banner
+  showClusterBanner(palette);
+}
+
+function showClusterBanner(palette) {
+  const banner = document.getElementById('cluster-banner');
+  const text   = document.getElementById('cluster-banner-text');
+  const dot    = document.getElementById('cluster-banner-dot');
+  if (!banner || !text) return;
+
+  clearTimeout(_clusterBannerTimeout);
+  text.textContent = `${palette.emoji}  ${palette.name}`;
+  banner.style.setProperty('--cluster-color',  palette.accent);
+  banner.style.setProperty('--cluster-border', palette.accent + '55');
+  dot.style.background  = palette.accent;
+  dot.style.boxShadow   = `0 0 8px ${palette.accent}`;
+
+  banner.classList.add('show');
+  _clusterBannerTimeout = setTimeout(() => banner.classList.remove('show'), 3000);
+}
+
+// Smooth hex color tweening via requestAnimationFrame
+function tweenCssColor(varName, targetHex, durationMs) {
+  const root   = document.documentElement;
+  const start  = _parseCssColor(getComputedStyle(root).getPropertyValue(varName).trim());
+  const end    = _hexToRgbTuple(targetHex);
+  if (!start || !end) { root.style.setProperty(varName, targetHex); return; }
+  const t0     = performance.now();
+  function frame(now) {
+    const p = Math.min(1, (now - t0) / durationMs);
+    const e = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2; // easeInOut
+    const r = Math.round(start[0] + (end[0] - start[0]) * e);
+    const g = Math.round(start[1] + (end[1] - start[1]) * e);
+    const b = Math.round(start[2] + (end[2] - start[2]) * e);
+    root.style.setProperty(varName, `rgb(${r},${g},${b})`);
+    if (p < 1) requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+function _parseCssColor(str) {
+  const m = str.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+  if (m) return [+m[1], +m[2], +m[3]];
+  return _hexToRgbTuple(str);
+}
+function _hexToRgbTuple(hex) {
+  hex = hex.replace('#', '');
+  if (hex.length === 3) hex = hex.split('').map(c => c + c).join('');
+  if (hex.length !== 6) return null;
+  return [
+    parseInt(hex.slice(0, 2), 16),
+    parseInt(hex.slice(2, 4), 16),
+    parseInt(hex.slice(4, 6), 16),
+  ];
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+//  COMBO SYSTEM
+// ════════════════════════════════════════════════════════════════════════════
+let _comboStreak     = 0;
+let _comboTimer      = null;
+let _comboDismissTimer = null;
+
+const COMBO_WORDS = {
+  3: ['ON FIRE', '🔥'],
+  5: ['UNSTOPPABLE', '⚡'],
+  7: ['LEGENDARY', '👑'],
+  10: ['GODLIKE', '✦'],
+};
+
+function registerComboHit() {
+  clearTimeout(_comboTimer);
+  _comboStreak++;
+
+  if (_comboStreak >= 3) {
+    showCombo(_comboStreak);
+  }
+
+  // Reset streak if no action in 6 seconds
+  _comboTimer = setTimeout(() => {
+    _comboStreak = 0;
+    dismissCombo();
+  }, 6000);
+}
+
+function breakCombo() {
+  if (_comboStreak >= 3) dismissCombo();
+  _comboStreak = 0;
+  clearTimeout(_comboTimer);
+}
+
+function showCombo(n) {
+  const el    = document.getElementById('combo-display');
+  const count = document.getElementById('combo-count');
+  const word  = document.getElementById('combo-word');
+  if (!el || !count) return;
+
+  // Find milestone label
+  const milestones = Object.keys(COMBO_WORDS).map(Number).sort((a,b) => b-a);
+  const milestone  = milestones.find(m => n >= m);
+  const [label, flame] = milestone ? COMBO_WORDS[milestone] : ['IN A ROW', '🔥'];
+
+  count.textContent = n;
+  word.textContent  = label;
+  el.querySelector('.combo-flames').textContent = flame;
+
+  el.classList.remove('fire','dismiss');
+  void el.offsetWidth; // reflow
+  el.classList.add('fire');
+
+  clearTimeout(_comboDismissTimer);
+  _comboDismissTimer = setTimeout(dismissCombo, 1800);
+
+  haptic(n >= 7 ? [40,20,80,20,40] : [40, 30, 60]);
+}
+
+function dismissCombo() {
+  const el = document.getElementById('combo-display');
+  if (!el || !el.classList.contains('fire')) return;
+  el.classList.remove('fire');
+  el.classList.add('dismiss');
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+//  WELCOME CANVAS — DRIFTING STAR PARTICLES
+// ════════════════════════════════════════════════════════════════════════════
+(function initWelcomeCanvas() {
+  const canvas = document.getElementById('welcome-canvas');
+  if (!canvas) return;
+
+  function resize() {
+    canvas.width  = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  const ctx = canvas.getContext('2d');
+  const COLORS = ['#2e80d8','#38bdf8','#a855f7','#ffb703','#ffffff'];
+  const stars = Array.from({ length: 55 }, () => ({
+    x: Math.random() * canvas.width,
+    y: Math.random() * canvas.height,
+    r: 0.5 + Math.random() * 1.8,
+    vx: (Math.random() - 0.5) * 0.25,
+    vy: -0.12 - Math.random() * 0.2,
+    alpha: 0.1 + Math.random() * 0.6,
+    color: COLORS[Math.floor(Math.random() * COLORS.length)],
+    twinkle: Math.random() * Math.PI * 2,
+    twinkleSpeed: 0.018 + Math.random() * 0.03,
+  }));
+
+  let rafId;
+  function tick() {
+    if (!document.getElementById('screen-welcome')?.classList.contains('active')) {
+      rafId = requestAnimationFrame(tick); return;
+    }
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (const s of stars) {
+      s.x += s.vx; s.y += s.vy;
+      s.twinkle += s.twinkleSpeed;
+      if (s.y < -4) { s.y = canvas.height + 4; s.x = Math.random() * canvas.width; }
+      if (s.x < -4) s.x = canvas.width + 4;
+      if (s.x > canvas.width + 4) s.x = -4;
+      const a = s.alpha * (0.6 + 0.4 * Math.sin(s.twinkle));
+      ctx.globalAlpha = a;
+      ctx.fillStyle = s.color;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    rafId = requestAnimationFrame(tick);
+  }
+  tick();
+})();
 function getGenreColor(genres) {
   if (!genres?.length) return '#2e80d8';
   for (const g of genres) { if (GENRE_COLORS[g]) return GENRE_COLORS[g]; }
@@ -4199,6 +4840,12 @@ function renderTasteCard(index, isReplacement = false) {
 }
 
 function swipeTaste(card, index, action) {
+  // Haptics + combo
+  if (action === 'superlike')    { haptic([40, 20, 90]); registerComboHit(); }
+  else if (action === 'like')    { haptic(40);            registerComboHit(); }
+  else if (action === 'dislike') { haptic(32);            breakCombo(); }
+  else if (action === 'skip')    { haptic(20);            breakCombo(); }
+
   const anime = tasteAnime[index];
   const dir   = action === 'dislike'   ? 'left'
               : action === 'skip'      ? 'down'
@@ -4972,43 +5619,168 @@ function launchGemParticles(container, count, delay) {
 }
 
 function triggerGemReveal(card, container) {
-  // 1 — Full-screen veil
-  const veil = document.createElement('div');
-  veil.className = 'gem-reveal-veil';
-  veil.innerHTML = `
-    <div class="gem-reveal-icon">✦</div>
-    <div class="gem-reveal-label">HIDDEN GEM</div>
+  // ── GACHA PULL — Full cinematic gem reveal ──────────────────────────────
+  haptic([80, 40, 160, 40, 80]);
+
+  // 1. Build full-screen overlay
+  const overlay = document.createElement('div');
+  overlay.id = 'gacha-overlay';
+  overlay.innerHTML = `
+    <div class="gacha-bg-orb"></div>
+    <div class="gacha-beam-wide"></div>
+    <div class="gacha-beam"></div>
+    <canvas id="gacha-canvas"></canvas>
+    <div style="position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;">
+      <div class="gacha-crystal" id="gacha-crystal">
+        <svg viewBox="0 0 96 96" xmlns="http://www.w3.org/2000/svg" width="96" height="96">
+          <defs>
+            <linearGradient id="gcy1" x1="20%" y1="0%" x2="80%" y2="100%">
+              <stop offset="0%"   stop-color="#fff7d6"/>
+              <stop offset="35%"  stop-color="#ffe066"/>
+              <stop offset="70%"  stop-color="#ffb703"/>
+              <stop offset="100%" stop-color="#d48000"/>
+            </linearGradient>
+            <linearGradient id="gcy2" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%"   stop-color="rgba(255,255,255,0.55)"/>
+              <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+            </linearGradient>
+            <filter id="gcyglow">
+              <feGaussianBlur stdDeviation="3" result="blur"/>
+              <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+          </defs>
+          <!-- Gem body -->
+          <polygon points="48,4 82,28 72,88 24,88 14,28" fill="url(#gcy1)" filter="url(#gcyglow)"/>
+          <!-- Top facet -->
+          <polygon points="48,4 82,28 48,38 14,28" fill="rgba(255,255,255,0.22)"/>
+          <!-- Side highlight -->
+          <polygon points="14,28 48,38 24,88" fill="rgba(0,0,0,0.12)"/>
+          <!-- Shine streak -->
+          <polygon points="48,4 82,28 72,34 48,10" fill="url(#gcy2)" opacity="0.5"/>
+          <!-- Center star -->
+          <polygon points="48,22 51,31 61,31 53,37 56,46 48,40 40,46 43,37 35,31 45,31"
+                   fill="rgba(255,255,255,0.8)" opacity="0.9"/>
+        </svg>
+      </div>
+      <div class="gacha-ring gacha-ring-1"></div>
+      <div class="gacha-ring gacha-ring-2"></div>
+      <div class="gacha-title">✦ HIDDEN GEM ✦</div>
+      <div class="gacha-subtitle">Tap anywhere to reveal</div>
+    </div>
   `;
-  document.body.appendChild(veil);
-  veil.addEventListener('animationend', () => veil.remove(), { once: true });
+  document.body.appendChild(overlay);
 
-  // 2 — Card entrance (clear opacity:0 so gemCardEnter animation owns the fade-in)
-  setTimeout(() => {
-    card.style.opacity = '';
-    card.classList.add('gem-card-enter');
-    card.addEventListener('animationend', () => card.classList.remove('gem-card-enter'), { once: true });
-
-    // 3 — Expanding ring
-    const ring = document.createElement('div');
-    ring.className = 'gem-ring';
-    container.appendChild(ring);
-    ring.addEventListener('animationend', () => ring.remove(), { once: true });
-
-    // 4 — Primary particles burst
-    launchGemParticles(container, 16, 0);
-  }, 300);
-
-  // 5 — Secondary particle ripple
-  setTimeout(() => launchGemParticles(container, 10, 0), 480);
-
-  // 6 — Badge bounces in
-  setTimeout(() => {
-    const badge = card.querySelector('.gem-badge');
-    if (badge) {
-      badge.classList.remove('badge-hidden');
-      badge.classList.add('badge-enter');
+  // 2. Fire gacha canvas particles
+  const gCanvas = document.getElementById('gacha-canvas');
+  if (gCanvas) {
+    gCanvas.width  = window.innerWidth;
+    gCanvas.height = window.innerHeight;
+    const gCtx = gCanvas.getContext('2d');
+    const cx = gCanvas.width / 2, cy = gCanvas.height / 2;
+    const COLORS = ['#ffb703','#ffe066','#ffffff','#a855f7','#38bdf8','#ffd700'];
+    const gParticles = Array.from({ length: 70 }, () => {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 1.8 + Math.random() * 5.5;
+      return {
+        x: cx, y: cy,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - 2,
+        r: 2 + Math.random() * 4,
+        color: COLORS[Math.floor(Math.random() * COLORS.length)],
+        alpha: 1, gravity: 0.07 + Math.random() * 0.05,
+        decay: 0.012 + Math.random() * 0.01,
+        shape: Math.random() < 0.35 ? 'star' : 'circle',
+      };
+    });
+    let gStarted = false;
+    function drawGachaStar(ctx, x, y, r) {
+      ctx.save(); ctx.translate(x, y);
+      ctx.beginPath();
+      for (let i = 0; i < 5; i++) {
+        const a = (i * 4 * Math.PI) / 5 - Math.PI / 2;
+        i === 0 ? ctx.moveTo(r * Math.cos(a), r * Math.sin(a))
+                : ctx.lineTo(r * Math.cos(a), r * Math.sin(a));
+      }
+      ctx.closePath(); ctx.fill(); ctx.restore();
     }
-  }, 450);
+    function gachaParticleTick() {
+      if (!gStarted) { gStarted = true; }
+      gCtx.clearRect(0, 0, gCanvas.width, gCanvas.height);
+      let alive = false;
+      for (const p of gParticles) {
+        if (p.alpha <= 0) continue;
+        alive = true;
+        p.x += p.vx; p.y += p.vy;
+        p.vy += p.gravity;
+        p.alpha -= p.decay;
+        gCtx.globalAlpha = Math.max(0, p.alpha);
+        gCtx.fillStyle = p.color;
+        if (p.shape === 'star') {
+          drawGachaStar(gCtx, p.x, p.y, p.r);
+        } else {
+          gCtx.beginPath();
+          gCtx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+          gCtx.fill();
+        }
+      }
+      gCtx.globalAlpha = 1;
+      if (alive) requestAnimationFrame(gachaParticleTick);
+    }
+    setTimeout(gachaParticleTick, 600);
+  }
+
+  // 3. After 1.5s — add flash + begin dismiss, un-hide card
+  const dismiss = () => {
+    overlay.removeEventListener('click', dismiss);
+
+    // Flash the screen
+    const flash = document.createElement('div');
+    flash.className = 'gacha-flash';
+    overlay.appendChild(flash);
+    haptic([60, 30, 120]);
+
+    // Crystal pulse class
+    const crystal = document.getElementById('gacha-crystal');
+    if (crystal) crystal.classList.add('pulsing');
+
+    // Un-hide card + entrance animation
+    setTimeout(() => {
+      card.style.opacity = '';
+      card.classList.add('gem-card-enter');
+      card.addEventListener('animationend', () => card.classList.remove('gem-card-enter'), { once: true });
+
+      // Expanding ring on the card container
+      const ring = document.createElement('div');
+      ring.className = 'gem-ring';
+      container.appendChild(ring);
+      ring.addEventListener('animationend', () => ring.remove(), { once: true });
+
+      // Card particles
+      launchGemParticles(container, 20, 0);
+    }, 120);
+
+    // Particle secondary burst
+    setTimeout(() => launchGemParticles(container, 12, 0), 320);
+
+    // Badge in
+    setTimeout(() => {
+      const badge = card.querySelector('.gem-badge');
+      if (badge) {
+        badge.classList.remove('badge-hidden');
+        badge.classList.add('badge-enter');
+      }
+    }, 280);
+
+    // Fade out gacha overlay
+    setTimeout(() => {
+      overlay.classList.add('dismissing');
+      setTimeout(() => overlay.remove(), 420);
+    }, 180);
+  };
+
+  // Auto-dismiss after 2.2s, or tap to dismiss early
+  setTimeout(dismiss, 2200);
+  overlay.addEventListener('click', dismiss, { once: true });
 }
 
 /* ─── Hidden Gem helpers ────────────────────────── */
@@ -5280,6 +6052,15 @@ function showNextRec(firstCard = false) {
 }
 
 function recSwipe(card, anime, action) {
+  // Haptics + combo tracking
+  if (action === 'supergood')  { haptic([40, 20, 90]); registerComboHit(); }
+  else if (action === 'like')  { haptic(40);            registerComboHit(); }
+  else if (action === 'dislike') { haptic(32);          breakCombo(); }
+  else if (action === 'skip')    { haptic(20);          breakCombo(); }
+
+  // Identity shift detection
+  detectAndApplyIdentityShift(anime);
+
   const dir = action === 'dislike'   ? 'left'  :
               action === 'skip'      ? 'down'  :
               action === 'supergood' ? 'up'    : 'right';
@@ -5922,32 +6703,33 @@ function _renderRadarChart(containerId, traits, group) {
     return;
   }
 
-  const n = rows.length;
+  const n   = rows.length;
   const max = rows[0].score;
+  const cx  = 170, cy = 162;
+  const R   = 90, LR = 132;
 
-  // SVG coordinate space
-  const cx = 170, cy = 162;  // centre
-  const R  = 90;             // radar radius
-  const LR = 130;            // label centre distance from origin
-
-  // Angles: 0 → top (−π/2), proceeding clockwise
   const angles = Array.from({ length: n }, (_, i) =>
     (i / n) * Math.PI * 2 - Math.PI / 2
   );
 
-  // Grid rings (25 / 50 / 75 / 100%)
-  const rings = [0.25, 0.5, 0.75, 1.0].map(p =>
-    `<circle cx="${cx}" cy="${cy}" r="${(R * p).toFixed(1)}"
-      fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>`
+  // Grid rings — animated fade in, staggered
+  const rings = [0.25, 0.5, 0.75, 1.0].map((p, ri) =>
+    `<circle class="radar-ring" cx="${cx}" cy="${cy}" r="${(R * p).toFixed(1)}"
+      fill="none" stroke="rgba(255,255,255,0.065)" stroke-width="${p === 1 ? 1.2 : 0.8}"
+      style="animation-delay:${ri * 0.08}s"/>`
   ).join('');
 
-  // Spokes
-  const spokes = angles.map(a =>
-    `<line x1="${cx}" y1="${cy}"
-      x2="${(cx + R * Math.cos(a)).toFixed(1)}"
-      y2="${(cy + R * Math.sin(a)).toFixed(1)}"
-      stroke="rgba(255,255,255,0.07)" stroke-width="1"/>`
-  ).join('');
+  // Spokes — draw-in animation per spoke
+  const spokes = angles.map((a, si) => {
+    const x2 = (cx + R * Math.cos(a)).toFixed(1);
+    const y2 = (cy + R * Math.sin(a)).toFixed(1);
+    const len = Math.hypot(cx - parseFloat(x2), cy - parseFloat(y2)).toFixed(1);
+    return `<line class="radar-spoke"
+      x1="${cx}" y1="${cy}" x2="${x2}" y2="${y2}"
+      stroke="rgba(255,255,255,0.07)" stroke-width="1"
+      stroke-dasharray="${len}" stroke-dashoffset="${len}"
+      style="animation-delay:${0.1 + si * 0.06}s"/>`;
+  }).join('');
 
   // Data polygon vertices
   const pts = rows.map((t, i) => {
@@ -5959,44 +6741,64 @@ function _renderRadarChart(containerId, traits, group) {
   });
   const polyStr = pts.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
 
-  // Dots at each vertex
-  const dots = pts.map(([x, y]) =>
-    `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3.5" fill="#2e80d8"/>`
+  // Perimeter estimate for dash animation (rough sum of edges)
+  const perim = pts.reduce((acc, [x, y], i) => {
+    const [nx, ny] = pts[(i + 1) % pts.length];
+    return acc + Math.hypot(nx - x, ny - y);
+  }, 0).toFixed(0);
+
+  // Vertex dots — stagger pop-in
+  const LABEL_COLORS = ['#2e80d8','#ffb703','#a855f7','#38bdf8','#f472b6','#22c55e'];
+  const dots = pts.map(([x, y], i) =>
+    `<circle class="radar-dot" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4.5"
+      fill="${LABEL_COLORS[i] || '#2e80d8'}"
+      style="animation-delay:${0.55 + i * 0.07}s;
+             filter:drop-shadow(0 0 5px ${LABEL_COLORS[i] || '#2e80d8'})"/>`
   ).join('');
 
-  // Axis-tip dots (faint, at full radius)
-  const tipDots = angles.map(a =>
-    `<circle cx="${(cx + R * Math.cos(a)).toFixed(1)}"
+  // Axis-tip glow dots
+  const tipDots = angles.map((a, ti) =>
+    `<circle class="radar-tip" cx="${(cx + R * Math.cos(a)).toFixed(1)}"
               cy="${(cy + R * Math.sin(a)).toFixed(1)}"
-              r="2" fill="rgba(255,255,255,0.12)"/>`
+              r="2.5" fill="rgba(255,255,255,0.18)"
+              style="animation-delay:${ti * 0.18}s"/>`
   ).join('');
 
-  // Labels — top 1: brand blue, top 2: brand gold, rest: muted
-  const LABEL_COLORS = ['#2e80d8', '#ffb703'];
+  // Labels — stagger fade-in
   const labels = rows.map((t, i) => {
-    const lx    = cx + LR * Math.cos(angles[i]);
-    const ly    = cy + LR * Math.sin(angles[i]);
-    const cosA  = Math.cos(angles[i]);
-    const anchor = cosA > 0.25 ? 'start' : cosA < -0.25 ? 'end' : 'middle';
+    const lx     = (cx + LR * Math.cos(angles[i])).toFixed(1);
+    const ly     = (cy + LR * Math.sin(angles[i])).toFixed(1);
+    const cosA   = Math.cos(angles[i]);
+    const anchor = cosA > 0.22 ? 'start' : cosA < -0.22 ? 'end' : 'middle';
     const label  = _cleanLabel(t.key, group);
-    const color  = LABEL_COLORS[i] || 'rgba(255,255,255,0.45)';
+    const color  = LABEL_COLORS[i] || 'rgba(255,255,255,0.4)';
     const weight = i < 2 ? '700' : '500';
-    return `<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}"
+    return `<text class="radar-label" x="${lx}" y="${ly}"
       text-anchor="${anchor}" dominant-baseline="middle"
-      fill="${color}" font-size="12" font-weight="${weight}"
-      font-family="Outfit, system-ui, sans-serif">${label}</text>`;
+      fill="${color}" font-size="${i < 2 ? 12.5 : 11.5}" font-weight="${weight}"
+      font-family="Outfit, system-ui, sans-serif"
+      style="animation-delay:${0.7 + i * 0.08}s">${label}</text>`;
   }).join('');
 
   el.innerHTML = `<div class="taste-radar-wrap">
     <svg viewBox="0 0 340 324" xmlns="http://www.w3.org/2000/svg" width="100%"
          style="overflow:visible;display:block">
+      <!-- Grid -->
       ${rings}
       ${spokes}
       ${tipDots}
-      <polygon points="${polyStr}"
-        fill="rgba(46,128,216,0.12)"
-        stroke="rgba(46,128,216,0.75)" stroke-width="1.5" stroke-linejoin="round"/>
+      <!-- Data area — fill + stroke animated separately -->
+      <polygon class="radar-polygon-fill radar-breath" points="${polyStr}"
+        fill="rgba(46,128,216,0.10)"
+        style="animation-delay:0.38s,1.1s"/>
+      <polygon class="radar-polygon-stroke" points="${polyStr}"
+        fill="none"
+        stroke="rgba(46,128,216,0.82)" stroke-width="2" stroke-linejoin="round"
+        stroke-dasharray="${perim}" stroke-dashoffset="${perim}"
+        style="animation-delay:0.28s"/>
+      <!-- Vertex dots -->
       ${dots}
+      <!-- Labels -->
       ${labels}
     </svg>
   </div>`;
@@ -6645,6 +7447,31 @@ else {
   }
 }
 </script>
-<div id="version-badge">v124</div>
+
+<!-- ══════════════════════════════════════════════ -->
+<!--  GACHA GEM PULL OVERLAY (injected by JS)      -->
+<!-- ══════════════════════════════════════════════ -->
+<!-- Created dynamically in triggerGemReveal() -->
+
+<!-- ══════════════════════════════════════════════ -->
+<!--  GENRE IDENTITY SHIFT                         -->
+<!-- ══════════════════════════════════════════════ -->
+<div id="identity-flash"></div>
+<div class="cluster-banner" id="cluster-banner">
+  <div class="cluster-banner-dot" id="cluster-banner-dot"></div>
+  <span id="cluster-banner-text"></span>
+</div>
+
+<!-- ══════════════════════════════════════════════ -->
+<!--  COMBO DISPLAY                                -->
+<!-- ══════════════════════════════════════════════ -->
+<div id="combo-display">
+  <div class="combo-flames">🔥</div>
+  <div class="combo-label">COMBO</div>
+  <div class="combo-count" id="combo-count">0</div>
+  <div class="combo-word" id="combo-word">IN A ROW</div>
+</div>
+
+<div id="version-badge">v128</div>
 </body>
 </html>
