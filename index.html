@@ -416,6 +416,40 @@
       margin-bottom: 8px;
       letter-spacing: 0.05px;
     }
+    /* Slot-type badge — shown on boundary / diversity / wildcard / fresh cards */
+    .slot-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 3px 9px;
+      border-radius: 99px;
+      margin-bottom: 6px;
+      width: fit-content;
+    }
+    .slot-badge--boundary {
+      background: rgba(139, 92, 246, 0.22);
+      color: #c4b5fd;
+      border: 1px solid rgba(139, 92, 246, 0.40);
+    }
+    .slot-badge--diversity {
+      background: rgba(16, 185, 129, 0.18);
+      color: #6ee7b7;
+      border: 1px solid rgba(16, 185, 129, 0.35);
+    }
+    .slot-badge--wildcard {
+      background: rgba(245, 158, 11, 0.18);
+      color: #fcd34d;
+      border: 1px solid rgba(245, 158, 11, 0.32);
+    }
+    .slot-badge--fresh {
+      background: rgba(239, 68, 68, 0.18);
+      color: #fca5a5;
+      border: 1px solid rgba(239, 68, 68, 0.32);
+    }
     /* Emotional vibe chips — frosted outline style, distinct from genre chips */
     .vibe-chip {
       border-radius: 50px;
@@ -3877,6 +3911,33 @@ function buildCard(anime, isTop = true, explanation = null) {
   const metaSep   = starRating && metaParts ? '<span style="opacity:0.4"> · </span>' : '';
   const metaLine  = starRating + metaSep + metaParts;
 
+  // ── Slot-type badge ──────────────────────────────────────────────────────
+  // Visible label on non-standard cards so the user knows what the engine is doing.
+  const _metaType = anime._meta?.type;
+  let slotBadge = '';
+  if (_metaType === 'boundary') {
+    const _dimLabels = {
+      darkness:           'Darker Content',
+      violence:           'More Intense',
+      romance:            'More Romance',
+      hype:               'Higher Octane',
+      psychologicalDepth: 'Deeper Psychology',
+      moralComplexity:    'Moral Complexity',
+      humor:              'More Comedy',
+      emotionalWeight:    'Heavier Emotions',
+      characterDrama:     'Character Drama',
+      worldbuilding:      'Richer Worldbuilding',
+    };
+    const _dir = _dimLabels[anime._meta?.dimension] || 'New Direction';
+    slotBadge = `<div class="slot-badge slot-badge--boundary">↗ Exploring: ${_dir}</div>`;
+  } else if (_metaType === 'diversity') {
+    slotBadge = `<div class="slot-badge slot-badge--diversity">✦ New Territory</div>`;
+  } else if (_metaType === 'wildcard') {
+    slotBadge = `<div class="slot-badge slot-badge--wildcard">⚡ Wild Card</div>`;
+  } else if (_metaType === 'fresh') {
+    slotBadge = `<div class="slot-badge slot-badge--fresh">★ New Release</div>`;
+  }
+
   card.innerHTML = `
     <div class="stamp stamp-like">GOOD</div>
     <div class="stamp stamp-dislike">BAD</div>
@@ -3888,6 +3949,7 @@ function buildCard(anime, isTop = true, explanation = null) {
     <div class="card-gradient"></div>
     ${primaryGenre ? `<div class="genre-pill">${getGenrePillLabel(anime)}</div>` : ''}
     <div class="card-info">
+      ${slotBadge}
       <div class="card-title">${title}</div>
       ${explanation ? `<div class="card-explanation">${explanation}</div>` : ''}
       <div class="card-meta">${metaLine}</div>
@@ -4830,7 +4892,15 @@ function generateRecExplanation(anime) {
   // ── Boundary probe ────────────────────────────────────────────────────
   if (metaType === 'boundary') {
     const label = BOUNDARY_DIM_LABELS[anime._meta?.dimension] || 'a new direction';
-    return `Testing if you're open to ${label} — based on what you've liked.`;
+    return `Your reaction here tells the engine whether to push further in this direction.`;
+  }
+
+  // ── Diversity pick ────────────────────────────────────────────────────
+  if (metaType === 'diversity') {
+    const phrase = BUCKET_MATCH_PHRASES[animeBuckets[0]];
+    return phrase
+      ? `Top-rated in a lane you haven't explored yet — could open a new taste cluster.`
+      : `A high-quality pick outside your usual territory — could open a new taste cluster.`;
   }
 
   // ── Wildcard ──────────────────────────────────────────────────────────

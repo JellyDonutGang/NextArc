@@ -323,6 +323,7 @@ const EMOTIONAL_BUCKET_DEFS = {
     tones:      ['dark', 'philosophical', 'intense'],
     archetypes: ['antihero', 'morallyGray', 'villain'],
     scalars:    { darkness: 0.35, moralComplexity: 0.40, psychologicalDepth: 0.25 },
+    antiDims:   { humor: 4.5 }, // high comedy (action-comedies, parody) ≠ dark moral complexity
   },
 
   // Healing, iyashikei, gentle slice of life, zero stakes warmth
