@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Browse Anime — OTAKULT</title>
+  <meta name="description" content="Browse 12,400+ hand-curated anime titles. Filter by genre, era, mood, and format. No algorithm slop." />
+  <link rel="canonical" href="https://otakult.app/browse" />
+  <meta property="og:title" content="Browse Anime — OTAKULT" />
+  <meta property="og:description" content="Browse 12,400+ hand-curated anime titles. Filter by genre, era, mood, and format." />
+  <meta property="og:url" content="https://otakult.app/browse" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Space+Grotesk:wght@400;500;600;700&family=M+PLUS+1 Code:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --ink:      #0d0d16;
+      --cream:    #f9f6e4;
+      --hot:      #f5195a;
+      --electric: #7b35eb;
+      --acid:     #d4f229;
+      --cyan:     #22d3ee;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Space Grotesk', sans-serif;
+      background: var(--cream);
+      color: var(--ink);
+      overflow-x: hidden;
+    }
+
+    .dot-bg {
+      background-color: var(--cream);
+      background-image: radial-gradient(circle, rgba(0,0,0,0.1) 1px, transparent 1px);
+      background-size: 20px 20px;
+    }
+
+    /* ─── NAV ──────────────────────────────── */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: var(--ink);
+      border-bottom: 3px solid #000;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 32px;
+      height: 64px;
+    }
+
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+    }
+    .logo-badge {
+      width: 40px;
+      height: 40px;
+      background: var(--hot);
+      border-radius: 50%;
+      border: 2px solid rgba(255,255,255,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Bungee', sans-serif;
+      font-size: 13px;
+      color: #fff;
+      transform: rotate(-1.5deg);
+    }
+    .logo-wordmark {
+      font-family: 'Bungee', sans-serif;
+      font-size: 22px;
+      color: #fff;
+      letter-spacing: 1px;
+    }
+    .logo-wordmark .dot { color: var(--hot); }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .nav-link {
+      font-family: 'Bungee', sans-serif;
+      font-size: 12px;
+      color: #fff;
+      text-decoration: none;
+      letter-spacing: 1.5px;
+      padding: 8px 14px;
+      transition: color 0.15s;
+    }
+    .nav-link.active { border: 2px solid var(--acid); color: var(--acid); }
+    .nav-link:hover:not(.active) { color: var(--hot); }
+    .nav-cta {
+      font-family: 'Bungee', sans-serif;
+      font-size: 12px;
+      background: var(--hot);
+      color: #fff;
+      text-decoration: none;
+      padding: 10px 20px;
+      letter-spacing: 1px;
+      border: 2px solid var(--hot);
+      transition: background 0.15s;
+    }
+    .nav-cta:hover { background: #d40f4a; border-color: #d40f4a; }
+
+    /* ─── PAGE HEADER ──────────────────────── */
+    .page-header {
+      padding: 56px 60px 40px;
+      border-bottom: 3px solid var(--ink);
+      background: var(--ink);
+    }
+
+    .header-top {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      margin-bottom: 32px;
+    }
+
+    .header-eyebrow {
+      font-family: 'M PLUS 1 Code', monospace;
+      font-size: 11px;
+      color: var(--hot);
+      letter-spacing: 3px;
+      margin-bottom: 10px;
+      display: block;
+    }
+
+    .page-title {
+      font-family: 'Bungee', sans-serif;
+      font-size: clamp(52px, 8vw, 96px);
+      color: #fff;
+      line-height: 0.9;
+      letter-spacing: -2px;
+    }
+    .page-title .highlight {
+      color: var(--acid);
+    }
+
+    .header-meta {
+      font-size: 13px;
+      color: #666;
+      font-weight: 500;
+      letter-spacing: 1px;
+      text-align: right;
+    }
+    .header-meta strong { color: var(--acid); font-size: 20px; display: block; font-family: 'Bungee', sans-serif; }
+
+    /* ─── SEARCH BAR ───────────────────────── */
+    .search-wrap {
+      position: relative;
+      max-width: 540px;
+    }
+    .search-input {
+      width: 100%;
+      background: #fff;
+      border: 3px solid #fff;
+      padding: 14px 54px 14px 20px;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 15px;
+      color: var(--ink);
+      outline: none;
+      box-shadow: 4px 4px 0 var(--acid);
+    }
+    .search-input::placeholder { color: #aaa; }
+    .search-icon {
+      position: absolute;
+      right: 18px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 18px;
+      pointer-events: none;
+    }
+
+    /* ─── FILTER BAR ───────────────────────── */
+    .filter-bar {
+      display: flex;
+      gap: 0;
+      overflow-x: auto;
+      scrollbar-width: none;
+      border-bottom: 3px solid var(--ink);
+    }
+    .filter-bar::-webkit-scrollbar { display: none; }
+
+    .filter-btn {
+      font-family: 'Bungee', sans-serif;
+      font-size: 11px;
+      letter-spacing: 1.5px;
+      padding: 14px 20px;
+      border: none;
+      border-right: 3px solid var(--ink);
+      background: var(--cream);
+      color: var(--ink);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.12s, color 0.12s;
+    }
+    .filter-btn:hover { background: var(--ink); color: #fff; }
+    .filter-btn.active { background: var(--hot); color: #fff; }
+    .filter-btn.active-acid { background: var(--acid); color: var(--ink); }
+    .filter-btn.active-electric { background: var(--electric); color: #fff; }
+
+    /* ─── MAIN LAYOUT ──────────────────────── */
+    .layout {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      min-height: calc(100vh - 64px - 200px);
+    }
+
+    /* ─── SIDEBAR ──────────────────────────── */
+    .sidebar {
+      border-right: 3px solid var(--ink);
+      padding: 28px 24px;
+      position: sticky;
+      top: 64px;
+      height: calc(100vh - 64px);
+      overflow-y: auto;
+      scrollbar-width: thin;
+      background: var(--cream);
+    }
+
+    .filter-group { margin-bottom: 28px; }
+    .filter-group-title {
+      font-family: 'Bungee', sans-serif;
+      font-size: 10px;
+      letter-spacing: 2.5px;
+      color: #aaa;
+      margin-bottom: 12px;
+      display: block;
+      padding-bottom: 8px;
+      border-bottom: 2px solid var(--ink);
+    }
+
+    .chip-list { display: flex; flex-wrap: wrap; gap: 7px; }
+
+    .chip {
+      font-family: 'Bungee', sans-serif;
+      font-size: 9px;
+      letter-spacing: 1px;
+      padding: 6px 11px;
+      border: 2px solid var(--ink);
+      background: transparent;
+      color: var(--ink);
+      cursor: pointer;
+      transition: background 0.1s, color 0.1s;
+    }
+    .chip:hover { background: var(--ink); color: #fff; }
+    .chip.on.genre-action    { background: var(--hot); color: #fff; border-color: var(--hot); }
+    .chip.on.genre-drama     { background: var(--electric); color: #fff; border-color: var(--electric); }
+    .chip.on.genre-comedy    { background: var(--acid); color: var(--ink); border-color: var(--acid); }
+    .chip.on.genre-sci-fi    { background: var(--cyan); color: var(--ink); border-color: var(--cyan); }
+    .chip.on.genre-horror    { background: #1a1a2e; color: #fff; border-color: #1a1a2e; }
+    .chip.on.genre-romance   { background: #ff6b9d; color: #fff; border-color: #ff6b9d; }
+    .chip.on.genre-sports    { background: #f97316; color: #fff; border-color: #f97316; }
+    .chip.on.genre-mecha     { background: #64748b; color: #fff; border-color: #64748b; }
+    .chip.on                 { background: var(--ink); color: #fff; }
+
+    /* ─── GRID ─────────────────────────────── */
+    .main { padding: 28px 28px 48px; }
+
+    .results-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 22px;
+    }
+    .results-count {
+      font-family: 'Bungee', sans-serif;
+      font-size: 13px;
+      color: var(--ink);
+      letter-spacing: 0.5px;
+    }
+    .results-count span { color: var(--hot); }
+
+    .sort-select {
+      font-family: 'Bungee', sans-serif;
+      font-size: 10px;
+      letter-spacing: 1.5px;
+      padding: 8px 14px;
+      border: 2px solid var(--ink);
+      background: var(--cream);
+      color: var(--ink);
+      cursor: pointer;
+      outline: none;
+      appearance: none;
+    }
+
+    .anime-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 18px;
+    }
+
+    /* ─── ANIME CARD ───────────────────────── */
+    .acard {
+      border: 3px solid var(--ink);
+      background: #fff;
+      box-shadow: 4px 4px 0 var(--ink);
+      cursor: pointer;
+      transition: transform 0.12s, box-shadow 0.12s;
+      text-decoration: none;
+      color: var(--ink);
+      display: flex;
+      flex-direction: column;
+    }
+    .acard:hover {
+      transform: translate(-2px, -2px);
+      box-shadow: 6px 6px 0 var(--ink);
+    }
+
+    .acard-art {
+      position: relative;
+      height: 200px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 56px;
+      flex-shrink: 0;
+    }
+
+    .acard-gem {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      font-size: 18px;
+    }
+
+    .acard-score {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: var(--acid);
+      border: 2px solid var(--ink);
+      font-family: 'Bungee', sans-serif;
+      font-size: 10px;
+      padding: 3px 8px;
+      letter-spacing: 0.5px;
+    }
+
+    .acard-jp {
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+      background: rgba(255,255,255,0.9);
+      border: 1.5px solid var(--ink);
+      font-family: 'M PLUS 1 Code', monospace;
+      font-size: 9px;
+      padding: 3px 7px;
+    }
+
+    .acard-body {
+      padding: 12px 14px 14px;
+      border-top: 3px solid var(--ink);
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .acard-title {
+      font-family: 'Bungee', sans-serif;
+      font-size: 13px;
+      letter-spacing: 0.3px;
+      line-height: 1.2;
+    }
+
+    .acard-meta {
+      font-size: 11px;
+      color: #999;
+      font-weight: 600;
+    }
+
+    .acard-tags {
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
+      margin-top: auto;
+    }
+
+    .tag {
+      font-family: 'Bungee', sans-serif;
+      font-size: 8px;
+      letter-spacing: 1px;
+      padding: 3px 7px;
+      border: 1.5px solid var(--ink);
+    }
+    .tag.action   { background: var(--hot); color: #fff; border-color: var(--hot); }
+    .tag.drama    { background: var(--electric); color: #fff; border-color: var(--electric); }
+    .tag.comedy   { background: var(--acid); color: var(--ink); border-color: var(--acid); }
+    .tag.sci-fi   { background: var(--cyan); color: var(--ink); border-color: var(--cyan); }
+    .tag.horror   { background: #1a1a2e; color: #fff; border-color: #1a1a2e; }
+    .tag.romance  { background: #ff6b9d; color: #fff; border-color: #ff6b9d; }
+    .tag.sports   { background: #f97316; color: #fff; border-color: #f97316; }
+    .tag.mecha    { background: #64748b; color: #fff; border-color: #64748b; }
+    .tag.mystery  { background: #8b5cf6; color: #fff; border-color: #8b5cf6; }
+    .tag.slice    { background: #34d399; color: var(--ink); border-color: #34d399; }
+
+    /* ─── LOAD MORE ────────────────────────── */
+    .load-more-wrap {
+      display: flex;
+      justify-content: center;
+      margin-top: 48px;
+    }
+
+    .btn {
+      font-family: 'Bungee', sans-serif;
+      font-size: 12px;
+      letter-spacing: 1.5px;
+      padding: 14px 28px;
+      border: 3px solid var(--ink);
+      cursor: pointer;
+      transition: transform 0.1s, box-shadow 0.1s;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn:hover { transform: translate(-2px,-2px); box-shadow: 4px 4px 0 var(--ink); }
+    .btn-ink { background: var(--ink); color: #fff; }
+    .btn-hot { background: var(--hot); color: #fff; border-color: var(--hot); }
+
+    /* ─── FOOTER ───────────────────────────── */
+    footer {
+      background: #080808;
+      border-top: 3px solid #1a1a1a;
+      padding: 40px 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .foot-logo {
+      font-family: 'Bungee', sans-serif;
+      font-size: 20px;
+      color: #fff;
+    }
+    .foot-logo span { color: var(--hot); }
+    footer p { font-size: 12px; color: #444; }
+    footer nav a {
+      font-family: 'Bungee', sans-serif;
+      font-size: 10px;
+      color: #666;
+      text-decoration: none;
+      letter-spacing: 1.5px;
+      margin-left: 20px;
+    }
+    footer nav a:hover { color: #fff; }
+
+    /* ─── RESPONSIVE ───────────────────────── */
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: 1fr; }
+      .sidebar { position: static; height: auto; border-right: none; border-bottom: 3px solid var(--ink); }
+      .page-header { padding: 40px 24px 32px; }
+      .header-top { flex-direction: column; align-items: flex-start; gap: 20px; }
+      .main { padding: 20px 16px 40px; }
+      footer { flex-direction: column; gap: 16px; padding: 32px 24px; text-align: center; }
+      footer nav { margin-top: 8px; }
+      footer nav a { margin-left: 12px; }
+      nav { padding: 0 20px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══ NAV ═══════════════════════════════════════════════ -->
+<nav>
+  <a href="/" class="nav-logo">
+    <div class="logo-badge">O!</div>
+    <span class="logo-wordmark">OTAKULT<span class="dot">.</span></span>
+  </a>
+  <div class="nav-links">
+    <a href="/" class="nav-link">HOME</a>
+    <a href="/browse" class="nav-link active">BROWSE</a>
+    <a href="/discover" class="nav-cta">START DISCOVERING →</a>
+  </div>
+</nav>
+
+<!-- ═══ PAGE HEADER ═════════════════════════════════════════ -->
+<div class="page-header">
+  <div class="header-top">
+    <div>
+      <span class="header-eyebrow">// ディレクトリ — THE CATALOG</span>
+      <h1 class="page-title">BROWSE<br><span class="highlight">ANIME.</span></h1>
+    </div>
+    <div class="header-meta">
+      <strong>12,400+</strong>
+      titles indexed
+    </div>
+  </div>
+  <div class="search-wrap">
+    <input class="search-input" type="text" placeholder="Search titles, studios, tags..." id="searchInput" />
+    <span class="search-icon">⌕</span>
+  </div>
+</div>
+
+<!-- ═══ FILTER BAR ══════════════════════════════════════════ -->
+<div class="filter-bar">
+  <button class="filter-btn active" data-filter="all" onclick="setTopFilter(this,'all')">ALL</button>
+  <button class="filter-btn" data-filter="trending" onclick="setTopFilter(this,'trending')">🔥 TRENDING</button>
+  <button class="filter-btn" data-filter="gems" onclick="setTopFilter(this,'gems')">💎 HIDDEN GEMS</button>
+  <button class="filter-btn" data-filter="classics" onclick="setTopFilter(this,'classics')">⭐ CLASSICS</button>
+  <button class="filter-btn" data-filter="new" onclick="setTopFilter(this,'new')">✨ NEW</button>
+  <button class="filter-btn" data-filter="short" onclick="setTopFilter(this,'short')">⚡ SHORT (&lt;13 EP)</button>
+  <button class="filter-btn" data-filter="movies" onclick="setTopFilter(this,'movies')">🎬 MOVIES</button>
+</div>
+
+<!-- ═══ LAYOUT ══════════════════════════════════════════════ -->
+<div class="layout">
+
+  <!-- Sidebar filters -->
+  <aside class="sidebar">
+
+    <div class="filter-group">
+      <span class="filter-group-title">GENRE</span>
+      <div class="chip-list">
+        <button class="chip genre-action" onclick="toggleChip(this)">ACTION</button>
+        <button class="chip genre-drama" onclick="toggleChip(this)">DRAMA</button>
+        <button class="chip genre-comedy" onclick="toggleChip(this)">COMEDY</button>
+        <button class="chip genre-sci-fi" onclick="toggleChip(this)">SCI-FI</button>
+        <button class="chip genre-horror" onclick="toggleChip(this)">HORROR</button>
+        <button class="chip genre-romance" onclick="toggleChip(this)">ROMANCE</button>
+        <button class="chip genre-sports" onclick="toggleChip(this)">SPORTS</button>
+        <button class="chip genre-mecha" onclick="toggleChip(this)">MECHA</button>
+        <button class="chip" onclick="toggleChip(this)">MYSTERY</button>
+        <button class="chip" onclick="toggleChip(this)">SLICE OF LIFE</button>
+        <button class="chip" onclick="toggleChip(this)">PSYCHOLOGICAL</button>
+        <button class="chip" onclick="toggleChip(this)">ISEKAI</button>
+        <button class="chip" onclick="toggleChip(this)">FANTASY</button>
+        <button class="chip" onclick="toggleChip(this)">SUPERNATURAL</button>
+        <button class="chip" onclick="toggleChip(this)">THRILLER</button>
+      </div>
+    </div>
+
+    <div class="filter-group">
+      <span class="filter-group-title">VIBE</span>
+      <div class="chip-list">
+        <button class="chip" onclick="toggleChip(this)">DARK &amp; GRITTY</button>
+        <button class="chip" onclick="toggleChip(this)">FEEL-GOOD</button>
+        <button class="chip" onclick="toggleChip(this)">MIND-BENDING</button>
+        <button class="chip" onclick="toggleChip(this)">EMOTIONAL</button>
+        <button class="chip" onclick="toggleChip(this)">HYPE</button>
+        <button class="chip" onclick="toggleChip(this)">COZY</button>
+        <button class="chip" onclick="toggleChip(this)">CHAOTIC</button>
+        <button class="chip" onclick="toggleChip(this)">AESTHETIC</button>
+      </div>
+    </div>
+
+    <div class="filter-group">
+      <span class="filter-group-title">ERA</span>
+      <div class="chip-list">
+        <button class="chip" onclick="toggleChip(this)">2020s</button>
+        <button class="chip" onclick="toggleChip(this)">2010s</button>
+        <button class="chip" onclick="toggleChip(this)">2000s</button>
+        <button class="chip" onclick="toggleChip(this)">90s</button>
+        <button class="chip" onclick="toggleChip(this)">80s &amp; OLDER</button>
+      </div>
+    </div>
+
+    <div class="filter-group">
+      <span class="filter-group-title">FORMAT</span>
+      <div class="chip-list">
+        <button class="chip" onclick="toggleChip(this)">SERIES</button>
+        <button class="chip" onclick="toggleChip(this)">MOVIE</button>
+        <button class="chip" onclick="toggleChip(this)">OVA</button>
+        <button class="chip" onclick="toggleChip(this)">SHORT</button>
+      </div>
+    </div>
+
+    <div class="filter-group">
+      <span class="filter-group-title">SCORE</span>
+      <div class="chip-list">
+        <button class="chip" onclick="toggleChip(this)">9+ MASTERPIECE</button>
+        <button class="chip" onclick="toggleChip(this)">8+ GREAT</button>
+        <button class="chip" onclick="toggleChip(this)">7+ SOLID</button>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- Main grid -->
+  <main class="main dot-bg">
+    <div class="results-bar">
+      <span class="results-count">Showing <span id="countDisplay">24</span> of <span>12,418</span> titles</span>
+      <select class="sort-select" onchange="handleSort(this.value)">
+        <option value="score">SORT: SCORE ↓</option>
+        <option value="popular">SORT: POPULARITY</option>
+        <option value="new">SORT: NEWEST</option>
+        <option value="trending">SORT: TRENDING</option>
+      </select>
+    </div>
+
+    <div class="anime-grid" id="animeGrid">
+
+      <a href="/discover" class="acard">
+        <div class="acard-art" style="background:linear-gradient(135deg,#a855f7,#ec4899)">
+          ⚔️
+          <div class="acard-score">★ 9.3</div>
+          <div class="acard-jp">進撃の巨人</div>
+        </div>
+        <div class="acard-body">
+          <div class="acard-title">ATTACK ON TITAN</div>
+          <div class="acard-meta">WIT / MAPPA · 2013</div>
+          <div class="acard-tags">
+            <span class="tag action">ACTION</span>
+            <span class="tag drama">DRAMA</span>
+          </div>
+        </div>
+      </a>
+
+      <a href="/discover" class="acard">
+        <div class="acard-gem">💎</div>
+        <div class="acard-art" style="background:linear-gradient(135deg,#1e3a5f,#2d6a4f)">
+          🌊
+          <div class="acard-score">★ 8.4</div>
+          <div class="acard-jp">海獣の子供</div>
+        </div>
+        <div class="acard-body">
+          <div class="acard-title">CHILDREN OF THE SEA</div>
+          <div class="acard-meta">Studio 4°C · 2019</div>
+          <div class="acard-tags">
+            <span class="tag drama">DRAMA</span>
+            <span class="tag slice">MYSTICAL</span>
+          </div>
+        </div>
+      </a>
+
+      <a href="/discover" class="acard">
+        <div class="acard-art" style="background:linear-gradient(135deg,#7c3aed,#4338ca)">
+          🤖
+          <div class="acard-score">★ 9.1</div>
+          <div class="acard-jp">新世紀エヴァンゲリオン</div>
+        </div>
+        <div class="acard-body">
+          <div class="acard-title">NEON GENESIS EVANGELION</div>
+          <div class="acard-meta">Gainax · 1995</div>
+          <div class="acard-tags">
+            <span class="tag mecha">MECHA</span>
+            <span class="tag drama">DRAMA</span>
+          </div>
+        </div>
+      </a>
+
+      <a href="/discover" class="acard">
+        <div class="acard-art" style="background:linear-gradient(135deg,#064e3b,#065f46)">
+          🎌
+          <div class="acard-score">★ 8.8</div>
+          <div class="acard-jp">鬼滅の刃</div>
+        </div>
+        <div class="acard-body">
+          <div class="acard-title">DEMON SLAYER</div>
+          <div class="acard-meta">ufotable · 2019</div>
+          <div class="acard-tags">
+            <span class="tag action">ACTION</span>
+            <span class="tag drama">DRAMA</span>
+          </div>
+        </div>
+      </a>
+
+      <a href="/discover" class="acard">
+        <div class="acard-gem">💎</div>
+        <div class="acard-art" style="background:linear-gradient(135deg,#1e1b4b,#312e81)">
+          🌸
+          <div class="acard-score">★ 8.6</div>
+          <div class="acard-jp">花物語</div>
+        </div>
+        <div class="acard-body">
+          <div class="acard-title">HANAMONOGATARI</div>
+          <div class="acard-meta">Shaft · 2014</div>
+          <div class="acard-tags">
+            <span class="tag mystery">MYSTERY</span>
+            <span class="tag drama">DRAMA</span>
+          </div>
+        </div>
+      </a>
+
+      <a href="/discover" class="acard">
+        <div class="acard-art" style="background:linear-gradient(135deg,#be123c,#9f1239)">
+          👊
+          <div class="acard-score">★ 8.7</div>
+          <div class="acard-jp">ジョジョの奇妙な冒険</div>
+        </div>
+        <div class="acard-body">
+          <div class="acard-title">JOJO'S BIZARRE ADVENTURE</div>
+          <div class="acard-meta">David Production · 2012</div>
+          <div class="acard-tags">
+            <span class="tag action">ACTION</span>
+            <span class="tag comedy">COMEDY</span>
+          </div>
+        </div>
+      </a>
+
+      <a href="/discover" class="acard">
+        <div class="acard-art" style="background:linear-gradient(135deg,#0f766e,#0d9488)">
+          🎭
+          <div class="acard-score">★ 9.0</div>
+          <div class="acard-jp">鋼の錬金術師</div>
+        </div>
+        <div class="acard-body">
+          <div class="acard-title">FULLMETAL ALCHEMIST: BROTHERHOOD</div>
+          <div class="acard-meta">Bones · 2009</div>
+          <div class="acard-tags">
+            <span class="tag action">ACTION</span>
+            <span class="tag drama">DRAMA</span>
+          </div>
+        </div>
+      </a>
+
+      <a href="/discover" class="acard">
+        <div class="acard-gem">💎</div>
+        <div class="acard-art" style="background:linear-gradient(135deg,#854d0e,#713f12)">
+          🍜
+          <div class="acard-score">★ 7.9</div>
+          <div class="acard-jp">深夜食堂</div>
+        </div>
+        <div class="acard-body">
+          <div class="acard-title">MIDNIGHT DINER</div>
+          <div class="acard-meta">TMS · 2009</div>
+          <div class="acard-tags">
+            <span class="tag slice">SLICE OF LIFE</span>
+            <span class="tag drama">DRAMA</span>
+          </div>
+        </div>
+      </a>
+
+      <a href="/discover" class="acard">
+        <div class="acard-art" style="background:linear-gradient(135deg,#155e75,#164e63)">
+          🚀
+          <div class="acard-score">★ 8.5</div>
+          <div class="acard-jp">カウボーイビバップ</div>
+        </div>
+        <div class="acard-body">
+          <div class="acard-title">COWBOY BEBOP</div>
+          <div class="acard-meta">Sunrise · 1998</div>
+          <div class="acard-tags">
+            <span class="tag sci-fi">SCI-FI</span>
+            <span class="tag action">ACTION</span>
+          </div>
+        </div>
+      </a>
+
+      <a href="/discover" class="acard">
+        <div class="acard-art" style="background:linear-gradient(135deg,#5b21b6,#7c3aed)">
+          🧠
+          <div class="acard-score">★ 8.6</div>
+          <div class="acard-jp">モブサイコ100</div>
+        </div>
+        <div class="acard-body">
+          <div class="acard-title">MOB PSYCHO 100</div>
+          <div class="acard-meta">Bones · 2016</div>
+          <div class="acard-tags">
+            <span class="tag action">ACTION</span>
+            <span class="tag comedy">COMEDY</span>
+          </div>
+        </div>
+      </a>
+
+      <a href="/discover" class="acard">
+        <div class="acard-gem">💎</div>
+        <div class="acard-art" style="background:linear-gradient(135deg,#1c1917,#292524)">
+          🎻
+          <div class="acard-score">★ 8.2</div>
+          <div class="acard-jp">四月は君の嘘</div>
+        </div>
+        <div class="acard-body">
+          <div class="acard-title">YOUR LIE IN APRIL</div>
+          <div class="acard-meta">A-1 Pictures · 2014</div>
+          <div class="acard-tags">
+            <span class="tag romance">ROMANCE</span>
+            <span class="tag drama">DRAMA</span>
+          </div>
+        </div>
+      </a>
+
+      <a href="/discover" class="acard">
+        <div class="acard-art" style="background:linear-gradient(135deg,#166534,#14532d)">
+          🏃
+          <div class="acard-score">★ 8.3</div>
+          <div class="acard-jp">ハイキュー!!</div>
+        </div>
+        <div class="acard-body">
+          <div class="acard-title">HAIKYUU!!</div>
+          <div class="acard-meta">Production I.G · 2014</div>
+          <div class="acard-tags">
+            <span class="tag sports">SPORTS</span>
+            <span class="tag drama">DRAMA</span>
+          </div>
+        </div>
+      </a>
+
+    </div>
+
+    <div class="load-more-wrap">
+      <a href="/discover" class="btn btn-ink">WANT PERSONALIZED PICKS? → TRY THE APP</a>
+    </div>
+  </main>
+
+</div>
+
+<!-- ═══ FOOTER ══════════════════════════════════════════════ -->
+<footer>
+  <div class="foot-logo">OTAKULT<span>.</span></div>
+  <p>© 2026 OTAKULT collective. Hand-curated in Tokyo, Berlin, Oakland.</p>
+  <nav>
+    <a href="/">HOME</a>
+    <a href="/browse">BROWSE</a>
+    <a href="/discover">APP</a>
+  </nav>
+</footer>
+
+<script>
+  function setTopFilter(btn, filter) {
+    document.querySelectorAll('.filter-bar .filter-btn').forEach(b => {
+      b.classList.remove('active','active-acid','active-electric');
+    });
+    btn.classList.add('active');
+  }
+
+  function toggleChip(btn) {
+    const cls = [...btn.classList].find(c => c.startsWith('genre-')) || '';
+    btn.classList.toggle('on');
+    if (cls) btn.classList.toggle(cls, btn.classList.contains('on'));
+  }
+
+  function handleSort(val) {
+    // Placeholder — will hook into real data fetch
+    console.log('sort:', val);
+  }
+
+  // Search input debounce placeholder
+  document.getElementById('searchInput').addEventListener('input', function() {
+    // Will wire to AniList / Firebase query
+  });
+</script>
+</body>
+</html>

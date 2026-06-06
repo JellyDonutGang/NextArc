@@ -10,12 +10,12 @@
 
 const CACHE_VERSION = 'otakult-v1';
 const APP_SHELL = [
-  '/',
-  '/index.html',
-  '/animeTasteEngine.js',
-  '/manifest.json',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png',
+  '/discover/',
+  '/discover/index.html',
+  '/discover/animeTasteEngine.js',
+  '/discover/manifest.json',
+  '/discover/icons/icon-192.png',
+  '/discover/icons/icon-512.png',
 ];
 
 const ANILIST_ORIGIN = 'https://graphql.anilist.co';
