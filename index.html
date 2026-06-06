@@ -3548,6 +3548,7 @@ function _saveEngineState() {
       recentClusterIds: engine.recentClusterIds,
       onboarded:      engine.onboarded,
       totalSwipes:    engine.totalSwipes,
+      likedIds:       [...engine.likedIds],
       // App-level state
       likeCount, dislikeCount, totalShown, gemsClaimed, nextGemInterval,
       seenIds:        [...seenIds],
@@ -3572,6 +3573,7 @@ function _loadEngineState() {
     engine.recentClusterIds = s.recentClusterIds || [];
     engine.onboarded        = s.onboarded        ?? false;
     engine.totalSwipes      = s.totalSwipes      ?? 0;
+    if (Array.isArray(s.likedIds)) engine.likedIds = new Set(s.likedIds);
 
     // Restore clusters — re-inflate Sets from arrays
     if (Array.isArray(s.clusters)) {

@@ -10,7 +10,7 @@
  * Architecture:
  *  ┌─ Semantic vectors     6 groups per cluster: tone · archetype · visual · tag · genre · studio
  *  │   (plus a global profile used for onboarding and boundary testing)
- *  ├─ Scalar dimensions    13 axes per cluster: 7 tolerance + 6 appetite dims
+ *  ├─ Scalar dimensions    17 axes per cluster: 10 tolerance + 7 appetite dims
  *  ├─ Cluster registry     up to 7 taste clusters, auto-detected from swipe patterns
  *  │   Each cluster has its own profile — no cross-cluster averaging
  *  ├─ Boundary tester      probes one dim per cluster, isolates one variable at a time
@@ -40,138 +40,272 @@
    score = Σ(tagRank × weight) + genreBoost, clamped [0, 10]
 ═══════════════════════════════════════════════════════════════════════════ */
 
+// All tag name keys are lowercase so they match both:
+//   • AniList tags (lowercased in tagMap at extraction time)
+//   • AniDB tags (already lowercase from UDP API)
+// AniDB tags are marked with a comment where they extend beyond AniList's vocabulary.
+
 const DIM_TAG_WEIGHTS = {
 
   fanService: {
-    'Ecchi':                         0.09,
-    'Fan Service':                   0.08,
-    'Nudity':                        0.10,
-    'Sexual Content':                0.10,
-    'Pantsu':                        0.07,
-    'Harem':                         0.05,
-    'Reverse Harem':                 0.04,
+    // AniList (lowercased)
+    'ecchi':                         0.09,
+    'fan service':                   0.08,
+    'nudity':                        0.10,
+    'sexual content':                0.10,
+    'pantsu':                        0.07,
+    'harem':                         0.05,
+    'reverse harem':                 0.04,
+    // AniDB additions
+    'partial nudity':                0.07,
+    'suggestive themes':             0.06,
+    'swimsuit':                      0.05,
+    'large breasts':                 0.06,
+    'small breasts':                 0.04,
+    'nudism':                        0.07,
+    'sexual humour':                 0.05,
+    'fanservice':                    0.08,
   },
 
   violence: {
-    'Violence':                      0.09,
-    'Gore':                          0.10,
-    'Graphic Violence':              0.10,
-    'Torture':                       0.09,
-    'Blood':                         0.06,
-    'War':                           0.05,
-    'Survival':                      0.04,
-    'Assassination':                 0.05,
+    // AniList (lowercased)
+    'violence':                      0.09,
+    'gore':                          0.10,
+    'graphic violence':              0.10,
+    'torture':                       0.09,
+    'blood':                         0.06,
+    'war':                           0.05,
+    'survival':                      0.04,
+    'assassination':                 0.05,
+    // AniDB additions
+    'intense violence':              0.11,
+    'martial arts':                  0.07,
+    'gunfights':                     0.07,
+    'swordplay':                     0.07,
+    'combat':                        0.06,
+    'fighting':                      0.06,
+    'hand-to-hand combat':           0.06,
+    'death':                         0.05,
+    'action':                        0.03,
   },
 
   darkness: {
-    'Dark Fantasy':                  0.08,
-    'Tragedy':                       0.09,
-    'Despair':                       0.09,
-    'Death':                         0.07,
-    'Horror':                        0.08,
-    'Dystopia':                      0.07,
-    'Nihilism':                      0.09,
-    'Corruption':                    0.07,
-    'Psychological Abuse':           0.07,
-    'Depression':                    0.07,
+    // AniList (lowercased)
+    'dark fantasy':                  0.08,
+    'tragedy':                       0.09,
+    'despair':                       0.09,
+    'death':                         0.07,
+    'horror':                        0.08,
+    'dystopia':                      0.07,
+    'nihilism':                      0.09,
+    'corruption':                    0.07,
+    'psychological abuse':           0.07,
+    'depression':                    0.07,
+    // AniDB additions
+    'dark themes':                   0.09,
+    'suicide':                       0.08,
+    'abuse':                         0.07,
+    'grief':                         0.06,
+    'war':                           0.05,
+    'post-apocalyptic':              0.07,
+    'dark':                          0.07,
+    'melancholic':                   0.06,
   },
 
   romance: {
-    'Romance':                       0.09,
-    'Love Triangle':                 0.09,
-    'Unrequited Love':               0.09,
-    'First Love':                    0.08,
-    'Childhood Friend Romance':      0.08,
-    'Forbidden Love':                0.08,
-    'Breakup':                       0.07,
-    'Arranged Marriage':             0.08,
+    // AniList (lowercased)
+    'romance':                       0.09,
+    'love triangle':                 0.09,
+    'unrequited love':               0.09,
+    'first love':                    0.08,
+    'childhood friend romance':      0.08,
+    'forbidden love':                0.08,
+    'breakup':                       0.07,
+    'arranged marriage':             0.08,
+    // AniDB additions
+    'slow romance':                  0.08,
+    'love interest':                 0.06,
+    'romantic comedy':               0.07,
+    'shoujo ai':                     0.07,
+    'shounen ai':                    0.07,
+    'one-sided love':                0.08,
+    'childhood romance':             0.07,
+    'school romance':                0.07,
+    'slow when it comes to love':    0.06,
   },
 
   humor: {
-    'Parody':                        0.09,
-    'Slapstick':                     0.09,
-    'Black Comedy':                  0.08,
-    'Satire':                        0.08,
-    'Gag Humor':                     0.09,
-    'Comedic Relief':                0.07,
-    'Absurdist':                     0.08,
-    'Tsukkomi':                      0.06,
+    // AniList (lowercased)
+    'parody':                        0.09,
+    'slapstick':                     0.09,
+    'black comedy':                  0.08,
+    'satire':                        0.08,
+    'gag humor':                     0.09,
+    'comedic relief':                0.07,
+    'absurdist':                     0.08,
+    'tsukkomi':                      0.06,
+    // AniDB additions
+    'comedy':                        0.10,
+    'physical comedy':               0.08,
+    'dark humor':                    0.08,
+    'dark comedy':                   0.08,
+    'action comedy':                 0.09,
+    'comedy of errors':              0.07,
+    'absurd':                        0.07,
+    'delinquents':                   0.04,
+    'four-panel':                    0.05,
   },
 
   _slowPacing: {
-    'Slow Pacing':                   0.10,
-    'Iyashikei':                     0.09,
-    'Daily Life':                    0.06,
-    'Healing':                       0.07,
-    'CGDCT':                         0.04,
+    // AniList (lowercased)
+    'slow pacing':                   0.10,
+    'iyashikei':                     0.09,
+    'daily life':                    0.06,
+    'healing':                       0.07,
+    'cgdct':                         0.04,
+    // AniDB additions
+    'slow-paced':                    0.10,
+    'slice of life':                 0.06,
+    'school life':                   0.05,
+    'calm':                          0.07,
+    'rural setting':                 0.05,
   },
 
   niche: {},
 
   emotionalWeight: {
-    'Tearjerker':                    0.10,
-    'Tragedy':                       0.09,
-    'Coming of Age':                 0.07,
-    'Heartwarming':                  0.08,
-    'Family Dynamics':               0.07,
-    'Grief':                         0.09,
-    'Self-Discovery':                0.07,
-    'Redemption':                    0.07,
-    'Bittersweet':                   0.08,
+    // AniList (lowercased)
+    'tearjerker':                    0.10,
+    'tragedy':                       0.09,
+    'coming of age':                 0.07,
+    'heartwarming':                  0.08,
+    'family dynamics':               0.07,
+    'grief':                         0.09,
+    'self-discovery':                0.07,
+    'redemption':                    0.07,
+    'bittersweet':                   0.08,
+    // AniDB additions
+    'emotional':                     0.08,
+    'melancholic':                   0.08,
+    'depression':                    0.07,
+    'loss':                          0.08,
+    'sacrifice':                     0.07,
+    'despair':                       0.07,
+    'hope':                          0.06,
+    'loneliness':                    0.07,
+    'nostalgia':                     0.06,
   },
 
   hype: {
-    'Super Power':                   0.08,
-    'Martial Arts':                  0.07,
-    'Tournament':                    0.09,
-    'Power Fantasy':                 0.08,
-    'Adrenaline Rush':               0.09,
-    'Overpowered Main Characters':   0.07,
-    'Mecha':                         0.05,
-    'Battle':                        0.06,
+    // AniList (lowercased)
+    'super power':                   0.08,
+    'martial arts':                  0.07,
+    'tournament':                    0.09,
+    'power fantasy':                 0.08,
+    'adrenaline rush':               0.09,
+    'overpowered main characters':   0.07,
+    'mecha':                         0.05,
+    'battle':                        0.06,
+    // AniDB additions
+    'action':                        0.05,
+    'battles':                       0.07,
+    'power system':                  0.08,
+    'shounen':                       0.05,
+    'fighting':                      0.06,
+    'sports':                        0.06,
+    'competition':                   0.06,
+    'adrenaline':                    0.07,
+    'training':                      0.05,
   },
 
   psychologicalDepth: {
-    'Psychological':                 0.10,
-    'Mind Games':                    0.10,
-    'Philosophy':                    0.08,
-    'Unreliable Narrator':           0.09,
-    'Memory Manipulation':           0.08,
-    'Multiple Personalities':        0.07,
-    'Reality vs Fantasy':            0.08,
-    'Existentialism':                0.08,
+    // AniList (lowercased)
+    'psychological':                 0.10,
+    'mind games':                    0.10,
+    'philosophy':                    0.08,
+    'unreliable narrator':           0.09,
+    'memory manipulation':           0.08,
+    'multiple personalities':        0.07,
+    'reality vs fantasy':            0.08,
+    'existentialism':                0.08,
+    // AniDB additions
+    'existential crisis':            0.09,
+    'psychological thriller':        0.10,
+    'hallucinations':                0.08,
+    'dissociation':                  0.08,
+    'mental illness':                0.07,
+    'manipulation':                  0.07,
+    'mind control':                  0.07,
+    'conspiracy':                    0.06,
   },
 
   worldbuilding: {
-    'World Building':                0.10,
-    'Magic System':                  0.08,
-    'Mythology':                     0.07,
-    'Political Intrigue':            0.09,
-    'Military':                      0.05,
-    'Alternate Universe':            0.06,
-    'Lore':                          0.07,
+    // AniList (lowercased)
+    'world building':                0.10,
+    'magic system':                  0.08,
+    'mythology':                     0.07,
+    'political intrigue':            0.09,
+    'military':                      0.05,
+    'alternate universe':            0.06,
+    'lore':                          0.07,
+    // AniDB additions
+    'magic':                         0.07,
+    'sci-fi':                        0.06,
+    'science fiction':               0.06,
+    'space':                         0.06,
+    'space travel':                  0.06,
+    'future':                        0.06,
+    'alternate history':             0.07,
+    'post-apocalyptic':              0.07,
+    'fantasy world':                 0.07,
+    'other planet':                  0.06,
+    'empire':                        0.06,
+    'war':                           0.05,
+    'kingdom':                       0.05,
   },
 
   characterDrama: {
-    'Character Study':               0.10,
-    'Found Family':                  0.09,
-    'Rivalry':                       0.09,
-    'Betrayal':                      0.10,
-    'Family Dynamics':               0.08,
-    'Ensemble Cast':                 0.07,
-    'Redemption':                    0.07,
-    'Bromance':                      0.06,
+    // AniList (lowercased)
+    'character study':               0.10,
+    'found family':                  0.09,
+    'rivalry':                       0.09,
+    'betrayal':                      0.10,
+    'family dynamics':               0.08,
+    'ensemble cast':                 0.07,
+    'redemption':                    0.07,
+    'bromance':                      0.06,
+    // AniDB additions
+    'character development':         0.10,
+    'coming of age':                 0.08,
+    'mentor':                        0.07,
+    'friendship':                    0.06,
+    'teamwork':                      0.06,
+    'revenge':                       0.07,
+    'sibling relationship':          0.07,
+    'parent-child relationship':     0.07,
+    'found family':                  0.09,
   },
 
   moralComplexity: {
-    'Moral Dilemmas':                0.10,
-    'Anti-Hero':                     0.09,
-    'Villain Protagonist':           0.10,
-    'Nihilism':                      0.09,
-    'Corruption':                    0.08,
-    'Gray Morality':                 0.10,
-    'Revenge':                       0.06,
-    'Ethics':                        0.07,
+    // AniList (lowercased)
+    'moral dilemmas':                0.10,
+    'anti-hero':                     0.09,
+    'villain protagonist':           0.10,
+    'nihilism':                      0.09,
+    'corruption':                    0.08,
+    'gray morality':                 0.10,
+    'revenge':                       0.06,
+    'ethics':                        0.07,
+    // AniDB additions
+    'moral dilemma':                 0.10,
+    'philosophical':                 0.08,
+    'ambiguous ending':              0.07,
+    'morally complex':               0.09,
+    'anti-villain':                  0.08,
+    'war crimes':                    0.07,
+    'justice':                       0.06,
+    'power struggle':                0.07,
+    'protagonist with dark past':    0.07,
   },
 };
 
@@ -195,68 +329,91 @@ const DIM_GENRE_BOOSTS = {
    HIGHER-LEVEL FEATURE DEFINITIONS
 ═══════════════════════════════════════════════════════════════════════════ */
 
+// All tag names lowercase — matches both AniList (lowercased in tagMap) and AniDB (natively lowercase).
 const TONE_DEFS = {
   dark: {
-    tags:   ['Tragedy', 'Dark Fantasy', 'Horror', 'Despair', 'Dystopia', 'Gore',
-             'Death Game', 'Nihilism', 'Psychological Abuse', 'Depression'],
+    tags:   ['tragedy', 'dark fantasy', 'horror', 'despair', 'dystopia', 'gore',
+             'death game', 'nihilism', 'psychological abuse', 'depression',
+             // AniDB
+             'dark themes', 'dark', 'suicide', 'abuse', 'post-apocalyptic', 'grief'],
     genres: ['Horror', 'Psychological'],
     min: 0.40,
   },
   emotional: {
-    tags:   ['Tearjerker', 'Coming of Age', 'Grief', 'Heartwarming',
-             'Family Dynamics', 'Redemption', 'Bittersweet'],
+    tags:   ['tearjerker', 'coming of age', 'grief', 'heartwarming',
+             'family dynamics', 'redemption', 'bittersweet',
+             // AniDB
+             'emotional', 'melancholic', 'loss', 'sacrifice', 'loneliness', 'nostalgia'],
     genres: ['Drama'],
     min: 0.40,
   },
   wholesome: {
-    tags:   ['Heartwarming', 'Iyashikei', 'Healing', 'CGDCT', 'Friendship', 'Cute'],
+    tags:   ['heartwarming', 'iyashikei', 'healing', 'cgdct', 'friendship', 'cute',
+             // AniDB
+             'daily life', 'school life', 'calm', 'hope'],
     genres: ['Slice of Life'],
     min: 0.40,
   },
   hype: {
-    tags:   ['Tournament', 'Super Power', 'Adrenaline Rush', 'Power Fantasy',
-             'Overpowered Main Characters', 'Battle', 'Mecha'],
+    tags:   ['tournament', 'super power', 'adrenaline rush', 'power fantasy',
+             'overpowered main characters', 'battle', 'mecha',
+             // AniDB
+             'action', 'battles', 'power system', 'fighting', 'competition', 'adrenaline'],
     genres: ['Action', 'Sports'],
     min: 0.35,
   },
   suspenseful: {
-    tags:   ['Thriller', 'Mystery', 'Conspiracy', 'Survival', 'Death Game',
-             'Hidden Identity', 'Assassination'],
+    tags:   ['thriller', 'mystery', 'conspiracy', 'survival', 'death game',
+             'hidden identity', 'assassination',
+             // AniDB
+             'suspense', 'mind games', 'plot twist', 'detective'],
     genres: ['Mystery', 'Thriller'],
     min: 0.35,
   },
   relaxing: {
-    tags:   ['Iyashikei', 'Daily Life', 'Healing', 'CGDCT', 'School Life', 'Moe'],
+    tags:   ['iyashikei', 'daily life', 'healing', 'cgdct', 'school life', 'moe',
+             // AniDB
+             'slice of life', 'calm', 'rural setting'],
     genres: ['Slice of Life'],
     min: 0.35,
   },
   inspirational: {
-    tags:   ['Underdog', 'Self-Discovery', 'Redemption', 'Overcoming Adversity',
-             'Coming of Age', 'Training'],
+    tags:   ['underdog', 'self-discovery', 'redemption', 'overcoming adversity',
+             'coming of age', 'training',
+             // AniDB
+             'sports', 'teamwork', 'character development', 'hope'],
     genres: ['Sports'],
     min: 0.30,
   },
   comedic: {
-    tags:   ['Gag Humor', 'Parody', 'Slapstick', 'Absurdist', 'Black Comedy',
-             'Comedic Relief', 'Tsukkomi'],
+    tags:   ['gag humor', 'parody', 'slapstick', 'absurdist', 'black comedy',
+             'comedic relief', 'tsukkomi',
+             // AniDB
+             'comedy', 'physical comedy', 'dark humor', 'action comedy', 'satire', 'dark comedy'],
     genres: ['Comedy'],
     min: 0.30,
   },
   intense: {
-    tags:   ['Violence', 'Psychological', 'Survival', 'War', 'Assassination', 'Gore'],
+    tags:   ['violence', 'psychological', 'survival', 'war', 'assassination', 'gore',
+             // AniDB
+             'intense violence', 'combat', 'gunfights', 'swordplay', 'martial arts'],
     genres: ['Action', 'Thriller'],
     min: 0.30,
   },
   philosophical: {
-    tags:   ['Philosophy', 'Existentialism', 'Nihilism', 'Mind Games', 'Ethics',
-             'Unreliable Narrator'],
+    tags:   ['philosophy', 'existentialism', 'nihilism', 'mind games', 'ethics',
+             'unreliable narrator',
+             // AniDB
+             'philosophical', 'existential crisis', 'moral dilemma', 'psychological'],
     genres: ['Psychological'],
     min: 0.30,
   },
   romantic: {
-    tags:   ['Romance', 'Love Triangle', 'Unrequited Love', 'First Love',
-             'Childhood Friend Romance', 'Forbidden Love', 'Arranged Marriage',
-             'Breakup', 'School Romance'],
+    tags:   ['romance', 'love triangle', 'unrequited love', 'first love',
+             'childhood friend romance', 'forbidden love', 'arranged marriage',
+             'breakup', 'school romance',
+             // AniDB
+             'slow romance', 'one-sided love', 'romantic comedy', 'love interest'],
     genres: ['Romance'],
     min: 0.35,
   },
@@ -266,43 +423,70 @@ const VISUAL_DEFS = {
   cinematic: {
     studios: ['ufotable', 'mappa', 'wit studio', 'bones', 'kyoto animation',
               'production i.g', 'madhouse', 'cloverworks', 'a-1 pictures'],
-    tags:    ['Cinematography', 'Beautiful Scenery', 'Fluid Animation', 'Sakuga',
-              'Detailed Background Art'],
+    tags:    ['cinematography', 'beautiful scenery', 'fluid animation', 'sakuga',
+              'detailed background art', 'animation', 'artistic'],
     min: 0.20,
   },
   retro: {
     yearBefore: 2004,
-    tags:       ['Classic', '80s', '90s', 'Retro', 'Old School'],
+    tags:       ['classic', '80s', '90s', 'retro', 'old school'],
     min: 0,
   },
   colorful: {
-    tags:    ['Magical Girl', 'CGDCT', 'Colorful', 'Cute', 'Vibrant'],
+    tags:    ['magical girl', 'cgdct', 'colorful', 'cute', 'vibrant', 'moe'],
     genres:  ['Mahou Shoujo', 'Fantasy'],
     min: 0.40,
   },
   gritty: {
-    tags:    ['Gritty', 'Post-Apocalyptic', 'Gore', 'Violence', 'Dark Fantasy', 'Dystopia'],
+    tags:    ['gritty', 'post-apocalyptic', 'gore', 'violence', 'dark fantasy', 'dystopia',
+              'dark themes', 'intense violence'],
     genres:  ['Horror'],
     min: 0.35,
   },
   modern: {
     yearAfter: 2016,
     studios:   ['mappa', 'ufotable', 'cloverworks', 'wit studio'],
-    tags:      ['CG Animation'],
+    tags:      ['cg animation'],
     min: 0,
   },
 };
 
+// All tag names lowercase. Threshold in extractFeatures is tagRank >= 50 (AniList) or
+// normalized score >= 50 — same check, both scales produce comparable values after merge.
 const ARCHETYPE_DEFS = {
-  antihero:     ['Anti-Hero', 'Villain Protagonist', 'Dark Hero', 'Morally Ambiguous Protagonist'],
-  overpowered:  ['Overpowered Main Characters', 'Power Fantasy', 'Isekai', 'Cheat Ability'],
-  morallyGray:  ['Gray Morality', 'Moral Dilemmas', 'Anti-Hero', 'Nihilism', 'Villain Protagonist'],
-  underdog:     ['Underdog', 'Weak to Strong', 'Coming of Age', 'Overcoming Adversity', 'Training'],
-  strongFemale: ['Strong Female Lead', 'Female Protagonist', 'Kuudere', 'Tsundere'],
-  foundFamily:  ['Found Family', 'Ensemble Cast', 'Teamwork', 'Brotherhood', 'Friendship'],
-  rivalry:      ['Rival', 'Competition', 'Tournament', 'Rivalry'],
-  villain:      ['Villain Protagonist', 'Antagonist Focus'],
-  chaotic:      ['Ensemble Cast', 'Eccentric Characters', 'Multiple Protagonists'],
+  antihero:     ['anti-hero', 'villain protagonist', 'dark hero', 'morally ambiguous protagonist',
+                 // AniDB
+                 'anti-villain', 'protagonist with dark past'],
+  overpowered:  ['overpowered main characters', 'power fantasy', 'isekai', 'cheat ability',
+                 // AniDB
+                 'reincarnation', 'summoned to another world', 'power system'],
+  morallyGray:  ['gray morality', 'moral dilemmas', 'anti-hero', 'nihilism', 'villain protagonist',
+                 // AniDB
+                 'moral dilemma', 'morally complex', 'philosophical'],
+  underdog:     ['underdog', 'weak to strong', 'coming of age', 'overcoming adversity', 'training',
+                 // AniDB
+                 'character development', 'self-improvement'],
+  strongFemale: ['strong female lead', 'female protagonist', 'kuudere', 'tsundere',
+                 // AniDB
+                 'villainess', 'independent female lead'],
+  foundFamily:  ['found family', 'ensemble cast', 'teamwork', 'brotherhood', 'friendship',
+                 // AniDB
+                 'bonds', 'camaraderie', 'found family'],
+  rivalry:      ['rival', 'competition', 'tournament', 'rivalry',
+                 // AniDB
+                 'rivals', 'competing teams'],
+  villain:      ['villain protagonist', 'antagonist focus',
+                 // AniDB
+                 'villain', 'antagonist'],
+  chaotic:      ['ensemble cast', 'eccentric characters', 'multiple protagonists',
+                 // AniDB
+                 'comedic ensemble', 'unpredictable'],
+  // New archetypes from AniDB character tag vocabulary
+  tsundere:     ['tsundere'],
+  yandere:      ['yandere'],
+  harem:        ['harem', 'reverse harem'],
+  isekai:       ['isekai', 'reincarnation', 'summoned to another world', 'transported to another world'],
+  mentor:       ['mentor', 'teacher-student relationship', 'master-student'],
 };
 
 /**
@@ -400,8 +584,14 @@ function extractFeatures(anime) {
   const tags   = anime.tags   || [];
   const year   = anime.startDate?.year || null;
 
+  // Normalize all tag names to lowercase so they match both:
+  //   • Current AniList API tags (Title Case → lowercased here)
+  //   • Future merged Firebase tags (already lowercase from AniDB UDP API)
   const tagMap = {};
-  for (const t of tags) tagMap[t.name] = t.rank || 0;
+  for (const t of tags) {
+    const key = t.name.toLowerCase();
+    tagMap[key] = Math.max(tagMap[key] || 0, t.rank || 0);
+  }
 
   function calcDim(dimName) {
     let score = 0;
@@ -430,6 +620,41 @@ function extractFeatures(anime) {
   const epsCount       = Math.max(1, anime.episodes || 12);
   const episodeAppetite = Math.min(10, (Math.log(epsCount) / Math.log(150)) * 10);
 
+  // Format preference: numeric score representing the format of the show.
+  // Learnable — users who prefer movies will see formatPreference converge toward 8–9.
+  // TV=6  Movie=9  OVA=4  ONA=3  Special=2  default=5
+  const _fmt = (anime.format || '').toUpperCase();
+  const formatScore =
+    _fmt === 'TV'      ? 6.0 :
+    _fmt === 'MOVIE'   ? 9.0 :
+    _fmt === 'OVA'     ? 4.0 :
+    _fmt === 'ONA'     ? 3.0 :
+    _fmt === 'SPECIAL' ? 2.0 : 5.0;
+
+  // Source preference: numeric score for the type of source material.
+  // Original anime score highest (purely creative vision); game/VN adaptations lowest
+  // (typically compressed from very long source, pacing issues).
+  const _src = (anime.source || '').toUpperCase().replace(/ /g, '_');
+  const sourceScore =
+    _src === 'ORIGINAL'      ? 9.0 :
+    _src === 'LIGHT_NOVEL'   ? 7.0 :
+    _src === 'NOVEL'         ? 7.5 :
+    _src === 'MANGA'         ? 6.0 :
+    _src === 'MANHWA'        ? 5.5 :
+    _src === 'MANHUA'        ? 5.0 :
+    _src === 'GAME'          ? 4.0 :
+    _src === 'VISUAL_NOVEL'  ? 3.5 :
+    _src === 'DOUJINSHI'     ? 3.0 : 5.0;
+
+  // Era preference: how modern/classic the anime is on a 0–10 scale.
+  // 2020s→9  2010s→7.5  2000s→5.5  1990s→3.5  pre-1990→1.5
+  const _yr = year || 2010;
+  const eraScore =
+    _yr >= 2020 ? 9.0 :
+    _yr >= 2010 ? 7.5 :
+    _yr >= 2000 ? 5.5 :
+    _yr >= 1990 ? 3.5 : 1.5;
+
   const scalars = {
     fanService:         calcDim('fanService'),
     violence:           calcDim('violence'),
@@ -445,6 +670,9 @@ function extractFeatures(anime) {
     characterDrama:     calcDim('characterDrama'),
     moralComplexity:    calcDim('moralComplexity'),
     episodeAppetite,
+    formatPreference:   formatScore,
+    sourcePreference:   sourceScore,
+    eraPreference:      eraScore,
   };
 
   // Tone keys
@@ -548,6 +776,12 @@ function defaultDims() {
     moralComplexity:    { preferred: 3.0, tolerance: 8.0,  confidence: 0, kind: 'appetite' },
     // Log-normalised episode count (0–10 scale; 12 eps ≈ 4.9, 50 eps ≈ 7.8, 150+ ≈ 10)
     episodeAppetite:    { preferred: 4.9, tolerance: 7.8,  confidence: 0, kind: 'tolerance' },
+    // Format: TV=6 Movie=9 OVA=4 ONA=3 Special=2 — learned from swipe patterns
+    formatPreference:   { preferred: 6.0, tolerance: 8.5,  confidence: 0, kind: 'tolerance' },
+    // Source material: Original=9 LightNovel=7 Manga=6 Game=4 VisualNovel=3.5
+    sourcePreference:   { preferred: 5.0, tolerance: 9.0,  confidence: 0, kind: 'appetite' },
+    // Era: 2020s=9 2010s=7.5 2000s=5.5 1990s=3.5 pre-1990=1.5
+    eraPreference:      { preferred: 7.0, tolerance: 9.0,  confidence: 0, kind: 'tolerance' },
   };
 }
 
@@ -609,6 +843,10 @@ class NextArcEngine {
     this.onboarded      = false;
     this.totalSwipes    = 0;
     this.firstBatchDone = false; // skip boundary probes on the very first post-onboarding batch
+
+    /** Relation-aware scoring — IDs of positively-rated anime (like/watch/superlike).
+     *  Used to boost sequels, prequels, and side stories of shows the user loved. */
+    this.likedIds = new Set();
   }
 
 
@@ -658,6 +896,8 @@ class NextArcEngine {
     if (isPositive) {
       const signal = isSuperLike ? 5.0 : isWatch ? 3.5 : (this.onboarded ? 2.0 : 3.0);
       this._absorbIntoCluster(features, signal, isSuperLike);
+      // Track liked IDs for relation-aware scoring
+      if (anime.id) this.likedIds.add(anime.id);
     }
 
     // ── Boundary test resolution ───────────────────────────────────────
@@ -765,6 +1005,26 @@ class NextArcEngine {
 
     // Re-sort after rotation penalty
     scored.sort((a, b) => b.score - a.score);
+
+    // ── Relation-aware boost ──────────────────────────────────────────
+    // If the user has positively rated an anime, nudge its sequels, prequels,
+    // and parent stories upward. This surfaces "next in series" picks naturally
+    // without forcing sequel marathons. Boost is moderate (0.12) so a weak
+    // match still won't rank above a strong unrelated pick.
+    if (this.likedIds.size > 0) {
+      const RELATION_TYPES = new Set(['SEQUEL', 'PREQUEL', 'PARENT', 'SIDE_STORY']);
+      for (const p of scored) {
+        const edges = p.anime.relations?.edges || [];
+        const hasLikedRelative = edges.some(edge =>
+          edge.node?.type === 'ANIME' &&
+          RELATION_TYPES.has(edge.relationType) &&
+          this.likedIds.has(edge.node.id)
+        );
+        if (hasLikedRelative) p.score += 0.12;
+      }
+      // Re-sort once more after relation boost
+      scored.sort((a, b) => b.score - a.score);
+    }
 
     // ── Boundary probe ────────────────────────────────────────────────
     const boundaryDim        = this.onboarded ? this._pickBoundaryDim() : null;
