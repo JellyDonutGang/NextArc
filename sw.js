@@ -8,7 +8,7 @@
  *   - Images (cover art): stale-while-revalidate
  */
 
-const CACHE_VERSION = 'nextarc-v128';
+const CACHE_VERSION = 'otakult-v1';
 const APP_SHELL = [
   '/',
   '/index.html',
