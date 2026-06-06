@@ -1097,12 +1097,20 @@ Create a file called `merge_data.py`:
 import json
 import os
 
-def normalize_anidb_tags(anidb_tags, min_weight=100):
-    MAX_WEIGHT = 600
+def normalize_anidb_tags(anidb_tags, min_weight=2):
+    """
+    Normalize AniDB UDP tags to 0–1 score scale.
+
+    The UDP API returns weights on a 1–9 scale (not 0–600 like the old HTTP API).
+    We divide by 9 to get a 0–1 score comparable to AniList's rank/100.
+
+    min_weight=2 filters out very weak signals (weight=1 means barely tagged).
+    """
     result = {}
     for tag in anidb_tags:
-        if tag["weight"] >= min_weight:
-            result[tag["name"]] = round(tag["weight"] / MAX_WEIGHT, 3)
+        w = tag.get("weight", 0)
+        if w >= min_weight:
+            result[tag["name"]] = round(w / 9, 3)   # 1-9 → 0.11–1.0
     return result
 
 def normalize_anilist_tags(anilist_tags):
@@ -1113,6 +1121,13 @@ def normalize_anilist_tags(anilist_tags):
     return result
 
 def merge_tag_vectors(anidb_vector, anilist_vector):
+    """
+    Merge AniDB and AniList tag vectors into a single dict.
+
+    When both sources have the same tag (after lowercasing), AniDB wins with
+    70% weight — it is more granular and consistently community-voted.
+    AniList-only tags are kept as-is. AniDB-only tags are added directly.
+    """
     merged = {}
     for tag, score in anilist_vector.items():
         merged[tag] = {"score": score, "source": "anilist"}
@@ -1123,6 +1138,39 @@ def merge_tag_vectors(anidb_vector, anilist_vector):
         else:
             merged[tag] = {"score": score, "source": "anidb"}
     return merged
+
+def load_anilist_to_anidb_map():
+    """
+    Build an AniList ID → AniDB ID lookup from the anime-offline-database.
+
+    This is the same cross-reference used during fetch_anidb_udp.py.
+    We use it here instead of MAL ID because our UDP results are keyed
+    by AniDB ID and the offline DB gives us the AniList → AniDB link directly.
+    """
+    cache_path = "data/anime-offline-db.json"
+    if not os.path.exists(cache_path):
+        print("⚠️  data/anime-offline-db.json not found — AniDB matching will be skipped.")
+        print("   Run fetch_anidb_udp.py first (it downloads the offline DB automatically).")
+        return {}
+
+    with open(cache_path) as f:
+        db = json.load(f)
+
+    mapping = {}
+    for entry in db.get("data", []):
+        al, adb = None, None
+        for src in entry.get("sources", []):
+            if "anilist.co/anime/" in src:
+                try:    al  = int(src.rstrip("/").split("/")[-1])
+                except: pass
+            elif "anidb.net/anime/" in src:
+                try:    adb = int(src.rstrip("/").split("/")[-1])
+                except: pass
+        if al and adb:
+            mapping[al] = adb
+
+    print(f"Offline DB: {len(mapping):,} AniList→AniDB pairs loaded")
+    return mapping
 
 def build_relation_graph(anilist_relations):
     graph = []
@@ -1170,7 +1218,7 @@ def merge_datasets():
 
     print("Loading AniDB data...")
     with open("data/anidb_results.json") as f:
-        anidb_by_id = json.load(f)
+        anidb_by_id = json.load(f)   # keyed by AniDB ID string
 
     print("Loading reviews...")
     reviews_by_id = {}
@@ -1179,25 +1227,28 @@ def merge_datasets():
             reviews_by_id = json.load(f)
         print(f"  Loaded reviews for {len(reviews_by_id)} anime")
 
-    anidb_by_mal = {}
-    for anidb_id, record in anidb_by_id.items():
-        mal_id = record.get("mal_id")
-        if mal_id:
-            anidb_by_mal[mal_id] = record
+    # AniList ID → AniDB ID cross-reference (from anime-offline-database)
+    # We use this instead of MAL ID because:
+    #   - Our UDP fetch is keyed by AniDB ID
+    #   - The offline DB gives us direct AniList → AniDB links
+    #   - MAL IDs are not present in UDP results
+    anilist_to_anidb = load_anilist_to_anidb_map()
 
     print(f"AniList: {len(anilist_list)} anime")
-    print(f"AniDB with MAL IDs: {len(anidb_by_mal)} anime")
+    print(f"AniDB records loaded: {len(anidb_by_id)}")
 
     merged = {}
     anidb_match_count = 0
 
     for anime in anilist_list:
-        mal_id = anime.get("idMal")
         anilist_id = anime.get("id")
+        mal_id     = anime.get("idMal")
         if not anilist_id:
             continue
 
-        anidb_record = anidb_by_mal.get(mal_id) if mal_id else None
+        # Look up AniDB record via AniList ID → AniDB ID mapping
+        anidb_id     = anilist_to_anidb.get(anilist_id)
+        anidb_record = anidb_by_id.get(str(anidb_id)) if anidb_id else None
         if anidb_record:
             anidb_match_count += 1
 
@@ -1310,6 +1361,98 @@ Run it:
 ```
 python3 merge_data.py
 ```
+
+---
+
+### After the merge: update the engine's tag mappings
+
+This step is important and easy to miss. The merged data now contains AniDB tag names (lowercase, e.g. `comedy`, `slapstick`, `ecchi`, `nudity`) alongside AniList tag names (Title Case, e.g. `Comedy Relief`, `Fan Service`). The recommendation engine in `animeTasteEngine.js` uses a mapping called `DIM_TAG_WEIGHTS` that converts tag names into dimension scores — but it currently only knows AniList tag names. AniDB tags will be in the data but silently ignored unless you add them.
+
+**Why this matters for comedy and ecchi specifically:**
+
+AniList treats Comedy and Ecchi as binary genre flags — a show either is one or it isn't. AniDB tags these as graded signals: `comedy` weight 8 means the show is heavily comedic; weight 3 means occasional humor. Without updating the mapping, the engine won't see this graded signal and comedy/ecchi shows will continue to be vectored weakly.
+
+**What to add to `DIM_TAG_WEIGHTS` in `animeTasteEngine.js`:**
+
+Open `animeTasteEngine.js` and find the `DIM_TAG_WEIGHTS` object. Inside the `humor` dimension, add these AniDB tag names:
+
+```javascript
+humor: {
+  // ... existing AniList entries ...
+
+  // AniDB tags (lowercase, as returned by UDP API)
+  'comedy':              0.20,
+  'slapstick':           0.18,
+  'parody':              0.16,
+  'gag humor':           0.18,
+  'physical comedy':     0.15,
+  'black humor':         0.12,
+  'dark humor':          0.12,
+  'satire':              0.12,
+  'comedy of errors':    0.14,
+  'action comedy':       0.15,
+  'romantic comedy':     0.12,
+},
+```
+
+Inside the `fanService` dimension, add:
+
+```javascript
+fanService: {
+  // ... existing AniList entries ...
+
+  // AniDB tags
+  'ecchi':               0.22,
+  'nudity':              0.20,
+  'fan service':         0.22,
+  'partial nudity':      0.14,
+  'sexual humour':       0.12,
+  'suggestive themes':   0.12,
+  'swimsuit':            0.08,
+  'large breasts':       0.10,
+  'small breasts':       0.06,
+},
+```
+
+Inside the `violence` dimension, add:
+
+```javascript
+violence: {
+  // ... existing AniList entries ...
+
+  // AniDB tags
+  'violence':            0.18,
+  'intense violence':    0.22,
+  'gore':                0.20,
+  'blood':               0.14,
+  'martial arts':        0.10,
+  'gunfights':           0.10,
+  'swordplay':           0.10,
+  'combat':              0.08,
+},
+```
+
+Inside the `darkness` dimension, add:
+
+```javascript
+darkness: {
+  // ... existing AniList entries ...
+
+  // AniDB tags
+  'dark themes':         0.18,
+  'death':               0.16,
+  'tragedy':             0.16,
+  'nihilism':            0.16,
+  'suicide':             0.14,
+  'abuse':               0.12,
+  'torture':             0.12,
+  'war':                 0.10,
+},
+```
+
+**How the Sakamoto Days fix interacts with this:**
+
+The `dark_complexity` bucket now has an anti-dim that suppresses it when `humor > 4.5`. Before the AniDB merge, Sakamoto Days' humor scalar was borderline (around 4–5 from the Comedy genre flat boost). After the merge adds `comedy` weight 8 and `action comedy` weight 7 from AniDB, properly mapped, the humor scalar will be 7–8 — well above the threshold. The anti-dim becomes more reliable, not less. The fix and the merge are complementary: the fix adds a safety net for now, and the AniDB data makes that safety net trigger correctly for every action-comedy in the database.
 
 Takes about 30 seconds. Produces `data/merged.json`.
 
