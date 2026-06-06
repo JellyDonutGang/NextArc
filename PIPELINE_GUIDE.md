@@ -51,7 +51,7 @@ You'll create a folder on your Desktop called `nextarc-pipeline` containing seve
 
 After that, a Cloud Function in Firebase automatically recomputes recommendations every time a user rates something.
 
-**Total cost: $0. Time to run all scripts: ~12 hours (mostly overnight AniDB fetch).**
+**Total cost: $0. Time to run all scripts: ~9 hours (mostly overnight AniDB fetch).**
 
 ---
 
@@ -703,35 +703,13 @@ After submitting you will land on your project page. You will see a yellow warni
    - **Version:** 1
 3. Click **+ Add Client**
 
-Your client name is `nextarcpipeline` and your version is `1`. These go into your `.env` file in Step 7.4.
+Your client name is `nextarcpipeline` and your version is `1`. These go into your `.env` file next.
 
 **Important:** AniDB client names must be lowercase letters and numbers only — no underscores, no spaces, no special characters.
 
-### 7.3 Download the AniDB titles dump
+### 7.3 Add AniDB credentials to your .env file
 
-AniDB provides a file listing every anime ID in their database. You need this to know which IDs to fetch.
-
-1. In your browser, go to: http://anidb.net/api/anime-titles.xml.gz
-2. The file will download to your Downloads folder
-3. In Finder, go to Downloads and find the file `anime-titles.xml.gz`
-4. Double-click it — Mac will extract it automatically and create `anime-titles.xml` next to it
-5. Move `anime-titles.xml` into the `data` folder inside your `nextarc-pipeline` folder on the Desktop
-
-To move it using Terminal:
-```
-mv ~/Downloads/anime-titles.xml ~/Desktop/nextarc-pipeline/data/anime-titles.xml
-```
-
-Verify it is in the right place:
-```
-ls ~/Desktop/nextarc-pipeline/data/
-```
-
-You should see `anime-titles.xml` in the list.
-
-### 7.4 Add AniDB credentials to your .env file
-
-Run these two commands one at a time:
+Run these two commands one at a time from inside your `nextarc-pipeline` folder:
 
 ```
 echo "ANIDB_CLIENT=nextarcpipeline" >> .env
@@ -756,7 +734,98 @@ ANIDB_CLIENT=nextarcpipeline
 ANIDB_CLIENTVER=1
 ```
 
-### 7.5 Create the AniDB fetch script
+### 7.4 Create the cross-reference check script
+
+Before committing to the overnight fetch, run a quick check to confirm how many of your AniList anime have AniDB matches. This script downloads a cross-reference database (maintained by the manami-project), matches it against your AniList library, and tells you the expected coverage and runtime.
+
+Create a file called `check_crossref.py`:
+
+```python
+"""
+Quick sanity check: how many of our AniList anime have AniDB cross-references?
+Run with: python3 check_crossref.py
+"""
+import requests
+import json
+import os
+
+URL   = "https://github.com/manami-project/anime-offline-database/releases/latest/download/anime-offline-database-minified.json"
+CACHE = "data/anime-offline-db.json"
+
+os.makedirs("data", exist_ok=True)
+
+if os.path.exists(CACHE):
+    try:
+        with open(CACHE) as f:
+            db = json.load(f)
+        print(f"Using cached file ({CACHE})")
+    except (json.JSONDecodeError, ValueError):
+        print("Cache corrupt — deleting and re-downloading...")
+        os.remove(CACHE)
+        db = None
+else:
+    db = None
+
+if db is None:
+    print("Downloading anime-offline-database (~20 MB)...")
+    r = requests.get(URL, timeout=120, allow_redirects=True)
+    r.raise_for_status()
+    db = r.json()
+    with open(CACHE, "w") as f:
+        json.dump(db, f)
+    print(f"Saved to {CACHE}")
+
+print(f"Offline DB total entries: {len(db.get('data', [])):,}")
+
+anilist_to_anidb = {}
+for entry in db.get("data", []):
+    al, adb = None, None
+    for src in entry.get("sources", []):
+        if "anilist.co/anime/" in src:
+            try:
+                al = int(src.rstrip("/").split("/")[-1])
+            except ValueError:
+                pass
+        elif "anidb.net/anime/" in src:
+            try:
+                adb = int(src.rstrip("/").split("/")[-1])
+            except ValueError:
+                pass
+    if al and adb:
+        anilist_to_anidb[al] = adb
+
+print(f"Cross-ref pairs (AniList→AniDB): {len(anilist_to_anidb):,}")
+
+with open("data/anilist_raw.json") as f:
+    anilist_data = json.load(f)
+
+our_ids = {a["id"] for a in anilist_data}
+matches = [anilist_to_anidb[i] for i in our_ids if i in anilist_to_anidb]
+
+print(f"Our AniList library:  {len(our_ids):,} anime")
+print(f"Matched to AniDB:     {len(matches):,}  ({len(matches)/len(our_ids)*100:.1f}%)")
+print(f"Estimated fetch time: ~{len(matches)*2.1/3600:.1f} hours at 2.1s/req")
+```
+
+Run it:
+```
+python3 check_crossref.py
+```
+
+You should see output like:
+```
+Offline DB total entries: 40,921
+Cross-ref pairs (AniList→AniDB): 13,002
+Our AniList library:  17,370 anime
+Matched to AniDB:     11,958  (68.8%)
+Estimated fetch time: ~7.0 hours at 2.1s/req
+```
+
+If you see a match count and estimated time, you are ready to run the full fetch.
+
+### 7.5 Create and run the AniDB fetch script
+
+This script uses the cross-reference database to build a targeted list of only the AniDB IDs that correspond to anime in your library — rather than blindly fetching all 16,000+ IDs in the AniDB dump. This gives ~12,000 results (69% of your library) vs. the ~300 you would get from sequential fetching before AniDB's flood protection kicks in.
 
 Create a file called `fetch_anidb.py`:
 
@@ -771,32 +840,99 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-CLIENT = os.getenv("ANIDB_CLIENT")
+CLIENT    = os.getenv("ANIDB_CLIENT")
 CLIENTVER = os.getenv("ANIDB_CLIENTVER")
 ANIDB_URL = "http://api.anidb.net:9001/httpapi"
 
-def get_anidb_ids_from_dump(dump_path="data/anime-titles.xml"):
-    tree = ET.parse(dump_path)
-    root = tree.getroot()
-    ids = []
-    for anime in root.findall("anime"):
-        aid = anime.get("aid")
-        if aid:
-            ids.append(int(aid))
-    return ids
+OFFLINE_DB_URL   = "https://github.com/manami-project/anime-offline-database/releases/latest/download/anime-offline-database-minified.json"
+OFFLINE_DB_CACHE = "data/anime-offline-db.json"
+ANILIST_RAW      = "data/anilist_raw.json"
+RESULTS_FILE     = "data/anidb_results.json"
+
+
+# ── Cross-reference: AniList ID → AniDB ID ───────────────────────────────────
+
+def build_anilist_to_anidb_map():
+    # Delete cache if corrupt
+    if os.path.exists(OFFLINE_DB_CACHE):
+        try:
+            with open(OFFLINE_DB_CACHE) as f:
+                json.load(f)
+            print(f"Using cached anime-offline-database ({OFFLINE_DB_CACHE})")
+        except (json.JSONDecodeError, ValueError):
+            print("Cache corrupt, re-downloading...")
+            os.remove(OFFLINE_DB_CACHE)
+
+    if not os.path.exists(OFFLINE_DB_CACHE):
+        print("Downloading anime-offline-database (one-time, ~20 MB)...")
+        r = requests.get(OFFLINE_DB_URL, timeout=120, allow_redirects=True)
+        r.raise_for_status()
+        data = r.json()
+        os.makedirs("data", exist_ok=True)
+        with open(OFFLINE_DB_CACHE, "w") as f:
+            json.dump(data, f)
+        print(f"  Cached to {OFFLINE_DB_CACHE}")
+
+    with open(OFFLINE_DB_CACHE) as f:
+        db = json.load(f)
+
+    anilist_to_anidb = {}
+    for entry in db.get("data", []):
+        anilist_id = None
+        anidb_id   = None
+        for src in entry.get("sources", []):
+            if "anilist.co/anime/" in src:
+                try:
+                    anilist_id = int(src.rstrip("/").split("/")[-1])
+                except ValueError:
+                    pass
+            elif "anidb.net/anime/" in src:
+                try:
+                    anidb_id = int(src.rstrip("/").split("/")[-1])
+                except ValueError:
+                    pass
+        if anilist_id and anidb_id:
+            anilist_to_anidb[anilist_id] = anidb_id
+
+    print(f"Cross-reference map built: {len(anilist_to_anidb):,} AniList→AniDB pairs")
+    return anilist_to_anidb
+
+
+def get_target_anidb_ids(anilist_to_anidb):
+    with open(ANILIST_RAW) as f:
+        anilist_data = json.load(f)
+
+    our_anilist_ids = {anime["id"] for anime in anilist_data}
+    print(f"AniList library size: {len(our_anilist_ids):,}")
+
+    target_ids = []
+    for al_id in our_anilist_ids:
+        adb_id = anilist_to_anidb.get(al_id)
+        if adb_id:
+            target_ids.append(adb_id)
+
+    print(f"AniDB IDs matched to our library: {len(target_ids):,}")
+    return sorted(set(target_ids))
+
+
+# ── AniDB HTTP API ────────────────────────────────────────────────────────────
 
 def fetch_anime_details(anidb_id):
     params = {
-        "client": CLIENT,
+        "client":    CLIENT,
         "clientver": CLIENTVER,
-        "protover": "1",
-        "request": "anime",
-        "aid": anidb_id
+        "protover":  "1",
+        "request":   "anime",
+        "aid":       anidb_id,
     }
-    response = requests.get(ANIDB_URL, params=params)
-    if response.status_code != 200:
+    try:
+        response = requests.get(ANIDB_URL, params=params, timeout=30)
+        if response.status_code != 200:
+            return None
+        return response.text
+    except requests.RequestException:
         return None
-    return response.text
+
 
 def parse_anidb_xml(xml_text):
     try:
@@ -813,19 +949,22 @@ def parse_anidb_xml(xml_text):
     for resource in root.findall(".//resource[@type='5']"):
         ext_id = resource.find("externalentity/identifier")
         if ext_id is not None:
-            anime["mal_id"] = int(ext_id.text)
+            try:
+                anime["mal_id"] = int(ext_id.text)
+            except (ValueError, TypeError):
+                pass
             break
 
     tags = []
     for tag in root.findall(".//tag"):
-        name = tag.find("name")
+        name   = tag.find("name")
         weight = tag.get("weight", "0")
-        count = tag.get("count", "0")
+        count  = tag.get("count",  "0")
         if name is not None and name.text:
             tags.append({
-                "name": name.text.lower(),
+                "name":   name.text.lower(),
                 "weight": int(weight),
-                "count": int(count)
+                "count":  int(count),
             })
     anime["tags"] = tags
 
@@ -835,18 +974,21 @@ def parse_anidb_xml(xml_text):
 
     eps = root.find("episodecount")
     if eps is not None and eps.text:
-        anime["episode_count"] = int(eps.text)
+        try:
+            anime["episode_count"] = int(eps.text)
+        except ValueError:
+            pass
 
     reviews = []
     for review in root.findall(".//review"):
-        text_el = review.find("text")
-        votes_el = review.find("votes")
+        text_el   = review.find("text")
+        votes_el  = review.find("votes")
         rating_el = review.find("rating")
         if text_el is not None and text_el.text and len(text_el.text) > 100:
             reviews.append({
-                "text": text_el.text.strip(),
-                "votes": int(votes_el.text) if votes_el is not None and votes_el.text else 0,
-                "rating": float(rating_el.text) if rating_el is not None and rating_el.text else None
+                "text":   text_el.text.strip(),
+                "votes":  int(votes_el.text)   if votes_el  is not None and votes_el.text  else 0,
+                "rating": float(rating_el.text) if rating_el is not None and rating_el.text else None,
             })
     anime["reviews"] = sorted(reviews, key=lambda r: r["votes"], reverse=True)
 
@@ -862,61 +1004,86 @@ def parse_anidb_xml(xml_text):
     CONTENT_WARNING_KEYWORDS = {
         "violence", "gore", "blood", "death", "suicide", "rape", "sexual content",
         "nudity", "ecchi", "hentai", "abuse", "torture", "drug use", "alcohol",
-        "smoking", "body horror", "psychological abuse", "sexual abuse", "child abuse"
+        "smoking", "body horror", "psychological abuse", "sexual abuse", "child abuse",
     }
     content_warnings = []
     for tag in anime.get("tags", []):
         name = tag["name"].lower()
         if any(kw in name for kw in CONTENT_WARNING_KEYWORDS) and tag["weight"] >= 200:
             content_warnings.append({"tag": tag["name"], "weight": tag["weight"]})
-    anime["content_warnings"] = sorted(content_warnings, key=lambda t: t["weight"], reverse=True)
+    anime["content_warnings"] = sorted(
+        content_warnings, key=lambda t: t["weight"], reverse=True
+    )
 
     return anime
 
+
+# ── Main ──────────────────────────────────────────────────────────────────────
+
 def fetch_all_anidb():
-    ids = get_anidb_ids_from_dump()
-    print(f"Found {len(ids)} AniDB IDs in dump")
+    os.makedirs("data", exist_ok=True)
+
+    anilist_to_anidb = build_anilist_to_anidb_map()
+    target_ids       = get_target_anidb_ids(anilist_to_anidb)
 
     results = {}
-    os.makedirs("data/anidb_cache", exist_ok=True)
-
-    cache_file = "data/anidb_results.json"
-    if os.path.exists(cache_file):
-        with open(cache_file) as f:
-            results = json.load(f)
+    if os.path.exists(RESULTS_FILE):
+        with open(RESULTS_FILE) as f:
+            try:
+                results = json.load(f)
+            except json.JSONDecodeError:
+                results = {}
         print(f"Loaded {len(results)} cached entries")
 
-    ids_to_fetch = [i for i in ids if str(i) not in results]
+    ids_to_fetch = [i for i in target_ids if str(i) not in results]
+    print(f"IDs remaining to fetch: {len(ids_to_fetch):,}  "
+          f"(~{len(ids_to_fetch) * 2.1 / 3600:.1f} hours at 2.1 s/req)")
 
+    errors = 0
     for anidb_id in tqdm(ids_to_fetch, desc="Fetching AniDB"):
         xml = fetch_anime_details(anidb_id)
         if xml:
             parsed = parse_anidb_xml(xml)
             if parsed:
                 results[str(anidb_id)] = parsed
+            else:
+                errors += 1
+        else:
+            errors += 1
 
-        if len(results) % 100 == 0:
-            with open(cache_file, "w") as f:
+        if len(results) % 100 == 0 and len(results) > 0:
+            with open(RESULTS_FILE, "w") as f:
                 json.dump(results, f)
 
         time.sleep(2.1)
 
-    with open(cache_file, "w") as f:
+    with open(RESULTS_FILE, "w") as f:
         json.dump(results, f, indent=2)
 
-    print(f"\nSaved {len(results)} AniDB entries")
+    print(f"\nSaved {len(results)} AniDB entries  ({errors} errors/skipped)")
     return results
+
 
 if __name__ == "__main__":
     fetch_all_anidb()
 ```
 
-Run it — use `caffeinate` so your Mac stays awake the whole time:
+Before running the full fetch, reset the results file (clears any previous incomplete run):
+```
+echo "{}" > data/anidb_results.json
+```
+
+Then run it overnight with `caffeinate` so your Mac stays awake:
 ```
 caffeinate -i python3 fetch_anidb.py
 ```
 
-**This takes about 10 hours** because AniDB only allows 1 request every 2 seconds. Run it overnight. If it gets interrupted for any reason, just run the same command again — it saves progress every 100 entries and will pick up where it left off.
+**This takes about 7 hours** because AniDB only allows 1 request every 2 seconds. Run it overnight. If it gets interrupted, just run the same command again — it saves progress every 100 entries and picks up where it left off.
+
+When it finishes you should see approximately:
+```
+Saved 11,958 AniDB entries  (X errors/skipped)
+```
 
 ---
 
@@ -1625,12 +1792,17 @@ Wait for it to finish (~60–90 min), then:
 ```
 python3 fetch_reviews.py
 ```
-Wait for it to finish (~45 min), then run the AniDB fetch overnight:
+Wait for it to finish (~45 min), then run the cross-reference check:
 
 ```
-caffeinate -i python3 fetch_anidb.py
+python3 check_crossref.py
 ```
-Wait for it to finish (~10 hours), then:
+Confirm you see ~11,958 matches and ~7 hours estimated, then reset and run the AniDB fetch overnight:
+
+```
+echo "{}" > data/anidb_results.json && caffeinate -i python3 fetch_anidb.py
+```
+Wait for it to finish (~7 hours), then:
 
 ```
 python3 merge_data.py
@@ -1656,7 +1828,8 @@ firebase deploy --only functions
 |---|---|---|---|
 | fetch_anilist.py | data/anilist_raw.json | Tags, scores, staff, recommendations | ~25 MB |
 | fetch_reviews.py | data/reviews.json | AniList reviews | ~80 MB |
-| fetch_anidb.py | data/anidb_results.json | Weighted tags, episode descriptions, reviews | ~150 MB |
+| check_crossref.py | data/anime-offline-db.json | AniList→AniDB cross-reference map (cached) | ~20 MB |
+| fetch_anidb.py | data/anidb_results.json | Weighted tags, episode descriptions, reviews (~12k anime) | ~90 MB |
 | merge_data.py | data/merged.json | Everything combined | ~200 MB |
 | process_nlp.py | data/processed.json | + keywords, topics, embeddings, sentiment | ~250 MB |
 | upload_to_firebase.py | Firestore /anime | Final records in your database | ~150 MB |
@@ -1671,6 +1844,8 @@ firebase deploy --only functions
 
 **A script crashes partway through** — Every script saves its progress. Just run it again with the same command and it will pick up where it left off.
 
-**"client banned" from AniDB** — Your client name or version does not match what you registered. Check your `.env` file with `cat .env` and make sure `ANIDB_CLIENT=nextarcpipeline` (no underscore) and `ANIDB_CLIENTVER=1`.
+**"client banned" from AniDB** — Your client name or version does not match what you registered. Check your `.env` file with `cat .env` and make sure `ANIDB_CLIENT=nextarcpipeline` (no underscore, all lowercase) and `ANIDB_CLIENTVER=1`. Also make sure you registered the client on AniDB's website (Step 7.2) before running the script.
+
+**fetch_anidb.py saves very few entries (under 1,000)** — This means AniDB's flood protection kicked in early. Make sure you are not running any other AniDB requests at the same time. Wait a few hours and re-run — it will resume from where it left off.
 
 **Firebase upload fails** — Make sure `firebase-key.json` is in your `nextarc-pipeline` folder and your `.env` has the correct project ID.

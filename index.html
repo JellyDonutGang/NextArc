@@ -3135,6 +3135,11 @@ const SEED_POOL_IDS = [
   17205,  // Non Non Biyori     — cozy, zero conflict, slow, rural
   20517,  // Barakamon          — heartwarming, SOL, cozy, adult
   98444,  // Yuru Camp          — solo iyashikei, camping, mindful, quiet
+  4081,   // Natsume Yuujinchou — cinematic + cozy, supernatural, slow, atmospheric
+  // ── Cinematic / Weird / Niche (bucket coverage anchors) ──────────────────
+  227,    // FLCL               — manic surreal, philosophical, 6 eps, definitive weird_niche
+  99426,  // A Place Further    — cinematic found_family, inspirational, extraordinary (Madhouse)
+  486,    // Kino's Journey     — philosophical travel anthology, cinematic, niche, slow
   // ── Calibration Gaps (targeted) ──────────────────
   11617,  // High School DxD    — pure ecchi/fan service anchor, harem
   14813,  // Oregairu (SNAFU)   — cynical realism, social complexity, no violence
@@ -3178,35 +3183,61 @@ function selectDiverseSeed(pool, n) {
 
   const DIMS = [
     'fanService','violence','darkness','romance',
-    'humor','emotionalWeight','pacing','niche',
+    'humor','emotionalWeight','pacing','niche','episodeAppetite',
   ];
 
-  // Pre-compute scalar profiles using the engine's extractFeatures
-  // (extractScalars was a placeholder — extractFeatures is the real function)
-  const profiles = pool.map(a => ({ anime: a, s: extractFeatures(a).scalars }));
+  // Pre-compute features once per anime (scalars + emotional bucket keys)
+  const profiles = pool.map(a => {
+    const f = extractFeatures(a);
+    return { anime: a, s: f.scalars, buckets: f.keys.emotionalBucket || [] };
+  });
 
-  // Squared Euclidean distance in 8D scalar space
+  // Squared Euclidean distance in 9D scalar space
   function dist2(a, b) {
     return DIMS.reduce((sum, d) => sum + ((a.s[d] || 0) - (b.s[d] || 0)) ** 2, 0);
   }
 
-  // ── Guaranteed genre anchors ────────────────────────────────────────────
-  // Romance is consistently crushed by max-distance diversity because romance
-  // shows cluster together in scalar space and the greedy algo picks at most one.
-  // Pre-select 2 romance anchors so they always make the initial queue.
-  const ROMANCE_FLOOR = 2;
-  const romanceProfiles = profiles
-    .filter(p => (p.anime.genres || []).includes('Romance') || (p.s.romance || 0) >= 2.5)
-    .sort(() => Math.random() - 0.5);
+  // ── Bucket coverage anchors ───────────────────────────────────────────────
+  // Guarantee at least one representative from each emotional bucket so
+  // onboarding exposes users to every taste lane.  Without this, if the
+  // first 12 cards are all dark/action, the engine thinks that's the whole
+  // personality and pigeon-holes from the very start.
+  //
+  // Strategy: iterate buckets in priority order, pick the highest-quality
+  // (averageScore) anime for each bucket that hasn't been selected yet.
+  // Leave at least 2 slots for farthest-point diversity fills.
+  const BUCKET_ORDER = [
+    'bucket:dark_complexity',
+    'bucket:hype_energy',
+    'bucket:emotional_depth',
+    'bucket:cozy_comfort',
+    'bucket:mind_games',
+    'bucket:found_family',
+    'bucket:cinematic',
+    'bucket:weird_niche',
+  ];
 
-  const anchors  = romanceProfiles.slice(0, Math.min(ROMANCE_FLOOR, romanceProfiles.length));
-  const anchorIds = new Set(anchors.map(p => p.anime.id));
+  const anchors   = [];
+  const anchorIds = new Set();
+  const maxAnchors = Math.min(BUCKET_ORDER.length, n - 2); // leave 2 slots for farthest-point
+
+  for (const bucket of BUCKET_ORDER) {
+    if (anchors.length >= maxAnchors) break;
+    const candidate = profiles
+      .filter(p => !anchorIds.has(p.anime.id) && p.buckets.includes(bucket))
+      .sort((a, b) => (b.anime.averageScore || 0) - (a.anime.averageScore || 0))[0];
+    if (candidate) {
+      anchors.push(candidate);
+      anchorIds.add(candidate.anime.id);
+    }
+  }
+
+  // ── Greedy farthest-point sampling for remaining slots ───────────────────
+  // Starts from all anchors so each new pick is maximally far from everything
+  // already selected — guarantees scalar-space coverage on top of bucket coverage.
   const remaining = profiles.filter(p => !anchorIds.has(p.anime.id));
-
-  // ── Greedy farthest-point sampling for the rest ─────────────────────────
-  // Start from the anchors so subsequent picks maximise distance from them too
-  const selected = [...anchors];
-  const pool2    = [...remaining];
+  const selected  = [...anchors];
+  const pool2     = [...remaining];
 
   while (selected.length < n && pool2.length > 0) {
     let bestIdx = 0, bestMinDist = -1;
@@ -6542,6 +6573,6 @@ else {
   }
 }
 </script>
-<div id="version-badge">v120</div>
+<div id="version-badge">v124</div>
 </body>
 </html>

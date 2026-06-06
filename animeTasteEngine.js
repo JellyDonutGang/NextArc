@@ -424,6 +424,11 @@ function extractFeatures(anime) {
   const pop   = Math.max(anime.popularity || 1, 1);
   const niche = Math.max(0, 10 - (Math.log10(pop) / Math.log10(500_000)) * 10);
 
+  // Episode appetite: log-normalised count → 0–10
+  // 1 ep→0.0  12 eps→4.9  24 eps→6.3  50 eps→7.8  150+ eps→10.0
+  const epsCount       = Math.max(1, anime.episodes || 12);
+  const episodeAppetite = Math.min(10, (Math.log(epsCount) / Math.log(150)) * 10);
+
   const scalars = {
     fanService:         calcDim('fanService'),
     violence:           calcDim('violence'),
@@ -438,6 +443,7 @@ function extractFeatures(anime) {
     worldbuilding:      calcDim('worldbuilding'),
     characterDrama:     calcDim('characterDrama'),
     moralComplexity:    calcDim('moralComplexity'),
+    episodeAppetite,
   };
 
   // Tone keys
@@ -539,6 +545,8 @@ function defaultDims() {
     worldbuilding:      { preferred: 4.0, tolerance: 9.0,  confidence: 0, kind: 'appetite' },
     characterDrama:     { preferred: 4.0, tolerance: 9.0,  confidence: 0, kind: 'appetite' },
     moralComplexity:    { preferred: 3.0, tolerance: 8.0,  confidence: 0, kind: 'appetite' },
+    // Log-normalised episode count (0–10 scale; 12 eps ≈ 4.9, 50 eps ≈ 7.8, 150+ ≈ 10)
+    episodeAppetite:    { preferred: 4.9, tolerance: 7.8,  confidence: 0, kind: 'tolerance' },
   };
 }
 
@@ -592,13 +600,14 @@ class NextArcEngine {
     this.dimCooldowns  = Object.fromEntries(Object.keys(this.dims).map(d => [d, 0]));
 
     /** Anti-repetition */
-    this.recentFeatures   = [];   // last 10 shown feature profiles
+    this.recentFeatures   = [];   // last 20 shown feature profiles (larger window = better diversity tracking)
     this.recentClusterIds = [];   // last 6 cluster IDs served (for cross-cluster rotation)
-    this.MAX_RECENT       = 10;
+    this.MAX_RECENT       = 20;   // was 10 — wider window so bucket diversity sees full batch history
     this.MAX_RECENT_CL    = 6;
 
-    this.onboarded   = false;
-    this.totalSwipes = 0;
+    this.onboarded      = false;
+    this.totalSwipes    = 0;
+    this.firstBatchDone = false; // skip boundary probes on the very first post-onboarding batch
   }
 
 
@@ -617,10 +626,13 @@ class NextArcEngine {
 
     // ── Global vector update ───────────────────────────────────────────
     // superlike carries 5.0 — 2.5× the normal post-onboarding like weight
+    // Dislike signal boosted: -3.0 post-onboarding (was -2.0).
+    // One dislike of a dark anime drops tone:dark from cap (4.0) to 1.0,
+    // making a real dent instead of being cancelled by the next like.
     const catDelta = isSuperLike ?  5.0
                    : isWatch     ?  3.5
                    : isPositive  ? (this.onboarded ?  2.0 :  3.0)
-                   :               (this.onboarded ? -2.0 : -3.0);
+                   :               (this.onboarded ? -3.0 : -4.0);
 
     // Cap individual vector components so that a handful of early strong-signal
     // swipes (e.g. several dark-anime likes during onboarding) cannot permanently
@@ -711,8 +723,14 @@ class NextArcEngine {
     const scored = profiles.map(p => {
       const globalScore = this._scoreAgainstProfile(p.features, this.vectors, this.dims);
 
+      // Quality multiplier: meaningful boost for well-rated anime.
+      // Range: score=100 → ×1.0, score=80 → ×0.93, score=60 → ×0.86, score=40 → ×0.79
+      // Spread: 21% gap between best and worst rated. Unrated → ×1.0 (no penalty).
+      const avgScore    = p.anime.averageScore || 0;
+      const qualityMult = avgScore > 0 ? 0.65 + 0.35 * (avgScore / 100) : 1.0;
+
       if (!multiCluster) {
-        return { ...p, score: globalScore, clusterId: -1 };
+        return { ...p, score: globalScore * qualityMult, clusterId: -1 };
       }
 
       // Score against each cluster; take best-fit (weighted by cluster recency)
@@ -730,7 +748,7 @@ class NextArcEngine {
 
       // Post-onboarding: clusters provide 65% of the signal; global provides 35%
       const blended = globalScore * 0.35 + bestClusterScore * 0.65;
-      return { ...p, score: blended, clusterId: bestClusterId };
+      return { ...p, score: blended * qualityMult, clusterId: bestClusterId };
     });
 
     // ── Apply cluster-rotation penalty ────────────────────────────────
@@ -757,24 +775,52 @@ class NextArcEngine {
     const wildcardCandidates = this._findWildcards(scored, trendingMap);
 
     // ── Allocate slots ────────────────────────────────────────────────
-    // Strong 65% · Boundary 20% · Fresh picks 10% · Wildcards 5%
-    const total     = Math.min(pool.length, 30);
-    const nBoundary = this.onboarded ? Math.max(1, Math.round(total * 0.20)) : 0;
-    const nFresh    = this.onboarded ? Math.max(1, Math.round(total * 0.10)) : 0;
-    const nWild     = Math.max(1, Math.round(total * 0.05));  // freed 5% to fresh slot
-    const nStrong   = total - nBoundary - nFresh - nWild;
+    // Strong 57% · Diversity 15–20% · Boundary 15% · Fresh 8% · Wildcards 3%
+    //
+    // Diversity slot actively seeds underrepresented emotional buckets using
+    // anime quality (averageScore), NOT taste score.  This is the core fix for
+    // single-cluster pigeon-holing: even if the entire taste profile is dark,
+    // the engine still serves high-quality comedy/slice-of-life/hype picks to
+    // give those taste lanes a chance to form new clusters.
+    //
+    // When only 1 cluster exists the diversity slot grows to 20% — more
+    // aggressive exploration to bootstrap cluster variety faster.
+    const total               = Math.min(pool.length, 30);
+    const hasMultipleClusters = activeClusters.length >= 2;
+    const nDiversity = this.onboarded
+      ? Math.max(1, Math.round(total * (hasMultipleClusters ? 0.15 : 0.20)))
+      : 0;
+    // Skip boundary probes on the very first post-onboarding batch so the user's
+    // first impression is their strongest taste matches, not edge-of-tolerance probes.
+    const isFirstBatch = this.onboarded && !this.firstBatchDone;
+    if (isFirstBatch) this.firstBatchDone = true;
+    const nBoundary  = (this.onboarded && !isFirstBatch) ? Math.max(1, Math.round(total * 0.15)) : 0;
+    const nFresh     = this.onboarded ? Math.max(1, Math.round(total * 0.08)) : 0;
+    const nWild      = Math.max(1, Math.round(total * 0.03));
+    const nStrong    = total - nDiversity - nBoundary - nFresh - nWild;
 
     // Median score threshold — fresh picks must clear this to be taste-relevant
-    const allScores   = scored.map(p => p.score).sort((a, b) => a - b);
-    const medianScore = allScores[Math.floor(allScores.length / 2)] || 0;
-    const freshCandidates = this.onboarded
-      ? this._findFreshPicks(scored, medianScore)
-      : [];
+    const allScores      = scored.map(p => p.score).sort((a, b) => a - b);
+    const medianScore    = allScores[Math.floor(allScores.length / 2)] || 0;
+    const freshCandidates     = this.onboarded ? this._findFreshPicks(scored, medianScore)    : [];
+    const diversityCandidates = this.onboarded ? this._findBucketDiversityPicks(profiles)     : [];
 
-    const usedIds  = new Set();
+    const usedIds = new Set();
+
+    // ── Fill diversity FIRST ──────────────────────────────────────────────────
+    // Bucket coverage guarantee only holds if diversity candidates are claimed
+    // before boundary/wild/fresh can consume the best per-bucket candidate.
+    const diversity = [];
+    for (const p of diversityCandidates) {
+      if (diversity.length >= nDiversity) break;
+      if (!usedIds.has(p.anime.id)) {
+        usedIds.add(p.anime.id);
+        diversity.push({ ...p.anime, _meta: { type: 'diversity' } });
+      }
+    }
+
+    // ── Then boundary ─────────────────────────────────────────────────────────
     const boundary = [];
-    const wild     = [];
-
     for (const p of boundaryCandidates) {
       if (boundary.length >= nBoundary) break;
       if (!usedIds.has(p.anime.id)) {
@@ -785,6 +831,8 @@ class NextArcEngine {
       }
     }
 
+    // ── Then wild ─────────────────────────────────────────────────────────────
+    const wild = [];
     for (const p of wildcardCandidates) {
       if (wild.length >= nWild) break;
       if (!usedIds.has(p.anime.id)) {
@@ -793,6 +841,7 @@ class NextArcEngine {
       }
     }
 
+    // ── Then fresh ────────────────────────────────────────────────────────────
     const fresh = [];
     for (const p of freshCandidates) {
       if (fresh.length >= nFresh) break;
@@ -808,9 +857,8 @@ class NextArcEngine {
       ? this._pickAcrossClusters(strongPool, activeClusters, nStrong, usedIds)
       : this._pickWithAntiRep(strongPool, nStrong, usedIds);
 
-    // Interleave, then cap any single bucket at 38% of the batch
-    // to prevent dark_complexity (or any other bucket) from monopolising recs.
-    return this._enforceBucketDiversity(this._interleave(strong, boundary, wild, fresh));
+    // Interleave, then cap any single bucket at 25% of the batch
+    return this._enforceBucketDiversity(this._interleave(strong, boundary, wild, fresh, diversity));
   }
 
 
@@ -1093,7 +1141,9 @@ class NextArcEngine {
 
     if (magUser === 0) return 0.3;
     const raw = dot / (Math.sqrt(magUser) * Math.sqrt(animeKeys.length));
-    return Math.max(0, Math.min(1, raw * 0.70 + 0.30));
+    // Neutral floor lowered 0.30 → 0.15 so positive matches stand out more
+    // and negative signals (disliked features) zero out similarity faster.
+    return Math.max(0, Math.min(1, raw * 0.85 + 0.15));
   }
 
 
@@ -1345,6 +1395,75 @@ class NextArcEngine {
 
 
   /* ════════════════════════════════════════════════════════════════════
+     BUCKET DIVERSITY PICKS
+     ════════════════════════════════════════════════════════════════════ */
+
+  /**
+   * Find one high-quality candidate per underrepresented emotional bucket.
+   *
+   * This is the primary fix for single-cluster pigeon-holing.  The engine's
+   * taste scoring is working correctly — it's genuinely true that dark anime
+   * score highest against a dark profile.  The problem is that without exposure
+   * to other buckets, new clusters can never form.
+   *
+   * The solution: ignore taste score entirely for these picks.  Instead, sort
+   * candidates within each underrepresented bucket by anime quality (averageScore).
+   * This serves the objectively best comedy / slice-of-life / hype anime rather
+   * than the best taste-fit version, giving those lanes a real chance to land.
+   *
+   * Design rules:
+   *  - "Underrepresented" = appeared in fewer of the last MAX_RECENT shown cards
+   *  - Sorted from least-seen bucket to most-seen — worst first gets first slot
+   *  - Quality floor: averageScore >= 65 (decent anime, not random noise)
+   *  - Popularity floor: 500 (enough community data to trust the bucket labelling)
+   *  - Returns at most one candidate per bucket, capped at 6 total picks
+   */
+  _findBucketDiversityPicks(profiles) {
+    // Count how often each bucket has appeared in recent history
+    const recentBucketCounts = {};
+    for (const f of this.recentFeatures) {
+      for (const b of (f.keys.emotionalBucket || [])) {
+        recentBucketCounts[b] = (recentBucketCounts[b] || 0) + 1;
+      }
+    }
+
+    // Sort all buckets from least-recently-seen to most
+    const allBuckets = Object.keys(EMOTIONAL_BUCKET_DEFS).map(k => `bucket:${k}`);
+    const byRepresentation = [...allBuckets].sort(
+      (a, b) => (recentBucketCounts[a] || 0) - (recentBucketCounts[b] || 0)
+    );
+
+    const MIN_QUALITY = 65;  // averageScore floor
+    const MIN_POP     = 500; // popularity floor for reliable bucket labelling
+    const MAX_PICKS   = 6;
+    const picks       = [];
+
+    for (const bucket of byRepresentation) {
+      if (picks.length >= MAX_PICKS) break;
+
+      // Skip if this bucket is already well-represented recently
+      // (threshold: seen in more than 20% of recent cards)
+      const recentCount = recentBucketCounts[bucket] || 0;
+      if (recentCount > this.recentFeatures.length * 0.20) continue;
+
+      // Find candidates that belong to this bucket and clear quality floors
+      const candidates = profiles
+        .filter(p => {
+          const buckets = p.features.keys.emotionalBucket || [];
+          const score   = p.anime.averageScore || 0;
+          const pop     = p.anime.popularity   || 0;
+          return buckets.includes(bucket) && score >= MIN_QUALITY && pop >= MIN_POP;
+        })
+        .sort((a, b) => (b.anime.averageScore || 0) - (a.anime.averageScore || 0));
+
+      if (candidates.length > 0) picks.push(candidates[0]);
+    }
+
+    return picks;
+  }
+
+
+  /* ════════════════════════════════════════════════════════════════════
      ANTI-REPETITION
      ════════════════════════════════════════════════════════════════════ */
 
@@ -1389,23 +1508,27 @@ class NextArcEngine {
      QUEUE INTERLEAVING
      ════════════════════════════════════════════════════════════════════ */
 
-  _interleave(strong, boundary, wild, fresh = []) {
+  _interleave(strong, boundary, wild, fresh = [], diversity = []) {
     const result = [];
-    let bI = 0, wI = 0, fI = 0;
+    let bI = 0, wI = 0, fI = 0, dI = 0;
 
     for (let i = 0; i < strong.length; i++) {
       result.push(strong[i]);
-      // Every 5th card: boundary probe (explores taste edges)
-      if ((i + 1) % 5  === 0 && bI < boundary.length) result.push(boundary[bI++]);
-      // Every 8th card: fresh pick (taste-matched recent anime)
-      if ((i + 1) % 8  === 0 && fI < fresh.length)    result.push(fresh[fI++]);
-      // Every 12th card: wildcard (pure exploration)
-      if ((i + 1) % 12 === 0 && wI < wild.length)     result.push(wild[wI++]);
+      // Every 3rd strong: diversity pick (different emotional bucket, quality-ranked)
+      // This is the primary mechanism for breaking single-cluster pigeon-holing.
+      if ((i + 1) % 3  === 0 && dI < diversity.length) result.push(diversity[dI++]);
+      // Every 5th strong: boundary probe (explores taste edges)
+      if ((i + 1) % 5  === 0 && bI < boundary.length)  result.push(boundary[bI++]);
+      // Every 8th strong: fresh pick (taste-matched recent anime)
+      if ((i + 1) % 8  === 0 && fI < fresh.length)     result.push(fresh[fI++]);
+      // Every 15th strong: wildcard (pure random exploration)
+      if ((i + 1) % 15 === 0 && wI < wild.length)      result.push(wild[wI++]);
     }
 
-    while (fI < fresh.length)    result.push(fresh[fI++]);
-    while (bI < boundary.length) result.push(boundary[bI++]);
-    while (wI < wild.length)     result.push(wild[wI++]);
+    while (dI < diversity.length) result.push(diversity[dI++]);
+    while (fI < fresh.length)     result.push(fresh[fI++]);
+    while (bI < boundary.length)  result.push(boundary[bI++]);
+    while (wI < wild.length)      result.push(wild[wI++]);
 
     return result;
   }
@@ -1424,7 +1547,7 @@ class NextArcEngine {
    * This directly fixes the "pigeon-holed into dark moral complexity" bug
    * where every rec batch ends up 70-80% dark_complexity.
    */
-  _enforceBucketDiversity(ranked, maxFraction = 0.38) {
+  _enforceBucketDiversity(ranked, maxFraction = 0.25) {
     if (ranked.length <= 4) return ranked;
     const maxCount     = Math.ceil(ranked.length * maxFraction);
     const bucketCounts = {};
