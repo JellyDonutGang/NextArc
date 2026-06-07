@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#f5195a" />
+  <meta name="theme-color" content="#ff086b" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="OTAKULT" />
@@ -62,16 +62,16 @@
       --surface: #121220;
       --surface2: #1c1c2c;
       --border: #2a2a3e;
-      --text: #f9f6e4;
+      --text: #fbf5df;
       --text-muted: #8a8a9a;
-      --accent: #f5195a;
-      --green: #d4f229;
-      --yellow: #d4f229;
-      --cyan: #22d3ee;
-      --electric: #7b35eb;
-      --hot: #f5195a;
-      --acid: #d4f229;
-      --cream: #f9f6e4;
+      --accent: #ff086b;
+      --green: #efef00;
+      --yellow: #efef00;
+      --cyan: #00d4f6;
+      --electric: #8625fe;
+      --hot: #ff086b;
+      --acid: #efef00;
+      --cream: #fbf5df;
       --radius: 20px;
       --card-w: min(92vw, 420px);
       --card-h: min(72vh, 580px);
@@ -927,7 +927,7 @@
       height: 100%;
       width: 0%;
       border-radius: 99px;
-      background: linear-gradient(90deg, #7b35eb 0%, var(--accent) 45%, #d4f229 80%, #f9f6e4 100%);
+      background: linear-gradient(90deg, #8625fe 0%, var(--accent) 45%, #efef00 80%, #fbf5df 100%);
       box-shadow: 0 0 8px rgba(56,189,248,0.45);
       transition: width 0.5s cubic-bezier(0.34,1.56,0.64,1);
       position: relative;
@@ -962,7 +962,7 @@
 
     /* Charging state — last 2 cards before gem */
     .gem-progress-fill.charging {
-      background: linear-gradient(90deg, #7b35eb 0%, #f5195a 50%, #d4f229 85%, #f9f6e4 100%);
+      background: linear-gradient(90deg, #8625fe 0%, #ff086b 50%, #efef00 85%, #fbf5df 100%);
       animation: bar-charge-pulse 0.45s ease-in-out infinite alternate;
     }
     .gem-progress-fill.charging::before {
@@ -980,10 +980,10 @@
     }
     @keyframes bar-trigger-flash {
       0%   { background: white;
-             box-shadow: 0 0 32px white, 0 0 64px #d4f229, 0 0 96px #f5195a; }
-      55%  { background: linear-gradient(90deg,#7b35eb,#f5195a,#d4f229);
-             box-shadow: 0 0 14px #f5195a; }
-      100% { background: linear-gradient(90deg,#7b35eb 0%,var(--accent) 45%,#d4f229 80%,#f9f6e4 100%);
+             box-shadow: 0 0 32px white, 0 0 64px #efef00, 0 0 96px #ff086b; }
+      55%  { background: linear-gradient(90deg,#8625fe,#ff086b,#efef00);
+             box-shadow: 0 0 14px #ff086b; }
+      100% { background: linear-gradient(90deg,#8625fe 0%,var(--accent) 45%,#efef00 80%,#fbf5df 100%);
              box-shadow: 0 0 8px rgba(56,189,248,0.45); }
     }
 
@@ -4204,7 +4204,7 @@ const CLUSTER_PALETTES = {
   'Slice of Life': { accent:'#fbbf24', green:'#fde68a', name:'Slice of Life',    emoji:'☕'  },
   'Comedy':        { accent:'#a3e635', green:'#bef264', name:'Comedy Mode',      emoji:'😂'  },
   'Mystery':       { accent:'#2dd4bf', green:'#5eead4', name:'Mystery Mode',     emoji:'🔍'  },
-  'Thriller':      { accent:'#0891b2', green:'#22d3ee', name:'Thriller Mode',    emoji:'😱'  },
+  'Thriller':      { accent:'#0891b2', green:'#00d4f6', name:'Thriller Mode',    emoji:'😱'  },
   'Drama':         { accent:'#e11d48', green:'#fb7185', name:'Drama Mode',       emoji:'🎭'  },
   'Sports':        { accent:'#22c55e', green:'#4ade80', name:'Sports Mode',      emoji:'⚡'  },
   'Supernatural':  { accent:'#818cf8', green:'#a5b4fc', name:'Supernatural',     emoji:'👻'  },

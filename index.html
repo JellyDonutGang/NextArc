@@ -15,7 +15,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Space+Grotesk:wght@400;500;600;700&family=M+PLUS+1+Code:wght@400;500&display=swap" rel="stylesheet"/>
   <style>
     :root{
-      --ink:#0d0d16;--cream:#f9f6e4;--hot:#f5195a;--electric:#7b35eb;--acid:#d4f229;--cyan:#22d3ee;
+      --ink:#0b0c16;--cream:#fbf5df;--hot:#ff086b;--electric:#8625fe;--acid:#efef00;--cyan:#00d4f6;
       --font-display:'Bungee',system-ui,sans-serif;
       --font-mono-jp:'M PLUS 1 Code',ui-monospace,monospace;
       --font-body:'Space Grotesk',system-ui,sans-serif;
@@ -48,7 +48,7 @@
     header{
       position:sticky;top:0;z-index:50;
       border-bottom:3px solid var(--ink);
-      background:rgba(249,246,228,0.95);
+      background:rgba(251,245,223,0.95);
       backdrop-filter:blur(8px);
     }
     /* No nav-divider — border comes from marquee border-top */
@@ -194,7 +194,7 @@
       display:grid;grid-template-columns:repeat(4,1fr);gap:24px;
     }
     .stat-n{font-family:var(--font-display);font-size:36px;color:var(--acid);line-height:1;}
-    .stat-l{font-size:11px;letter-spacing:.15em;text-transform:uppercase;margin-top:4px;color:rgba(249,246,228,.7);}
+    .stat-l{font-size:11px;letter-spacing:.15em;text-transform:uppercase;margin-top:4px;color:rgba(251,245,223,.7);}
 
     /* HOW IT WORKS */
     .how{max-width:1280px;margin:0 auto;padding:80px 24px;}
@@ -249,10 +249,10 @@
       background-size:8px 8px;opacity:.2;
     }
     .heat-score{position:absolute;top:8px;left:8px;z-index:1;background:var(--ink);color:var(--acid);font-family:var(--font-display);font-size:10px;padding:4px 8px;}
-    .heat-jp{position:absolute;bottom:8px;right:8px;z-index:1;background:rgba(249,246,228,.9);font-family:var(--font-mono-jp);font-size:8px;padding:3px 7px;}
+    .heat-jp{position:absolute;bottom:8px;right:8px;z-index:1;background:rgba(251,245,223,.9);font-family:var(--font-mono-jp);font-size:8px;padding:3px 7px;}
     .heat-body{padding:12px;border-top:3px solid var(--ink);}
     .heat-card-title{font-family:var(--font-display);font-size:18px;line-height:1.1;margin-bottom:4px;}
-    .heat-card-studio{font-size:11px;color:rgba(13,13,22,.6);margin-bottom:8px;}
+    .heat-card-studio{font-size:11px;color:rgba(11,12,22,.6);margin-bottom:8px;}
     .heat-tags{display:flex;gap:4px;flex-wrap:wrap;}
     .heat-tag{font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;background:var(--acid);border:3px solid var(--ink);}
 
@@ -304,11 +304,11 @@
     }
     .foot-logo{font-family:var(--font-display);font-size:30px;}
     .foot-logo span{color:var(--hot);}
-    .foot-desc{font-size:13px;color:rgba(249,246,228,.7);line-height:1.7;max-width:280px;margin-top:8px;}
+    .foot-desc{font-size:13px;color:rgba(251,245,223,.7);line-height:1.7;max-width:280px;margin-top:8px;}
     .foot-links{display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:14px;}
     .foot-links a{color:var(--cream);text-decoration:none;}
     .foot-links a:hover{color:var(--acid);}
-    .foot-copy{font-size:13px;color:rgba(249,246,228,.7);}
+    .foot-copy{font-size:13px;color:rgba(251,245,223,.7);}
     .foot-copy p+p{margin-top:4px;}
 
     /* RESPONSIVE */
@@ -420,7 +420,7 @@
       </div>
       <!-- Card 3: -3deg -->
       <div class="float-card" style="top:44%;left:12%;transform:rotate(-3deg)">
-        <div class="art" style="background:linear-gradient(135deg,#22d3ee,#a855f7,#facc15);aspect-ratio:3/4;display:grid;place-items:center;font-size:64px;">📻</div>
+        <div class="art" style="background:linear-gradient(135deg,#00d4f6,#a855f7,#facc15);aspect-ratio:3/4;display:grid;place-items:center;font-size:64px;">📻</div>
         <div class="card-meta" style="padding:8px 4px 4px;display:flex;align-items:center;justify-content:space-between;">
           <span style="font-family:var(--font-display);font-size:12px;">YOKAI RADIO</span>
           <span style="font-family:var(--font-display);font-size:9px;background:var(--ink);color:var(--cream);padding:2px 6px;">COZY</span>
