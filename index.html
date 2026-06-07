@@ -51,6 +51,7 @@
       background:rgba(249,246,228,0.95);
       backdrop-filter:blur(8px);
     }
+    /* No nav-divider — border comes from marquee border-top */
     .nav-inner{
       max-width:1280px;margin:0 auto;
       display:flex;align-items:center;justify-content:space-between;
@@ -85,10 +86,9 @@
     .nav-cta:hover{background:var(--hot);border-color:var(--hot);}
 
     /* MARQUEE */
-    .nav-divider{height:3px;background:var(--ink);}
     .marquee-bar{
-      overflow:hidden;background:var(--ink);
-      border-bottom:3px solid var(--ink);
+      overflow:hidden;background:var(--ink);color:var(--cream);
+      border-top:3px solid var(--ink);
       padding:6px 0;
     }
     .marquee-track{display:flex;width:max-content;animation:marquee 30s linear infinite;}
@@ -99,22 +99,24 @@
     .marquee-item .sep{color:var(--hot);}
 
     /* HERO */
-    .hero{position:relative;overflow-x:clip;}
+    .hero{position:relative;overflow:hidden;}
     .hero-halftone{
       position:absolute;inset:0;pointer-events:none;z-index:0;opacity:.3;
       background-image:radial-gradient(var(--ink) 1.5px,transparent 1.6px);
       background-size:8px 8px;
     }
+    /* Mobile-first: 1 column, then at lg (1024px) split 7/5 */
     .hero-inner{
       position:relative;z-index:1;
-      display:grid;grid-template-columns:1fr 1fr;gap:0;align-items:flex-start;
-      padding-top:128px;padding-bottom:96px;
+      max-width:1280px;margin:0 auto;
+      padding:64px 24px 96px;
+      display:grid;grid-template-columns:1fr;
+      gap:40px;align-items:center;
     }
-    /* Left column: dynamic horizontal padding matches a centered max-1280px container */
-    .hero-left{
-      padding-right:48px;
-      padding-left:max(24px, calc((100vw - 1280px) / 2 + 24px));
+    @media(min-width:1024px){
+      .hero-inner{grid-template-columns:7fr 5fr;}
     }
+    .hero-left{/* padding handled by hero-inner */}
     .hero-badge{
       display:inline-block;font-family:var(--font-display);font-size:11px;
       letter-spacing:.15em;background:var(--electric);color:var(--cream);
@@ -123,10 +125,11 @@
     }
     .hero-title{
       font-family:var(--font-display);line-height:.85;
-      font-size:clamp(64px,7.5rem,140px);letter-spacing:.01em;margin-bottom:24px;
+      font-size:14vw;letter-spacing:.01em;margin-bottom:32px;
     }
+    @media(min-width:640px){.hero-title{font-size:10vw;}}
+    @media(min-width:1024px){.hero-title{font-size:7.5rem;}}
     .hero-title .line{display:block;}
-    .hero-title .next-wrap{display:block;}
     .next-pill{
       background:var(--acid);border:3px solid var(--ink);
       padding:0 12px;display:inline-block;transform:rotate(-2deg);
@@ -161,7 +164,8 @@
     .avatars .avatar:first-child{margin-left:0;}
 
     /* CARD STACK */
-    .hero-cards{position:relative;height:600px;}
+    .hero-cards{position:relative;height:520px;}
+    @media(max-width:1023px){.hero-cards{height:360px;}}
     .picks-sticker{
       position:absolute;top:-8px;right:0;z-index:10;
       font-family:var(--font-display);font-size:11px;letter-spacing:.1em;
@@ -170,10 +174,11 @@
       animation:wobble 2.5s ease-in-out infinite;
     }
     .float-card{
-      position:absolute;width:224px;
+      position:absolute;width:192px;
       background:var(--cream);border:3px solid var(--ink);box-shadow:8px 8px 0 0 var(--ink);
       padding:8px;
     }
+    @media(min-width:640px){.float-card{width:224px;}}
     .float-card .art{aspect-ratio:3/4;display:grid;place-items:center;font-size:64px;}
     .float-card .card-meta{padding:8px 4px 4px;display:flex;align-items:center;justify-content:space-between;}
     .float-card .card-title{font-family:var(--font-display);font-size:12px;}
@@ -297,10 +302,7 @@
     .foot-col a:hover{color:var(--hot);}
 
     /* RESPONSIVE */
-    @media(max-width:960px){
-      .hero-inner{grid-template-columns:1fr;padding-top:56px;padding-bottom:56px;}
-      .hero-left{padding-right:24px;padding-left:24px;padding-bottom:40px;}
-      .hero-cards{height:360px;}
+    @media(max-width:1023px){
       .stats-inner,.heat-grid{grid-template-columns:repeat(2,1fr);}
       .steps,.cult-grid{grid-template-columns:1fr;}
       .foot-inner{grid-template-columns:1fr 1fr;}
@@ -329,7 +331,6 @@
       <a href="/discover" class="nav-cta">GET THE APP →</a>
     </nav>
   </div>
-  <div class="nav-divider"></div>
   <div class="marquee-bar">
     <div class="marquee-track">
       <span class="marquee-item">NEW DROPS WEEKLY <span class="sep">✦</span></span>
@@ -357,8 +358,7 @@
       <span class="hero-badge">BETA · v0.9 · 240,118 OTAKU</span>
       <h1 class="hero-title">
         <span class="line">FIND</span>
-        <span class="line">YOUR</span>
-        <span class="line"><span class="next-pill">NEXT</span></span>
+        <span class="line">YOUR <span class="next-pill">NEXT</span></span>
         <span class="line"><span class="obsession">OBSESSION</span><span class="period">.</span></span>
       </h1>
       <p class="hero-body">OTAKULT is the anime app for people who take their tastes seriously. No algorithm-slop. No filler. Just <strong>hand-curated picks</strong> matched to the vibe you're chasing tonight.</p>
