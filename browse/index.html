@@ -48,28 +48,28 @@
     .nav-link.active{background:var(--acid);border:3px solid var(--ink);}
     .nav-cta{font-family:var(--font-display);font-size:14px;padding:8px 16px;text-decoration:none;background:var(--ink);color:var(--cream);border:3px solid var(--ink);box-shadow:4px 4px 0 0 var(--ink);transition:background .1s;}
     .nav-cta:hover{background:var(--hot);border-color:var(--hot);}
-    .marquee-bar{overflow:hidden;background:var(--ink);border-bottom:3px solid var(--ink);padding:6px 0;}
+    .marquee-bar{overflow:hidden;background:var(--ink);border-top:3px solid var(--ink);padding:6px 0;}
     .marquee-track{display:flex;width:max-content;animation:marquee 30s linear infinite;}
     .marquee-item{font-family:var(--font-display);font-size:11px;color:var(--cream);letter-spacing:.15em;padding:0 24px;white-space:nowrap;}
     .marquee-item .sep{color:var(--hot);}
 
-    /* PAGE HEADER */
+    /* PAGE HEADER — flex row: title left, search right, aligned to bottom */
     .page-header{max-width:1280px;margin:0 auto;padding:48px 24px 0;}
-    .dir-jp-label{font-family:var(--font-mono-jp);font-size:12px;background:var(--ink);color:var(--cream);padding:4px 8px;display:inline-block;margin-bottom:12px;}
-    .dir-h1{font-family:var(--font-display);font-size:clamp(48px,8vw,120px);line-height:.85;letter-spacing:.01em;margin-bottom:16px;}
-    .dir-h1 .directory-word{background:var(--hot);color:var(--cream);padding:4px 12px;display:inline-block;transform:rotate(-1deg);transform-origin:left bottom;}
-    .dir-subtitle{font-size:16px;color:rgba(13,13,22,.7);max-width:560px;line-height:1.6;margin-bottom:8px;}
-    .dir-meta{font-family:var(--font-mono-jp);font-size:11px;letter-spacing:.1em;color:var(--hot);margin-bottom:32px;}
-
-    /* CONTROLS */
-    .controls{max-width:1280px;margin:0 auto;padding:0 24px 32px;}
+    .page-header-inner{display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:16px;}
+    .dir-jp-label{font-family:var(--font-mono-jp);font-size:13px;background:var(--ink);color:var(--cream);padding:4px 8px;display:inline-block;}
+    .dir-h1{font-family:var(--font-display);font-size:clamp(48px,8vw,96px);line-height:.85;letter-spacing:.01em;margin-top:12px;}
+    .dir-h1 .directory-word{background:var(--hot);color:var(--cream);padding:0 12px;display:inline-block;transform:rotate(-1deg);}
+    .dir-subtitle{font-size:16px;color:rgba(13,13,22,.7);max-width:560px;line-height:1.6;margin-top:16px;}
     .dir-search{
-      width:100%;max-width:480px;display:block;
+      width:320px;max-width:100%;
       font-family:var(--font-display);font-size:13px;letter-spacing:.05em;
       padding:12px 16px;border:3px solid var(--ink);
-      background:var(--cream);color:var(--ink);outline:none;margin-bottom:16px;
+      background:var(--cream);color:var(--ink);outline:none;
     }
-    .dir-search:focus{border-color:var(--hot);box-shadow:4px 4px 0 0 var(--hot);}
+    .dir-search:focus{background:var(--acid);}
+
+    /* FILTER PILLS */
+    .pill-row{max-width:1280px;margin:0 auto;padding:32px 24px 0;}
     .gpills{display:flex;flex-wrap:wrap;gap:8px;}
     .gpill{
       font-family:var(--font-display);font-size:10px;letter-spacing:.1em;
@@ -77,7 +77,7 @@
       background:transparent;color:var(--ink);cursor:pointer;transition:background .1s;
     }
     .gpill:hover{background:var(--acid);}
-    .gpill.active{background:var(--ink);color:var(--acid);box-shadow:3px 3px 0 0 var(--hot);}
+    .gpill.active{background:var(--ink);color:var(--acid);box-shadow:8px 8px 0 0 var(--hot);}
 
     /* CARD GRID */
     .dir-grid{
@@ -100,14 +100,12 @@
       background-image:radial-gradient(var(--ink) 1.5px,transparent 1.6px);
       background-size:8px 8px;opacity:.2;
     }
-    /* Score badge: bg-ink text-acid (exact Lovable source) */
-    .dir-score{position:absolute;top:10px;left:10px;z-index:1;background:var(--ink);color:var(--acid);font-family:var(--font-display);font-size:10px;padding:4px 8px;}
-    /* EP badge: bg-acid + brutal-border (exact Lovable source) */
-    .dir-ep{position:absolute;top:10px;right:10px;z-index:1;background:var(--acid);font-family:var(--font-display);font-size:10px;padding:4px 8px;border:2px solid var(--ink);}
-    .dir-jp{position:absolute;bottom:10px;right:10px;z-index:1;background:rgba(249,246,228,.95);font-family:var(--font-mono-jp);font-size:9px;padding:3px 8px;}
+    .dir-score{position:absolute;top:12px;left:12px;z-index:1;background:var(--ink);color:var(--acid);font-family:var(--font-display);font-size:10px;padding:4px 8px;}
+    .dir-ep{position:absolute;top:12px;right:12px;z-index:1;background:var(--acid);font-family:var(--font-display);font-size:10px;padding:4px 8px;border:3px solid var(--ink);}
+    .dir-jp{position:absolute;bottom:12px;right:12px;z-index:1;background:rgba(249,246,228,.95);font-family:var(--font-mono-jp);font-size:9px;padding:3px 8px;}
     .dir-body{padding:16px 18px 20px;}
     .dir-title-row{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:4px;}
-    .dir-title{font-family:var(--font-display);font-size:clamp(14px,2vw,20px);line-height:1.1;}
+    .dir-title{font-family:var(--font-display);font-size:24px;line-height:1.1;}
     .dir-year{font-family:var(--font-mono-jp);font-size:11px;color:rgba(13,13,22,.5);white-space:nowrap;}
     .dir-studio{font-size:11px;color:rgba(13,13,22,.5);margin-bottom:8px;}
     .dir-vibe{font-size:13px;font-style:italic;color:rgba(13,13,22,.8);line-height:1.55;margin-bottom:10px;}
@@ -122,17 +120,23 @@
       background:var(--cream);
     }
 
-    /* FOOTER */
-    footer{background:var(--cream);border-top:3px solid var(--ink);padding:40px 24px;}
-    .foot-inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;}
-    .foot-logo{font-family:var(--font-display);font-size:20px;}
+    /* FOOTER — dark matching Lovable SiteFooter */
+    footer{margin-top:96px;border-top:3px solid var(--ink);background:var(--ink);color:var(--cream);}
+    .foot-inner{max-width:1280px;margin:0 auto;padding:48px 24px;display:grid;grid-template-columns:1fr;gap:32px;}
+    @media(min-width:640px){.foot-inner{grid-template-columns:repeat(3,1fr);}}
+    .foot-logo{font-family:var(--font-display);font-size:30px;}
     .foot-logo span{color:var(--hot);}
-    footer p{font-size:12px;color:rgba(13,13,22,.5);}
-    footer nav a{font-family:var(--font-display);font-size:10px;color:rgba(13,13,22,.5);text-decoration:none;letter-spacing:.1em;margin-left:16px;}
-    footer nav a:hover{color:var(--ink);}
+    .foot-desc{font-size:13px;color:rgba(249,246,228,.7);line-height:1.7;max-width:280px;margin-top:8px;}
+    .foot-links{display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:14px;}
+    .foot-links a{color:var(--cream);text-decoration:none;}
+    .foot-links a:hover{color:var(--acid);}
+    .foot-copy{font-size:13px;color:rgba(249,246,228,.7);}
+    .foot-copy p+p{margin-top:4px;}
 
-    @media(max-width:900px){.dir-grid{grid-template-columns:repeat(2,1fr);}}
-    @media(max-width:580px){.dir-grid{grid-template-columns:1fr;}}
+    /* RESPONSIVE GRID */
+    .dir-grid{grid-template-columns:1fr;}
+    @media(min-width:640px){.dir-grid{grid-template-columns:repeat(2,1fr);}}
+    @media(min-width:1024px){.dir-grid{grid-template-columns:repeat(3,1fr);}}
   </style>
 </head>
 <body>
@@ -166,14 +170,17 @@
 </header>
 
 <div class="page-header">
-  <span class="dir-jp-label">// 全作品 · ALL</span>
-  <h1 class="dir-h1">THE<br/><span class="directory-word">DIRECTORY</span></h1>
-  <p class="dir-subtitle">12 titles hand-picked by the cult. Click anything to read why it slaps.</p>
-  <p class="dir-meta">// 12 TITLES · UPDATED WEEKLY</p>
+  <div class="page-header-inner">
+    <div>
+      <span class="dir-jp-label">// 全作品 · ALL</span>
+      <h1 class="dir-h1">THE<br/><span class="directory-word">DIRECTORY</span></h1>
+      <p class="dir-subtitle">12 titles hand-picked by the cult. Click anything to read why it slaps.</p>
+    </div>
+    <input class="dir-search" type="text" placeholder="search titles, studios, tags…" id="search-input" oninput="runFilter()"/>
+  </div>
 </div>
 
-<div class="controls">
-  <input class="dir-search" type="text" placeholder="search titles, studios, tags…" id="search-input" oninput="runFilter()"/>
+<div class="pill-row">
   <div class="gpills" id="gpills">
     <button class="gpill active" data-genre="ALL" onclick="filterCards(this,'ALL')">ALL</button><button class="gpill" data-genre="Action" onclick="filterCards(this,'Action')">Action</button><button class="gpill" data-genre="Adventure" onclick="filterCards(this,'Adventure')">Adventure</button><button class="gpill" data-genre="Classic" onclick="filterCards(this,'Classic')">Classic</button><button class="gpill" data-genre="Comedy" onclick="filterCards(this,'Comedy')">Comedy</button><button class="gpill" data-genre="Coming of Age" onclick="filterCards(this,'Coming of Age')">Coming of Age</button><button class="gpill" data-genre="Cozy" onclick="filterCards(this,'Cozy')">Cozy</button><button class="gpill" data-genre="Cyberpunk" onclick="filterCards(this,'Cyberpunk')">Cyberpunk</button><button class="gpill" data-genre="Dark Fantasy" onclick="filterCards(this,'Dark Fantasy')">Dark Fantasy</button><button class="gpill" data-genre="Existential" onclick="filterCards(this,'Existential')">Existential</button><button class="gpill" data-genre="Family" onclick="filterCards(this,'Family')">Family</button><button class="gpill" data-genre="Food" onclick="filterCards(this,'Food')">Food</button><button class="gpill" data-genre="Found Family" onclick="filterCards(this,'Found Family')">Found Family</button><button class="gpill" data-genre="Jazz" onclick="filterCards(this,'Jazz')">Jazz</button><button class="gpill" data-genre="Mecha" onclick="filterCards(this,'Mecha')">Mecha</button><button class="gpill" data-genre="Melancholy" onclick="filterCards(this,'Melancholy')">Melancholy</button><button class="gpill" data-genre="Music" onclick="filterCards(this,'Music')">Music</button><button class="gpill" data-genre="Mystical" onclick="filterCards(this,'Mystical')">Mystical</button><button class="gpill" data-genre="Noir" onclick="filterCards(this,'Noir')">Noir</button><button class="gpill" data-genre="Ocean" onclick="filterCards(this,'Ocean')">Ocean</button><button class="gpill" data-genre="Philosophy" onclick="filterCards(this,'Philosophy')">Philosophy</button><button class="gpill" data-genre="Political" onclick="filterCards(this,'Political')">Political</button><button class="gpill" data-genre="Psychological" onclick="filterCards(this,'Psychological')">Psychological</button><button class="gpill" data-genre="Rivals" onclick="filterCards(this,'Rivals')">Rivals</button><button class="gpill" data-genre="Romance" onclick="filterCards(this,'Romance')">Romance</button><button class="gpill" data-genre="Sci-Fi" onclick="filterCards(this,'Sci-Fi')">Sci-Fi</button><button class="gpill" data-genre="Slice of Life" onclick="filterCards(this,'Slice of Life')">Slice of Life</button><button class="gpill" data-genre="Sports" onclick="filterCards(this,'Sports')">Sports</button><button class="gpill" data-genre="Supernatural" onclick="filterCards(this,'Supernatural')">Supernatural</button><button class="gpill" data-genre="Tearjerker" onclick="filterCards(this,'Tearjerker')">Tearjerker</button><button class="gpill" data-genre="Titans" onclick="filterCards(this,'Titans')">Titans</button><button class="gpill" data-genre="Tragedy" onclick="filterCards(this,'Tragedy')">Tragedy</button>
   </div>
@@ -196,7 +203,7 @@
         </div>
         <div class="dir-studio">MAPPA</div>
         <p class="dir-vibe">"Walls don't keep the enemy out. They keep the truth in."</p>
-        <div class="dir-tags"><span style="font-family:var(--font-display);font-size:9px;letter-spacing:.05em;padding:3px 9px;border:2px solid var(--ink);background:var(--cream)">Action</span><span style="font-family:var(--font-display);font-size:9px;letter-spacing:.05em;padding:3px 9px;border:2px solid var(--ink);background:var(--cream)">Dark Fantasy</span><span style="font-family:var(--font-display);font-size:9px;letter-spacing:.05em;padding:3px 9px;border:2px solid var(--ink);background:var(--cream)">Political</span><span style="font-family:var(--font-display);font-size:9px;letter-spacing:.05em;padding:3px 9px;border:2px solid var(--ink);background:var(--cream)">Titans</span></div>
+        <div class="dir-tags"><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Action</span><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Dark Fantasy</span><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Political</span><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Titans</span></div>
       </div>
     </a>
     <a href="/browse/evangelion" class="dir-card" style="transform:rotate(0deg)">
@@ -214,7 +221,7 @@
         </div>
         <div class="dir-studio">Gainax</div>
         <p class="dir-vibe">"Get in the robot. Also your mom is in the robot."</p>
-        <div class="dir-tags"><span style="font-family:var(--font-display);font-size:9px;letter-spacing:.05em;padding:3px 9px;border:2px solid var(--ink);background:var(--cream)">Mecha</span><span style="font-family:var(--font-display);font-size:9px;letter-spacing:.05em;padding:3px 9px;border:2px solid var(--ink);background:var(--cream)">Psychological</span><span style="font-family:var(--font-display);font-size:9px;letter-spacing:.05em;padding:3px 9px;border:2px solid var(--ink);background:var(--cream)">Existential</span><span style="font-family:var(--font-display);font-size:9px;letter-spacing:.05em;padding:3px 9px;border:2px solid var(--ink);background:var(--cream)">Classic</span></div>
+        <div class="dir-tags"><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Mecha</span><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Psychological</span><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Existential</span><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Classic</span></div>
       </div>
     </a>
     <a href="/browse/neon-requiem" class="dir-card" style="transform:rotate(1deg)">
@@ -232,7 +239,7 @@
         </div>
         <div class="dir-studio">Studio Kaiju</div>
         <p class="dir-vibe">"City lights that only work when you're falling apart."</p>
-        <div class="dir-tags"><span style="font-family:var(--font-display);font-size:9px;letter-spacing:.05em;padding:3px 9px;border:2px solid var(--ink);background:var(--cream)">Cyberpunk</span><span style="font-family:var(--font-display);font-size:9px;letter-spacing:.05em;padding:3px 9px;border:2px solid var(--ink);background:var(--cream)">Music</span><span style="font-family:var(--font-display);font-size:9px;letter-spacing:.05em;padding:3px 9px;border:2px solid var(--ink);background:var(--cream)">Tragedy</span></div>
+        <div class="dir-tags"><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Cyberpunk</span><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Music</span><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Tragedy</span></div>
       </div>
     </a>
     <a href="/browse/fullmetal-alchemist" class="dir-card" style="transform:rotate(-1deg)">
@@ -250,7 +257,7 @@
         </div>
         <div class="dir-studio">Bones</div>
         <p class="dir-vibe">"Equivalent exchange: everything costs everything."</p>
-        <div class="dir-tags"><span style="font-family:var(--font-display);font-size:9px;letter-spacing:.05em;padding:3px 9px;border:2px solid var(--ink);background:var(--cream)">Action</span><span style="font-family:var(--font-display);font-size:9px;letter-spacing:.05em;padding:3px 9px;border:2px solid var(--ink);background:var(--cream)">Philosophy</span><span style="font-family:var(--font-display);font-size:9px;letter-spacing:.05em;padding:3px 9px;border:2px solid var(--ink);background:var(--cream)">Adventure</span></div>
+        <div class="dir-tags"><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Action</span><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Philosophy</span><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Adventure</span></div>
       </div>
     </a>
     <a href="/browse/cowboy-bebop" class="dir-card" style="transform:rotate(0deg)">
@@ -268,7 +275,7 @@
         </div>
         <div class="dir-studio">Sunrise</div>
         <p class="dir-vibe">"You're gonna carry that weight."</p>
-        <div class="dir-tags"><span style="font-family:var(--font-display);font-size:9px;letter-spacing:.05em;padding:3px 9px;border:2px solid var(--ink);background:var(--cream)">Sci-Fi</span><span style="font-family:var(--font-display);font-size:9px;letter-spacing:.05em;padding:3px 9px;border:2px solid var(--ink);background:var(--cream)">Jazz</span><span style="font-family:var(--font-display);font-size:9px;letter-spacing:.05em;padding:3px 9px;border:2px solid var(--ink);background:var(--cream)">Noir</span><span style="font-family:var(--font-display);font-size:9px;letter-spacing:.05em;padding:3px 9px;border:2px solid var(--ink);background:var(--cream)">Classic</span></div>
+        <div class="dir-tags"><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Sci-Fi</span><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Jazz</span><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Noir</span><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Classic</span></div>
       </div>
     </a>
     <a href="/browse/mob-psycho-100" class="dir-card" style="transform:rotate(1deg)">
@@ -286,7 +293,7 @@
         </div>
         <div class="dir-studio">Bones</div>
         <p class="dir-vibe">"The kindest boy in anime has the power to end the world."</p>
-        <div class="dir-tags"><span style="font-family:var(--font-display);font-size:9px;letter-spacing:.05em;padding:3px 9px;border:2px solid var(--ink);background:var(--cream)">Supernatural</span><span style="font-family:var(--font-display);font-size:9px;letter-spacing:.05em;padding:3px 9px;border:2px solid var(--ink);background:var(--cream)">Coming of Age</span><span style="font-family:var(--font-display);font-size:9px;letter-spacing:.05em;padding:3px 9px;border:2px solid var(--ink);background:var(--cream)">Comedy</span></div>
+        <div class="dir-tags"><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Supernatural</span><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Coming of Age</span><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Comedy</span></div>
       </div>
     </a>
     <a href="/browse/demon-slayer" class="dir-card" style="transform:rotate(-1deg)">
@@ -304,7 +311,7 @@
         </div>
         <div class="dir-studio">ufotable</div>
         <p class="dir-vibe">"The most beautiful thing ufotable ever made breathes fire."</p>
-        <div class="dir-tags"><span style="font-family:var(--font-display);font-size:9px;letter-spacing:.05em;padding:3px 9px;border:2px solid var(--ink);background:var(--cream)">Action</span><span style="font-family:var(--font-display);font-size:9px;letter-spacing:.05em;padding:3px 9px;border:2px solid var(--ink);background:var(--cream)">Supernatural</span><span style="font-family:var(--font-display);font-size:9px;letter-spacing:.05em;padding:3px 9px;border:2px solid var(--ink);background:var(--cream)">Family</span></div>
+        <div class="dir-tags"><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Action</span><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Supernatural</span><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Family</span></div>
       </div>
     </a>
     <a href="/browse/haikyuu" class="dir-card" style="transform:rotate(0deg)">
@@ -322,7 +329,7 @@
         </div>
         <div class="dir-studio">Production I.G</div>
         <p class="dir-vibe">"No superpowers. No magic. Just will and volleyball."</p>
-        <div class="dir-tags"><span style="font-family:var(--font-display);font-size:9px;letter-spacing:.05em;padding:3px 9px;border:2px solid var(--ink);background:var(--cream)">Sports</span><span style="font-family:var(--font-display);font-size:9px;letter-spacing:.05em;padding:3px 9px;border:2px solid var(--ink);background:var(--cream)">Found Family</span><span style="font-family:var(--font-display);font-size:9px;letter-spacing:.05em;padding:3px 9px;border:2px solid var(--ink);background:var(--cream)">Rivals</span></div>
+        <div class="dir-tags"><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Sports</span><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Found Family</span><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Rivals</span></div>
       </div>
     </a>
     <a href="/browse/spectral-koi" class="dir-card" style="transform:rotate(1deg)">
@@ -340,7 +347,7 @@
         </div>
         <div class="dir-studio">Hanabira Works</div>
         <p class="dir-vibe">"Lantern-lit summers, ghost fish, a softness that hurts."</p>
-        <div class="dir-tags"><span style="font-family:var(--font-display);font-size:9px;letter-spacing:.05em;padding:3px 9px;border:2px solid var(--ink);background:var(--cream)">Supernatural</span><span style="font-family:var(--font-display);font-size:9px;letter-spacing:.05em;padding:3px 9px;border:2px solid var(--ink);background:var(--cream)">Slice of Life</span><span style="font-family:var(--font-display);font-size:9px;letter-spacing:.05em;padding:3px 9px;border:2px solid var(--ink);background:var(--cream)">Melancholy</span></div>
+        <div class="dir-tags"><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Supernatural</span><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Slice of Life</span><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Melancholy</span></div>
       </div>
     </a>
     <a href="/browse/children-of-the-sea" class="dir-card" style="transform:rotate(-1deg)">
@@ -358,7 +365,7 @@
         </div>
         <div class="dir-studio">Studio 4°C</div>
         <p class="dir-vibe">"What the ocean remembers, the living have forgotten."</p>
-        <div class="dir-tags"><span style="font-family:var(--font-display);font-size:9px;letter-spacing:.05em;padding:3px 9px;border:2px solid var(--ink);background:var(--cream)">Supernatural</span><span style="font-family:var(--font-display);font-size:9px;letter-spacing:.05em;padding:3px 9px;border:2px solid var(--ink);background:var(--cream)">Mystical</span><span style="font-family:var(--font-display);font-size:9px;letter-spacing:.05em;padding:3px 9px;border:2px solid var(--ink);background:var(--cream)">Ocean</span></div>
+        <div class="dir-tags"><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Supernatural</span><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Mystical</span><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Ocean</span></div>
       </div>
     </a>
     <a href="/browse/your-lie-in-april" class="dir-card" style="transform:rotate(0deg)">
@@ -376,7 +383,7 @@
         </div>
         <div class="dir-studio">A-1 Pictures</div>
         <p class="dir-vibe">"Music as grief. Grief as music. You will not be okay."</p>
-        <div class="dir-tags"><span style="font-family:var(--font-display);font-size:9px;letter-spacing:.05em;padding:3px 9px;border:2px solid var(--ink);background:var(--cream)">Romance</span><span style="font-family:var(--font-display);font-size:9px;letter-spacing:.05em;padding:3px 9px;border:2px solid var(--ink);background:var(--cream)">Music</span><span style="font-family:var(--font-display);font-size:9px;letter-spacing:.05em;padding:3px 9px;border:2px solid var(--ink);background:var(--cream)">Tearjerker</span></div>
+        <div class="dir-tags"><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Romance</span><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Music</span><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Tearjerker</span></div>
       </div>
     </a>
     <a href="/browse/midnight-diner" class="dir-card" style="transform:rotate(1deg)">
@@ -394,7 +401,7 @@
         </div>
         <div class="dir-studio">TMS Entertainment</div>
         <p class="dir-vibe">"A counter, a ladle, and everyone's saddest story."</p>
-        <div class="dir-tags"><span style="font-family:var(--font-display);font-size:9px;letter-spacing:.05em;padding:3px 9px;border:2px solid var(--ink);background:var(--cream)">Slice of Life</span><span style="font-family:var(--font-display);font-size:9px;letter-spacing:.05em;padding:3px 9px;border:2px solid var(--ink);background:var(--cream)">Food</span><span style="font-family:var(--font-display);font-size:9px;letter-spacing:.05em;padding:3px 9px;border:2px solid var(--ink);background:var(--cream)">Cozy</span></div>
+        <div class="dir-tags"><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Slice of Life</span><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Food</span><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Cozy</span></div>
       </div>
     </a>
   <div class="empty" id="empty-state" style="display:none">NOTHING MATCHES. UNCLENCH THE FILTERS.</div>
@@ -402,13 +409,22 @@
 
 <footer>
   <div class="foot-inner">
-    <div class="foot-logo">OTAKULT<span>.</span></div>
-    <p>© 2026 OTAKULT collective. Hand-curated in Tokyo, Berlin, Oakland.</p>
-    <nav>
-      <a href="/">HOME</a>
-      <a href="/browse">DIRECTORY</a>
-      <a href="/discover">APP</a>
-    </nav>
+    <div>
+      <div class="foot-logo">OTAKULT<span>.</span></div>
+      <p class="foot-desc">A maximalist anime recommendation engine for people who take their obsessions seriously.</p>
+    </div>
+    <div class="foot-links">
+      <a href="/discover">iOS</a>
+      <a href="/discover">Android</a>
+      <a href="/discover">Discord</a>
+      <a href="#">Press kit</a>
+      <a href="#">Manifesto</a>
+      <a href="#">Tag glossary</a>
+    </div>
+    <div class="foot-copy">
+      <p>© 2026 OTAKULT collective.</p>
+      <p>Hand-curated in Tokyo, Berlin, Oakland.</p>
+    </div>
   </div>
 </footer>
 
