@@ -3,474 +3,125 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Browse Anime — OTAKULT</title>
-  <meta name="description" content="Browse 12,400+ hand-curated anime titles. Filter by genre, era, mood, and format. No algorithm slop." />
+  <title>Browse Anime — OTAKULT Directory</title>
+  <meta name="description" content="Browse 12+ curated anime titles. Filter by genre, vibe, era, and format. Find your next obsession." />
   <link rel="canonical" href="https://otakult.app/browse" />
-  <meta property="og:title" content="Browse Anime — OTAKULT" />
-  <meta property="og:description" content="Browse 12,400+ hand-curated anime titles. Filter by genre, era, mood, and format." />
+  <meta property="og:title" content="Browse Anime — OTAKULT Directory" />
+  <meta property="og:description" content="Browse curated anime. Filter by genre, vibe, era, and format." />
+  <meta property="og:type" content="website" />
   <meta property="og:url" content="https://otakult.app/browse" />
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"CollectionPage","name":"OTAKULT Anime Directory","description":"Curated anime directory with taste-matched recommendations","url":"https://otakult.app/browse"}</script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Space+Grotesk:wght@400;500;600;700&family=M+PLUS+1 Code:wght@400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Space+Grotesk:wght@400;500;600;700&family=M+PLUS+1+Code:wght@400;500&display=swap" rel="stylesheet" />
   <style>
-    :root {
-      --ink:      #0d0d16;
-      --cream:    #f9f6e4;
-      --hot:      #f5195a;
-      --electric: #7b35eb;
-      --acid:     #d4f229;
-      --cyan:     #22d3ee;
-    }
+    :root{--ink:#0d0d16;--cream:#f9f6e4;--hot:#f5195a;--electric:#7b35eb;--acid:#d4f229;--cyan:#22d3ee;}
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'Space Grotesk',sans-serif;background:var(--cream);color:var(--ink);overflow-x:hidden;}
 
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    /* NAV */
+    nav{position:sticky;top:0;z-index:100;background:var(--ink);border-bottom:3px solid #000;display:flex;align-items:center;justify-content:space-between;padding:0 32px;height:64px;}
+    .nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none;}
+    .logo-badge{width:40px;height:40px;background:var(--hot);border-radius:50%;border:2px solid rgba(255,255,255,0.3);display:flex;align-items:center;justify-content:center;font-family:'Bungee',sans-serif;font-size:13px;color:#fff;transform:rotate(-1.5deg);}
+    .logo-wm{font-family:'Bungee',sans-serif;font-size:22px;color:#fff;letter-spacing:1px;}
+    .logo-wm .dot{color:var(--hot);}
+    .nav-links{display:flex;align-items:center;gap:8px;}
+    .nav-link{font-family:'Bungee',sans-serif;font-size:12px;color:#fff;text-decoration:none;letter-spacing:1.5px;padding:8px 14px;transition:color 0.15s;}
+    .nav-link:hover{color:var(--hot);}
+    .nav-link.active{color:var(--acid);}
+    .nav-cta{font-family:'Bungee',sans-serif;font-size:12px;background:var(--hot);color:#fff;text-decoration:none;padding:10px 20px;letter-spacing:1px;border:2px solid var(--hot);}
 
-    body {
-      font-family: 'Space Grotesk', sans-serif;
-      background: var(--cream);
-      color: var(--ink);
-      overflow-x: hidden;
-    }
+    /* TICKER */
+    .ticker-wrap{background:var(--ink);border-bottom:3px solid #000;overflow:hidden;padding:10px 0;white-space:nowrap;}
+    .ticker-track{display:inline-flex;animation:marquee 32s linear infinite;}
+    @keyframes marquee{0%{transform:translateX(0);}100%{transform:translateX(-50%);}}
+    .ticker-item{font-family:'Bungee',sans-serif;font-size:11px;color:#fff;letter-spacing:2px;padding:0 20px;display:inline-flex;align-items:center;}
+    .tsep{color:var(--hot);margin-left:4px;}
 
-    .dot-bg {
-      background-color: var(--cream);
-      background-image: radial-gradient(circle, rgba(0,0,0,0.1) 1px, transparent 1px);
-      background-size: 20px 20px;
-    }
+    /* PAGE HEADER */
+    .page-header{background:var(--ink);padding:48px 60px 40px;border-bottom:3px solid #000;position:relative;overflow:hidden;}
+    .page-header::after{content:'';position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,0.04) 1px,transparent 1px);background-size:20px 20px;pointer-events:none;}
+    .ph-label{font-family:'M PLUS 1 Code',monospace;font-size:11px;color:var(--acid);letter-spacing:3px;display:block;margin-bottom:12px;position:relative;z-index:1;}
+    .ph-title{font-family:'Bungee',sans-serif;font-size:clamp(40px,7vw,88px);color:#fff;line-height:0.9;letter-spacing:-1px;position:relative;z-index:1;}
+    .ph-title .hl{color:var(--hot);}
+    .ph-sub{font-size:15px;color:rgba(255,255,255,0.6);margin-top:16px;max-width:500px;line-height:1.6;position:relative;z-index:1;}
+    .ph-count{font-family:'Bungee',sans-serif;font-size:11px;color:var(--acid);letter-spacing:2px;margin-top:16px;position:relative;z-index:1;}
 
-    /* ─── NAV ──────────────────────────────── */
-    nav {
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      background: var(--ink);
-      border-bottom: 3px solid #000;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 32px;
-      height: 64px;
-    }
+    /* LAYOUT */
+    .browse-layout{display:grid;grid-template-columns:260px 1fr;align-items:start;}
+    .sidebar{border-right:3px solid var(--ink);padding:32px 24px;position:sticky;top:64px;height:calc(100vh - 64px);overflow-y:auto;background:var(--cream);}
+    .main-content{padding:40px 48px 60px;}
 
-    .nav-logo {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      text-decoration: none;
-    }
-    .logo-badge {
-      width: 40px;
-      height: 40px;
-      background: var(--hot);
-      border-radius: 50%;
-      border: 2px solid rgba(255,255,255,0.3);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: 'Bungee', sans-serif;
-      font-size: 13px;
-      color: #fff;
-      transform: rotate(-1.5deg);
-    }
-    .logo-wordmark {
-      font-family: 'Bungee', sans-serif;
-      font-size: 22px;
-      color: #fff;
-      letter-spacing: 1px;
-    }
-    .logo-wordmark .dot { color: var(--hot); }
+    /* SIDEBAR */
+    .filter-group{margin-bottom:28px;}
+    .filter-group:last-child{margin-bottom:0;}
+    .fg-label{font-family:'Bungee',sans-serif;font-size:10px;letter-spacing:2px;color:var(--ink);opacity:0.5;margin-bottom:10px;display:block;}
+    .chips{display:flex;flex-wrap:wrap;gap:6px;}
+    .chip{font-family:'Bungee',sans-serif;font-size:9px;letter-spacing:1px;padding:6px 12px;border:2px solid var(--ink);background:transparent;cursor:pointer;transition:all 0.1s;color:var(--ink);}
+    .chip:hover,.chip.active{background:var(--ink);color:var(--cream);}
+    .chip.active-hot{background:var(--hot);border-color:var(--hot);color:#fff;}
+    .chip.active-electric{background:var(--electric);border-color:var(--electric);color:#fff;}
+    .chip.active-acid{background:var(--acid);border-color:var(--acid);color:var(--ink);}
+    .sidebar-cta{margin-top:32px;padding-top:24px;border-top:2px dashed rgba(0,0,0,0.15);}
+    .sidebar-cta p{font-size:13px;color:#666;line-height:1.6;margin-bottom:12px;}
+    .btn-sidebar{display:block;font-family:'Bungee',sans-serif;font-size:10px;letter-spacing:1.5px;padding:12px 16px;background:var(--hot);color:#fff;border:2px solid var(--hot);text-decoration:none;text-align:center;transition:transform 0.1s,box-shadow 0.1s;}
+    .btn-sidebar:hover{transform:translate(-2px,-2px);box-shadow:3px 3px 0 var(--ink);}
 
-    .nav-links {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .nav-link {
-      font-family: 'Bungee', sans-serif;
-      font-size: 12px;
-      color: #fff;
-      text-decoration: none;
-      letter-spacing: 1.5px;
-      padding: 8px 14px;
-      transition: color 0.15s;
-    }
-    .nav-link.active { border: 2px solid var(--acid); color: var(--acid); }
-    .nav-link:hover:not(.active) { color: var(--hot); }
-    .nav-cta {
-      font-family: 'Bungee', sans-serif;
-      font-size: 12px;
-      background: var(--hot);
-      color: #fff;
-      text-decoration: none;
-      padding: 10px 20px;
-      letter-spacing: 1px;
-      border: 2px solid var(--hot);
-      transition: background 0.15s;
-    }
-    .nav-cta:hover { background: #d40f4a; border-color: #d40f4a; }
+    /* SORT BAR */
+    .sort-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;padding-bottom:20px;border-bottom:2px solid rgba(0,0,0,0.1);}
+    .sort-label{font-family:'Bungee',sans-serif;font-size:11px;letter-spacing:1px;color:var(--ink);opacity:0.5;}
+    .sort-pills{display:flex;gap:6px;}
+    .sort-pill{font-family:'Bungee',sans-serif;font-size:9px;letter-spacing:1px;padding:5px 12px;border:2px solid var(--ink);background:transparent;cursor:pointer;color:var(--ink);}
+    .sort-pill.active{background:var(--ink);color:var(--cream);}
 
-    /* ─── PAGE HEADER ──────────────────────── */
-    .page-header {
-      padding: 56px 60px 40px;
-      border-bottom: 3px solid var(--ink);
-      background: var(--ink);
-    }
+    /* CARD GRID */
+    .card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:0;}
+    .anime-card{border:3px solid var(--ink);border-left:none;border-top:none;text-decoration:none;color:var(--ink);display:flex;flex-direction:column;background:#fff;transition:transform 0.12s,box-shadow 0.12s,z-index 0s;}
+    .anime-card:first-child,.anime-card:nth-child(4n+1){border-left:3px solid var(--ink);}
+    .anime-card:hover{transform:translate(-3px,-3px);box-shadow:6px 6px 0 var(--ink);z-index:2;position:relative;}
 
-    .header-top {
-      display: flex;
-      align-items: flex-end;
-      justify-content: space-between;
-      margin-bottom: 32px;
-    }
+    .card-art{height:200px;display:flex;align-items:center;justify-content:center;font-size:64px;position:relative;border-bottom:3px solid var(--ink);}
+    .card-score{position:absolute;top:10px;left:10px;background:var(--acid);border:2px solid var(--ink);font-family:'Bungee',sans-serif;font-size:10px;padding:4px 10px;}
+    .card-jp{position:absolute;bottom:10px;right:10px;background:rgba(255,255,255,0.92);border:1.5px solid var(--ink);font-family:'M PLUS 1 Code',monospace;font-size:8px;padding:3px 7px;}
+    .card-year{position:absolute;top:10px;right:10px;background:rgba(0,0,0,0.6);border:1.5px solid rgba(255,255,255,0.3);font-family:'Bungee',sans-serif;font-size:9px;color:#fff;padding:3px 8px;}
 
-    .header-eyebrow {
-      font-family: 'M PLUS 1 Code', monospace;
-      font-size: 11px;
-      color: var(--hot);
-      letter-spacing: 3px;
-      margin-bottom: 10px;
-      display: block;
-    }
+    .card-body{padding:16px 18px 18px;flex:1;display:flex;flex-direction:column;gap:8px;}
+    .card-title{font-family:'Bungee',sans-serif;font-size:16px;letter-spacing:0.3px;line-height:1.1;}
+    .card-tagline{font-size:12px;color:#555;line-height:1.55;font-style:italic;flex:1;}
+    .card-tags{display:flex;gap:5px;flex-wrap:wrap;}
+    .card-tag{font-family:'Bungee',sans-serif;font-size:8px;letter-spacing:1px;padding:3px 8px;border:2px solid var(--ink);background:transparent;color:var(--ink);}
+    .card-tag.hot{background:var(--hot);border-color:var(--hot);color:#fff;}
+    .card-tag.electric{background:var(--electric);border-color:var(--electric);color:#fff;}
+    .card-tag.acid{background:var(--acid);border-color:var(--acid);color:var(--ink);}
+    .card-cta{font-family:'Bungee',sans-serif;font-size:10px;letter-spacing:1px;padding:10px 14px;background:var(--ink);color:#fff;border:none;cursor:pointer;text-align:center;margin-top:4px;display:block;}
 
-    .page-title {
-      font-family: 'Bungee', sans-serif;
-      font-size: clamp(52px, 8vw, 96px);
-      color: #fff;
-      line-height: 0.9;
-      letter-spacing: -2px;
-    }
-    .page-title .highlight {
-      color: var(--acid);
-    }
+    /* FOOTER */
+    footer{background:#080808;border-top:3px solid #1a1a1a;padding:40px 60px;display:flex;align-items:center;justify-content:space-between;}
+    .foot-logo{font-family:'Bungee',sans-serif;font-size:20px;color:#fff;}
+    .foot-logo span{color:var(--hot);}
+    footer p{font-size:12px;color:#444;}
+    footer nav a{font-family:'Bungee',sans-serif;font-size:10px;color:#666;text-decoration:none;letter-spacing:1.5px;margin-left:20px;}
+    footer nav a:hover{color:#fff;}
 
-    .header-meta {
-      font-size: 13px;
-      color: #666;
-      font-weight: 500;
-      letter-spacing: 1px;
-      text-align: right;
-    }
-    .header-meta strong { color: var(--acid); font-size: 20px; display: block; font-family: 'Bungee', sans-serif; }
-
-    /* ─── SEARCH BAR ───────────────────────── */
-    .search-wrap {
-      position: relative;
-      max-width: 540px;
-    }
-    .search-input {
-      width: 100%;
-      background: #fff;
-      border: 3px solid #fff;
-      padding: 14px 54px 14px 20px;
-      font-family: 'Space Grotesk', sans-serif;
-      font-size: 15px;
-      color: var(--ink);
-      outline: none;
-      box-shadow: 4px 4px 0 var(--acid);
-    }
-    .search-input::placeholder { color: #aaa; }
-    .search-icon {
-      position: absolute;
-      right: 18px;
-      top: 50%;
-      transform: translateY(-50%);
-      font-size: 18px;
-      pointer-events: none;
-    }
-
-    /* ─── FILTER BAR ───────────────────────── */
-    .filter-bar {
-      display: flex;
-      gap: 0;
-      overflow-x: auto;
-      scrollbar-width: none;
-      border-bottom: 3px solid var(--ink);
-    }
-    .filter-bar::-webkit-scrollbar { display: none; }
-
-    .filter-btn {
-      font-family: 'Bungee', sans-serif;
-      font-size: 11px;
-      letter-spacing: 1.5px;
-      padding: 14px 20px;
-      border: none;
-      border-right: 3px solid var(--ink);
-      background: var(--cream);
-      color: var(--ink);
-      cursor: pointer;
-      white-space: nowrap;
-      transition: background 0.12s, color 0.12s;
-    }
-    .filter-btn:hover { background: var(--ink); color: #fff; }
-    .filter-btn.active { background: var(--hot); color: #fff; }
-    .filter-btn.active-acid { background: var(--acid); color: var(--ink); }
-    .filter-btn.active-electric { background: var(--electric); color: #fff; }
-
-    /* ─── MAIN LAYOUT ──────────────────────── */
-    .layout {
-      display: grid;
-      grid-template-columns: 260px 1fr;
-      min-height: calc(100vh - 64px - 200px);
-    }
-
-    /* ─── SIDEBAR ──────────────────────────── */
-    .sidebar {
-      border-right: 3px solid var(--ink);
-      padding: 28px 24px;
-      position: sticky;
-      top: 64px;
-      height: calc(100vh - 64px);
-      overflow-y: auto;
-      scrollbar-width: thin;
-      background: var(--cream);
-    }
-
-    .filter-group { margin-bottom: 28px; }
-    .filter-group-title {
-      font-family: 'Bungee', sans-serif;
-      font-size: 10px;
-      letter-spacing: 2.5px;
-      color: #aaa;
-      margin-bottom: 12px;
-      display: block;
-      padding-bottom: 8px;
-      border-bottom: 2px solid var(--ink);
-    }
-
-    .chip-list { display: flex; flex-wrap: wrap; gap: 7px; }
-
-    .chip {
-      font-family: 'Bungee', sans-serif;
-      font-size: 9px;
-      letter-spacing: 1px;
-      padding: 6px 11px;
-      border: 2px solid var(--ink);
-      background: transparent;
-      color: var(--ink);
-      cursor: pointer;
-      transition: background 0.1s, color 0.1s;
-    }
-    .chip:hover { background: var(--ink); color: #fff; }
-    .chip.on.genre-action    { background: var(--hot); color: #fff; border-color: var(--hot); }
-    .chip.on.genre-drama     { background: var(--electric); color: #fff; border-color: var(--electric); }
-    .chip.on.genre-comedy    { background: var(--acid); color: var(--ink); border-color: var(--acid); }
-    .chip.on.genre-sci-fi    { background: var(--cyan); color: var(--ink); border-color: var(--cyan); }
-    .chip.on.genre-horror    { background: #1a1a2e; color: #fff; border-color: #1a1a2e; }
-    .chip.on.genre-romance   { background: #ff6b9d; color: #fff; border-color: #ff6b9d; }
-    .chip.on.genre-sports    { background: #f97316; color: #fff; border-color: #f97316; }
-    .chip.on.genre-mecha     { background: #64748b; color: #fff; border-color: #64748b; }
-    .chip.on                 { background: var(--ink); color: #fff; }
-
-    /* ─── GRID ─────────────────────────────── */
-    .main { padding: 28px 28px 48px; }
-
-    .results-bar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 22px;
-    }
-    .results-count {
-      font-family: 'Bungee', sans-serif;
-      font-size: 13px;
-      color: var(--ink);
-      letter-spacing: 0.5px;
-    }
-    .results-count span { color: var(--hot); }
-
-    .sort-select {
-      font-family: 'Bungee', sans-serif;
-      font-size: 10px;
-      letter-spacing: 1.5px;
-      padding: 8px 14px;
-      border: 2px solid var(--ink);
-      background: var(--cream);
-      color: var(--ink);
-      cursor: pointer;
-      outline: none;
-      appearance: none;
-    }
-
-    .anime-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 18px;
-    }
-
-    /* ─── ANIME CARD ───────────────────────── */
-    .acard {
-      border: 3px solid var(--ink);
-      background: #fff;
-      box-shadow: 4px 4px 0 var(--ink);
-      cursor: pointer;
-      transition: transform 0.12s, box-shadow 0.12s;
-      text-decoration: none;
-      color: var(--ink);
-      display: flex;
-      flex-direction: column;
-    }
-    .acard:hover {
-      transform: translate(-2px, -2px);
-      box-shadow: 6px 6px 0 var(--ink);
-    }
-
-    .acard-art {
-      position: relative;
-      height: 200px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 56px;
-      flex-shrink: 0;
-    }
-
-    .acard-gem {
-      position: absolute;
-      top: 8px;
-      left: 8px;
-      font-size: 18px;
-    }
-
-    .acard-score {
-      position: absolute;
-      top: 8px;
-      right: 8px;
-      background: var(--acid);
-      border: 2px solid var(--ink);
-      font-family: 'Bungee', sans-serif;
-      font-size: 10px;
-      padding: 3px 8px;
-      letter-spacing: 0.5px;
-    }
-
-    .acard-jp {
-      position: absolute;
-      bottom: 8px;
-      right: 8px;
-      background: rgba(255,255,255,0.9);
-      border: 1.5px solid var(--ink);
-      font-family: 'M PLUS 1 Code', monospace;
-      font-size: 9px;
-      padding: 3px 7px;
-    }
-
-    .acard-body {
-      padding: 12px 14px 14px;
-      border-top: 3px solid var(--ink);
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .acard-title {
-      font-family: 'Bungee', sans-serif;
-      font-size: 13px;
-      letter-spacing: 0.3px;
-      line-height: 1.2;
-    }
-
-    .acard-meta {
-      font-size: 11px;
-      color: #999;
-      font-weight: 600;
-    }
-
-    .acard-tags {
-      display: flex;
-      gap: 5px;
-      flex-wrap: wrap;
-      margin-top: auto;
-    }
-
-    .tag {
-      font-family: 'Bungee', sans-serif;
-      font-size: 8px;
-      letter-spacing: 1px;
-      padding: 3px 7px;
-      border: 1.5px solid var(--ink);
-    }
-    .tag.action   { background: var(--hot); color: #fff; border-color: var(--hot); }
-    .tag.drama    { background: var(--electric); color: #fff; border-color: var(--electric); }
-    .tag.comedy   { background: var(--acid); color: var(--ink); border-color: var(--acid); }
-    .tag.sci-fi   { background: var(--cyan); color: var(--ink); border-color: var(--cyan); }
-    .tag.horror   { background: #1a1a2e; color: #fff; border-color: #1a1a2e; }
-    .tag.romance  { background: #ff6b9d; color: #fff; border-color: #ff6b9d; }
-    .tag.sports   { background: #f97316; color: #fff; border-color: #f97316; }
-    .tag.mecha    { background: #64748b; color: #fff; border-color: #64748b; }
-    .tag.mystery  { background: #8b5cf6; color: #fff; border-color: #8b5cf6; }
-    .tag.slice    { background: #34d399; color: var(--ink); border-color: #34d399; }
-
-    /* ─── LOAD MORE ────────────────────────── */
-    .load-more-wrap {
-      display: flex;
-      justify-content: center;
-      margin-top: 48px;
-    }
-
-    .btn {
-      font-family: 'Bungee', sans-serif;
-      font-size: 12px;
-      letter-spacing: 1.5px;
-      padding: 14px 28px;
-      border: 3px solid var(--ink);
-      cursor: pointer;
-      transition: transform 0.1s, box-shadow 0.1s;
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .btn:hover { transform: translate(-2px,-2px); box-shadow: 4px 4px 0 var(--ink); }
-    .btn-ink { background: var(--ink); color: #fff; }
-    .btn-hot { background: var(--hot); color: #fff; border-color: var(--hot); }
-
-    /* ─── FOOTER ───────────────────────────── */
-    footer {
-      background: #080808;
-      border-top: 3px solid #1a1a1a;
-      padding: 40px 60px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    .foot-logo {
-      font-family: 'Bungee', sans-serif;
-      font-size: 20px;
-      color: #fff;
-    }
-    .foot-logo span { color: var(--hot); }
-    footer p { font-size: 12px; color: #444; }
-    footer nav a {
-      font-family: 'Bungee', sans-serif;
-      font-size: 10px;
-      color: #666;
-      text-decoration: none;
-      letter-spacing: 1.5px;
-      margin-left: 20px;
-    }
-    footer nav a:hover { color: #fff; }
-
-    /* ─── RESPONSIVE ───────────────────────── */
-    @media (max-width: 900px) {
-      .layout { grid-template-columns: 1fr; }
-      .sidebar { position: static; height: auto; border-right: none; border-bottom: 3px solid var(--ink); }
-      .page-header { padding: 40px 24px 32px; }
-      .header-top { flex-direction: column; align-items: flex-start; gap: 20px; }
-      .main { padding: 20px 16px 40px; }
-      footer { flex-direction: column; gap: 16px; padding: 32px 24px; text-align: center; }
-      footer nav { margin-top: 8px; }
-      footer nav a { margin-left: 12px; }
-      nav { padding: 0 20px; }
+    /* RESPONSIVE */
+    @media(max-width:900px){
+      .browse-layout{grid-template-columns:1fr;}
+      .sidebar{position:static;height:auto;border-right:none;border-bottom:3px solid var(--ink);padding:24px;}
+      .main-content{padding:28px 20px 48px;}
+      .page-header{padding:36px 24px 32px;}
+      .card-grid{grid-template-columns:repeat(auto-fill,minmax(200px,1fr));}
+      .anime-card,.anime-card:nth-child(4n+1){border-left:3px solid var(--ink);}
+      footer{flex-direction:column;gap:16px;padding:32px 24px;text-align:center;}
+      nav{padding:0 20px;}
     }
   </style>
 </head>
 <body>
 
-<!-- ═══ NAV ═══════════════════════════════════════════════ -->
 <nav>
   <a href="/" class="nav-logo">
     <div class="logo-badge">O!</div>
-    <span class="logo-wordmark">OTAKULT<span class="dot">.</span></span>
+    <span class="logo-wm">OTAKULT<span class="dot">.</span></span>
   </a>
   <div class="nav-links">
     <a href="/" class="nav-link">HOME</a>
@@ -479,361 +130,352 @@
   </div>
 </nav>
 
-<!-- ═══ PAGE HEADER ═════════════════════════════════════════ -->
+<div class="ticker-wrap"><div class="ticker-track">
+  <span class="ticker-item">12 TITLES AND COUNTING <span class="tsep">✦</span></span>
+  <span class="ticker-item">HAND-CURATED, NO ALGORITHM SLOP <span class="tsep">✦</span></span>
+  <span class="ticker-item" style="font-family:'M PLUS 1 Code',monospace">全作品レビュー済み <span class="tsep">✦</span></span>
+  <span class="ticker-item">CLICK ANY CARD FOR SIMILAR PICKS <span class="tsep">✦</span></span>
+  <span class="ticker-item">NEW TITLES ADDED WEEKLY <span class="tsep">✦</span></span>
+  <span class="ticker-item">SEE WHAT MATCHES YOUR TASTE <span class="tsep">✦</span></span>
+  <span class="ticker-item">12 TITLES AND COUNTING <span class="tsep">✦</span></span>
+  <span class="ticker-item">HAND-CURATED, NO ALGORITHM SLOP <span class="tsep">✦</span></span>
+  <span class="ticker-item" style="font-family:'M PLUS 1 Code',monospace">全作品レビュー済み <span class="tsep">✦</span></span>
+  <span class="ticker-item">CLICK ANY CARD FOR SIMILAR PICKS <span class="tsep">✦</span></span>
+  <span class="ticker-item">NEW TITLES ADDED WEEKLY <span class="tsep">✦</span></span>
+  <span class="ticker-item">SEE WHAT MATCHES YOUR TASTE <span class="tsep">✦</span></span>
+</div></div>
+
 <div class="page-header">
-  <div class="header-top">
-    <div>
-      <span class="header-eyebrow">// ディレクトリ — THE CATALOG</span>
-      <h1 class="page-title">BROWSE<br><span class="highlight">ANIME.</span></h1>
-    </div>
-    <div class="header-meta">
-      <strong>12,400+</strong>
-      titles indexed
-    </div>
-  </div>
-  <div class="search-wrap">
-    <input class="search-input" type="text" placeholder="Search titles, studios, tags..." id="searchInput" />
-    <span class="search-icon">⌕</span>
-  </div>
+  <span class="ph-label">// 作品一覧 — BROWSE THE DIRECTORY</span>
+  <h1 class="ph-title">EVERY TITLE<br>EARNS ITS <span class="hl">SPOT.</span></h1>
+  <p class="ph-sub">No filler. No franchise spam. Every entry is chosen because it hits different — and links to everything similar you'll obsess over next.</p>
+  <span class="ph-count">// 12 TITLES · UPDATED WEEKLY</span>
 </div>
 
-<!-- ═══ FILTER BAR ══════════════════════════════════════════ -->
-<div class="filter-bar">
-  <button class="filter-btn active" data-filter="all" onclick="setTopFilter(this,'all')">ALL</button>
-  <button class="filter-btn" data-filter="trending" onclick="setTopFilter(this,'trending')">🔥 TRENDING</button>
-  <button class="filter-btn" data-filter="gems" onclick="setTopFilter(this,'gems')">💎 HIDDEN GEMS</button>
-  <button class="filter-btn" data-filter="classics" onclick="setTopFilter(this,'classics')">⭐ CLASSICS</button>
-  <button class="filter-btn" data-filter="new" onclick="setTopFilter(this,'new')">✨ NEW</button>
-  <button class="filter-btn" data-filter="short" onclick="setTopFilter(this,'short')">⚡ SHORT (&lt;13 EP)</button>
-  <button class="filter-btn" data-filter="movies" onclick="setTopFilter(this,'movies')">🎬 MOVIES</button>
-</div>
-
-<!-- ═══ LAYOUT ══════════════════════════════════════════════ -->
-<div class="layout">
-
-  <!-- Sidebar filters -->
+<div class="browse-layout">
+  <!-- SIDEBAR FILTERS -->
   <aside class="sidebar">
-
     <div class="filter-group">
-      <span class="filter-group-title">GENRE</span>
-      <div class="chip-list">
-        <button class="chip genre-action" onclick="toggleChip(this)">ACTION</button>
-        <button class="chip genre-drama" onclick="toggleChip(this)">DRAMA</button>
-        <button class="chip genre-comedy" onclick="toggleChip(this)">COMEDY</button>
-        <button class="chip genre-sci-fi" onclick="toggleChip(this)">SCI-FI</button>
-        <button class="chip genre-horror" onclick="toggleChip(this)">HORROR</button>
-        <button class="chip genre-romance" onclick="toggleChip(this)">ROMANCE</button>
-        <button class="chip genre-sports" onclick="toggleChip(this)">SPORTS</button>
-        <button class="chip genre-mecha" onclick="toggleChip(this)">MECHA</button>
-        <button class="chip" onclick="toggleChip(this)">MYSTERY</button>
-        <button class="chip" onclick="toggleChip(this)">SLICE OF LIFE</button>
-        <button class="chip" onclick="toggleChip(this)">PSYCHOLOGICAL</button>
-        <button class="chip" onclick="toggleChip(this)">ISEKAI</button>
-        <button class="chip" onclick="toggleChip(this)">FANTASY</button>
-        <button class="chip" onclick="toggleChip(this)">SUPERNATURAL</button>
-        <button class="chip" onclick="toggleChip(this)">THRILLER</button>
+      <span class="fg-label">GENRE</span>
+      <div class="chips">
+        <button class="chip active-hot">ACTION</button>
+        <button class="chip">SLICE OF LIFE</button>
+        <button class="chip">SCI-FI</button>
+        <button class="chip">SUPERNATURAL</button>
+        <button class="chip">SPORTS</button>
+        <button class="chip">ROMANCE</button>
+        <button class="chip">MECHA</button>
+        <button class="chip">HORROR</button>
       </div>
     </div>
-
     <div class="filter-group">
-      <span class="filter-group-title">VIBE</span>
-      <div class="chip-list">
-        <button class="chip" onclick="toggleChip(this)">DARK &amp; GRITTY</button>
-        <button class="chip" onclick="toggleChip(this)">FEEL-GOOD</button>
-        <button class="chip" onclick="toggleChip(this)">MIND-BENDING</button>
-        <button class="chip" onclick="toggleChip(this)">EMOTIONAL</button>
-        <button class="chip" onclick="toggleChip(this)">HYPE</button>
-        <button class="chip" onclick="toggleChip(this)">COZY</button>
-        <button class="chip" onclick="toggleChip(this)">CHAOTIC</button>
-        <button class="chip" onclick="toggleChip(this)">AESTHETIC</button>
+      <span class="fg-label">VIBE</span>
+      <div class="chips">
+        <button class="chip active-electric">TEARJERKER</button>
+        <button class="chip">COZY</button>
+        <button class="chip">HYPE</button>
+        <button class="chip">DARK</button>
+        <button class="chip">MYSTICAL</button>
+        <button class="chip">PSYCHOLOGICAL</button>
+        <button class="chip">MELANCHOLY</button>
       </div>
     </div>
-
     <div class="filter-group">
-      <span class="filter-group-title">ERA</span>
-      <div class="chip-list">
-        <button class="chip" onclick="toggleChip(this)">2020s</button>
-        <button class="chip" onclick="toggleChip(this)">2010s</button>
-        <button class="chip" onclick="toggleChip(this)">2000s</button>
-        <button class="chip" onclick="toggleChip(this)">90s</button>
-        <button class="chip" onclick="toggleChip(this)">80s &amp; OLDER</button>
+      <span class="fg-label">ERA</span>
+      <div class="chips">
+        <button class="chip">CLASSIC</button>
+        <button class="chip">2000s</button>
+        <button class="chip">2010s</button>
+        <button class="chip active-acid">2020s</button>
       </div>
     </div>
-
     <div class="filter-group">
-      <span class="filter-group-title">FORMAT</span>
-      <div class="chip-list">
-        <button class="chip" onclick="toggleChip(this)">SERIES</button>
-        <button class="chip" onclick="toggleChip(this)">MOVIE</button>
-        <button class="chip" onclick="toggleChip(this)">OVA</button>
-        <button class="chip" onclick="toggleChip(this)">SHORT</button>
+      <span class="fg-label">FORMAT</span>
+      <div class="chips">
+        <button class="chip">TV SERIES</button>
+        <button class="chip">FILM</button>
+        <button class="chip">OVA</button>
+        <button class="chip">SHORT</button>
       </div>
     </div>
-
     <div class="filter-group">
-      <span class="filter-group-title">SCORE</span>
-      <div class="chip-list">
-        <button class="chip" onclick="toggleChip(this)">9+ MASTERPIECE</button>
-        <button class="chip" onclick="toggleChip(this)">8+ GREAT</button>
-        <button class="chip" onclick="toggleChip(this)">7+ SOLID</button>
+      <span class="fg-label">SCORE</span>
+      <div class="chips">
+        <button class="chip">★ 9+</button>
+        <button class="chip">★ 8+</button>
+        <button class="chip">★ 7+</button>
+        <button class="chip">ALL</button>
       </div>
     </div>
-
+    <div class="sidebar-cta">
+      <p>Not sure where to start? Let OTAKULT match you to your perfect anime in 60 seconds.</p>
+      <a href="/discover" class="btn-sidebar">START TASTE CHECK →</a>
+    </div>
   </aside>
 
-  <!-- Main grid -->
-  <main class="main dot-bg">
-    <div class="results-bar">
-      <span class="results-count">Showing <span id="countDisplay">24</span> of <span>12,418</span> titles</span>
-      <select class="sort-select" onchange="handleSort(this.value)">
-        <option value="score">SORT: SCORE ↓</option>
-        <option value="popular">SORT: POPULARITY</option>
-        <option value="new">SORT: NEWEST</option>
-        <option value="trending">SORT: TRENDING</option>
-      </select>
+  <!-- CARD GRID -->
+  <main class="main-content">
+    <div class="sort-bar">
+      <span class="sort-label">SHOWING 12 TITLES</span>
+      <div class="sort-pills">
+        <button class="sort-pill active">FEATURED</button>
+        <button class="sort-pill">SCORE ↓</button>
+        <button class="sort-pill">NEWEST</button>
+        <button class="sort-pill">A–Z</button>
+      </div>
     </div>
 
-    <div class="anime-grid" id="animeGrid">
+    <div class="card-grid">
 
-      <a href="/discover" class="acard">
-        <div class="acard-art" style="background:linear-gradient(135deg,#a855f7,#ec4899)">
+      <!-- ATTACK ON TITAN -->
+      <a href="/browse/attack-on-titan" class="anime-card">
+        <div class="card-art" style="background:linear-gradient(135deg,rgb(30,30,30) 0%,rgb(180,20,20) 50%,rgb(80,80,80) 100%)">
           ⚔️
-          <div class="acard-score">★ 9.3</div>
-          <div class="acard-jp">進撃の巨人</div>
+          <div class="card-score">★ 9.0</div>
+          <div class="card-year">2013</div>
+          <div class="card-jp">進撃の巨人</div>
         </div>
-        <div class="acard-body">
-          <div class="acard-title">ATTACK ON TITAN</div>
-          <div class="acard-meta">WIT / MAPPA · 2013</div>
-          <div class="acard-tags">
-            <span class="tag action">ACTION</span>
-            <span class="tag drama">DRAMA</span>
+        <div class="card-body">
+          <div class="card-title">ATTACK ON TITAN</div>
+          <div class="card-tagline">"Walls don't keep the enemy out. They keep the truth in."</div>
+          <div class="card-tags">
+            <span class="card-tag hot">ACTION</span>
+            <span class="card-tag">DARK FANTASY</span>
+            <span class="card-tag">POLITICAL</span>
           </div>
+          <span class="card-cta">VIEW + SIMILAR →</span>
         </div>
       </a>
 
-      <a href="/discover" class="acard">
-        <div class="acard-gem">💎</div>
-        <div class="acard-art" style="background:linear-gradient(135deg,#1e3a5f,#2d6a4f)">
-          🌊
-          <div class="acard-score">★ 8.4</div>
-          <div class="acard-jp">海獣の子供</div>
-        </div>
-        <div class="acard-body">
-          <div class="acard-title">CHILDREN OF THE SEA</div>
-          <div class="acard-meta">Studio 4°C · 2019</div>
-          <div class="acard-tags">
-            <span class="tag drama">DRAMA</span>
-            <span class="tag slice">MYSTICAL</span>
-          </div>
-        </div>
-      </a>
-
-      <a href="/discover" class="acard">
-        <div class="acard-art" style="background:linear-gradient(135deg,#7c3aed,#4338ca)">
+      <!-- EVANGELION -->
+      <a href="/browse/evangelion" class="anime-card">
+        <div class="card-art" style="background:linear-gradient(135deg,rgb(180,30,80) 0%,rgb(100,0,160) 50%,rgb(240,200,50) 100%)">
           🤖
-          <div class="acard-score">★ 9.1</div>
-          <div class="acard-jp">新世紀エヴァンゲリオン</div>
+          <div class="card-score">★ 9.0</div>
+          <div class="card-year">1995</div>
+          <div class="card-jp">エヴァンゲリオン</div>
         </div>
-        <div class="acard-body">
-          <div class="acard-title">NEON GENESIS EVANGELION</div>
-          <div class="acard-meta">Gainax · 1995</div>
-          <div class="acard-tags">
-            <span class="tag mecha">MECHA</span>
-            <span class="tag drama">DRAMA</span>
+        <div class="card-body">
+          <div class="card-title">EVANGELION</div>
+          <div class="card-tagline">"Get in the robot. Also your mom is in the robot."</div>
+          <div class="card-tags">
+            <span class="card-tag electric">MECHA</span>
+            <span class="card-tag">PSYCHOLOGICAL</span>
+            <span class="card-tag">CLASSIC</span>
           </div>
+          <span class="card-cta">VIEW + SIMILAR →</span>
         </div>
       </a>
 
-      <a href="/discover" class="acard">
-        <div class="acard-art" style="background:linear-gradient(135deg,#064e3b,#065f46)">
-          🎌
-          <div class="acard-score">★ 8.8</div>
-          <div class="acard-jp">鬼滅の刃</div>
+      <!-- NEON REQUIEM -->
+      <a href="/browse/neon-requiem" class="anime-card">
+        <div class="card-art" style="background:linear-gradient(135deg,rgb(255,46,138) 0%,rgb(124,58,237) 50%,rgb(14,165,233) 100%)">
+          🎸
+          <div class="card-score">★ 9.1</div>
+          <div class="card-year">2021</div>
+          <div class="card-jp">ネオン・レクイエム</div>
         </div>
-        <div class="acard-body">
-          <div class="acard-title">DEMON SLAYER</div>
-          <div class="acard-meta">ufotable · 2019</div>
-          <div class="acard-tags">
-            <span class="tag action">ACTION</span>
-            <span class="tag drama">DRAMA</span>
+        <div class="card-body">
+          <div class="card-title">NEON REQUIEM</div>
+          <div class="card-tagline">"City lights that only work when you're falling apart."</div>
+          <div class="card-tags">
+            <span class="card-tag hot">CYBERPUNK</span>
+            <span class="card-tag">MUSIC</span>
+            <span class="card-tag">TRAGEDY</span>
           </div>
+          <span class="card-cta">VIEW + SIMILAR →</span>
         </div>
       </a>
 
-      <a href="/discover" class="acard">
-        <div class="acard-gem">💎</div>
-        <div class="acard-art" style="background:linear-gradient(135deg,#1e1b4b,#312e81)">
-          🌸
-          <div class="acard-score">★ 8.6</div>
-          <div class="acard-jp">花物語</div>
+      <!-- FULLMETAL ALCHEMIST -->
+      <a href="/browse/fullmetal-alchemist" class="anime-card">
+        <div class="card-art" style="background:linear-gradient(135deg,rgb(253,180,30) 0%,rgb(200,50,0) 50%,rgb(50,30,10) 100%)">
+          ⚗️
+          <div class="card-score">★ 9.1</div>
+          <div class="card-year">2009</div>
+          <div class="card-jp">鋼の錬金術師</div>
         </div>
-        <div class="acard-body">
-          <div class="acard-title">HANAMONOGATARI</div>
-          <div class="acard-meta">Shaft · 2014</div>
-          <div class="acard-tags">
-            <span class="tag mystery">MYSTERY</span>
-            <span class="tag drama">DRAMA</span>
+        <div class="card-body">
+          <div class="card-title">FULLMETAL ALCHEMIST</div>
+          <div class="card-tagline">"You cannot gain anything without giving something in return."</div>
+          <div class="card-tags">
+            <span class="card-tag hot">ACTION</span>
+            <span class="card-tag">PHILOSOPHY</span>
+            <span class="card-tag">CLASSIC</span>
           </div>
+          <span class="card-cta">VIEW + SIMILAR →</span>
         </div>
       </a>
 
-      <a href="/discover" class="acard">
-        <div class="acard-art" style="background:linear-gradient(135deg,#be123c,#9f1239)">
-          👊
-          <div class="acard-score">★ 8.7</div>
-          <div class="acard-jp">ジョジョの奇妙な冒険</div>
+      <!-- COWBOY BEBOP -->
+      <a href="/browse/cowboy-bebop" class="anime-card">
+        <div class="card-art" style="background:linear-gradient(135deg,rgb(249,115,22) 0%,rgb(236,72,153) 50%,rgb(167,139,250) 100%)">
+          🎺
+          <div class="card-score">★ 9.3</div>
+          <div class="card-year">1998</div>
+          <div class="card-jp">カウボーイビバップ</div>
         </div>
-        <div class="acard-body">
-          <div class="acard-title">JOJO'S BIZARRE ADVENTURE</div>
-          <div class="acard-meta">David Production · 2012</div>
-          <div class="acard-tags">
-            <span class="tag action">ACTION</span>
-            <span class="tag comedy">COMEDY</span>
+        <div class="card-body">
+          <div class="card-title">COWBOY BEBOP</div>
+          <div class="card-tagline">"You're gonna carry that weight."</div>
+          <div class="card-tags">
+            <span class="card-tag">SCI-FI</span>
+            <span class="card-tag">JAZZ</span>
+            <span class="card-tag">NOIR</span>
           </div>
+          <span class="card-cta">VIEW + SIMILAR →</span>
         </div>
       </a>
 
-      <a href="/discover" class="acard">
-        <div class="acard-art" style="background:linear-gradient(135deg,#0f766e,#0d9488)">
-          🎭
-          <div class="acard-score">★ 9.0</div>
-          <div class="acard-jp">鋼の錬金術師</div>
+      <!-- MOB PSYCHO 100 -->
+      <a href="/browse/mob-psycho-100" class="anime-card">
+        <div class="card-art" style="background:linear-gradient(135deg,rgb(253,224,71) 0%,rgb(251,113,133) 50%,rgb(167,139,250) 100%)">
+          💥
+          <div class="card-score">★ 8.9</div>
+          <div class="card-year">2016</div>
+          <div class="card-jp">モブサイコ100</div>
         </div>
-        <div class="acard-body">
-          <div class="acard-title">FULLMETAL ALCHEMIST: BROTHERHOOD</div>
-          <div class="acard-meta">Bones · 2009</div>
-          <div class="acard-tags">
-            <span class="tag action">ACTION</span>
-            <span class="tag drama">DRAMA</span>
+        <div class="card-body">
+          <div class="card-title">MOB PSYCHO 100</div>
+          <div class="card-tagline">"The kindest boy in anime has the power to end the world."</div>
+          <div class="card-tags">
+            <span class="card-tag electric">SUPERNATURAL</span>
+            <span class="card-tag">COMING OF AGE</span>
+            <span class="card-tag acid">COMEDY</span>
           </div>
+          <span class="card-cta">VIEW + SIMILAR →</span>
         </div>
       </a>
 
-      <a href="/discover" class="acard">
-        <div class="acard-gem">💎</div>
-        <div class="acard-art" style="background:linear-gradient(135deg,#854d0e,#713f12)">
-          🍜
-          <div class="acard-score">★ 7.9</div>
-          <div class="acard-jp">深夜食堂</div>
+      <!-- DEMON SLAYER -->
+      <a href="/browse/demon-slayer" class="anime-card">
+        <div class="card-art" style="background:linear-gradient(135deg,rgb(255,100,50) 0%,rgb(255,0,100) 50%,rgb(50,0,100) 100%)">
+          🗡️
+          <div class="card-score">★ 8.7</div>
+          <div class="card-year">2019</div>
+          <div class="card-jp">鬼滅の刃</div>
         </div>
-        <div class="acard-body">
-          <div class="acard-title">MIDNIGHT DINER</div>
-          <div class="acard-meta">TMS · 2009</div>
-          <div class="acard-tags">
-            <span class="tag slice">SLICE OF LIFE</span>
-            <span class="tag drama">DRAMA</span>
+        <div class="card-body">
+          <div class="card-title">DEMON SLAYER</div>
+          <div class="card-tagline">"The most beautiful thing ufotable ever made is a boy breathing fire."</div>
+          <div class="card-tags">
+            <span class="card-tag hot">ACTION</span>
+            <span class="card-tag">SUPERNATURAL</span>
+            <span class="card-tag">FAMILY</span>
           </div>
+          <span class="card-cta">VIEW + SIMILAR →</span>
         </div>
       </a>
 
-      <a href="/discover" class="acard">
-        <div class="acard-art" style="background:linear-gradient(135deg,#155e75,#164e63)">
-          🚀
-          <div class="acard-score">★ 8.5</div>
-          <div class="acard-jp">カウボーイビバップ</div>
+      <!-- HAIKYUU -->
+      <a href="/browse/haikyuu" class="anime-card">
+        <div class="card-art" style="background:linear-gradient(135deg,rgb(255,160,0) 0%,rgb(20,20,20) 50%,rgb(80,80,80) 100%)">
+          🏐
+          <div class="card-score">★ 8.7</div>
+          <div class="card-year">2014</div>
+          <div class="card-jp">ハイキュー!!</div>
         </div>
-        <div class="acard-body">
-          <div class="acard-title">COWBOY BEBOP</div>
-          <div class="acard-meta">Sunrise · 1998</div>
-          <div class="acard-tags">
-            <span class="tag sci-fi">SCI-FI</span>
-            <span class="tag action">ACTION</span>
+        <div class="card-body">
+          <div class="card-title">HAIKYUU!!</div>
+          <div class="card-tagline">"No superpowers. No magic. Just will and volleyball."</div>
+          <div class="card-tags">
+            <span class="card-tag">SPORTS</span>
+            <span class="card-tag">FOUND FAMILY</span>
+            <span class="card-tag acid">HYPE</span>
           </div>
+          <span class="card-cta">VIEW + SIMILAR →</span>
         </div>
       </a>
 
-      <a href="/discover" class="acard">
-        <div class="acard-art" style="background:linear-gradient(135deg,#5b21b6,#7c3aed)">
-          🧠
-          <div class="acard-score">★ 8.6</div>
-          <div class="acard-jp">モブサイコ100</div>
+      <!-- SPECTRAL KOI -->
+      <a href="/browse/spectral-koi" class="anime-card">
+        <div class="card-art" style="background:linear-gradient(135deg,rgb(249,115,22) 0%,rgb(236,72,153) 50%,rgb(167,139,250) 100%)">
+          🐟
+          <div class="card-score">★ 8.7</div>
+          <div class="card-year">2019</div>
+          <div class="card-jp">幽霊の鯉</div>
         </div>
-        <div class="acard-body">
-          <div class="acard-title">MOB PSYCHO 100</div>
-          <div class="acard-meta">Bones · 2016</div>
-          <div class="acard-tags">
-            <span class="tag action">ACTION</span>
-            <span class="tag comedy">COMEDY</span>
+        <div class="card-body">
+          <div class="card-title">SPECTRAL KOI</div>
+          <div class="card-tagline">"Lantern-lit summers, ghost fish, a softness that hurts."</div>
+          <div class="card-tags">
+            <span class="card-tag">SUPERNATURAL</span>
+            <span class="card-tag">SLICE OF LIFE</span>
+            <span class="card-tag">MELANCHOLY</span>
           </div>
+          <span class="card-cta">VIEW + SIMILAR →</span>
         </div>
       </a>
 
-      <a href="/discover" class="acard">
-        <div class="acard-gem">💎</div>
-        <div class="acard-art" style="background:linear-gradient(135deg,#1c1917,#292524)">
+      <!-- CHILDREN OF THE SEA -->
+      <a href="/browse/children-of-the-sea" class="anime-card">
+        <div class="card-art" style="background:linear-gradient(135deg,rgb(0,80,160) 0%,rgb(0,200,200) 50%,rgb(160,220,255) 100%)">
+          🌊
+          <div class="card-score">★ 8.4</div>
+          <div class="card-year">2019</div>
+          <div class="card-jp">海獣の子供</div>
+        </div>
+        <div class="card-body">
+          <div class="card-title">CHILDREN OF THE SEA</div>
+          <div class="card-tagline">"What the ocean remembers, the living have forgotten."</div>
+          <div class="card-tags">
+            <span class="card-tag electric">SUPERNATURAL</span>
+            <span class="card-tag">MYSTICAL</span>
+            <span class="card-tag">OCEAN</span>
+          </div>
+          <span class="card-cta">VIEW + SIMILAR →</span>
+        </div>
+      </a>
+
+      <!-- YOUR LIE IN APRIL -->
+      <a href="/browse/your-lie-in-april" class="anime-card">
+        <div class="card-art" style="background:linear-gradient(135deg,rgb(167,139,250) 0%,rgb(236,72,153) 50%,rgb(249,115,22) 100%)">
           🎻
-          <div class="acard-score">★ 8.2</div>
-          <div class="acard-jp">四月は君の嘘</div>
+          <div class="card-score">★ 8.2</div>
+          <div class="card-year">2014</div>
+          <div class="card-jp">四月は君の嘘</div>
         </div>
-        <div class="acard-body">
-          <div class="acard-title">YOUR LIE IN APRIL</div>
-          <div class="acard-meta">A-1 Pictures · 2014</div>
-          <div class="acard-tags">
-            <span class="tag romance">ROMANCE</span>
-            <span class="tag drama">DRAMA</span>
+        <div class="card-body">
+          <div class="card-title">YOUR LIE IN APRIL</div>
+          <div class="card-tagline">"Music as grief. Grief as music. You will not be okay."</div>
+          <div class="card-tags">
+            <span class="card-tag">ROMANCE</span>
+            <span class="card-tag">MUSIC</span>
+            <span class="card-tag hot">TEARJERKER</span>
           </div>
+          <span class="card-cta">VIEW + SIMILAR →</span>
         </div>
       </a>
 
-      <a href="/discover" class="acard">
-        <div class="acard-art" style="background:linear-gradient(135deg,#166534,#14532d)">
-          🏃
-          <div class="acard-score">★ 8.3</div>
-          <div class="acard-jp">ハイキュー!!</div>
+      <!-- MIDNIGHT DINER -->
+      <a href="/browse/midnight-diner" class="anime-card">
+        <div class="card-art" style="background:linear-gradient(135deg,rgb(40,30,20) 0%,rgb(180,40,40) 50%,rgb(220,160,80) 100%)">
+          🍜
+          <div class="card-score">★ 7.9</div>
+          <div class="card-year">2009</div>
+          <div class="card-jp">深夜食堂</div>
         </div>
-        <div class="acard-body">
-          <div class="acard-title">HAIKYUU!!</div>
-          <div class="acard-meta">Production I.G · 2014</div>
-          <div class="acard-tags">
-            <span class="tag sports">SPORTS</span>
-            <span class="tag drama">DRAMA</span>
+        <div class="card-body">
+          <div class="card-title">MIDNIGHT DINER</div>
+          <div class="card-tagline">"A counter, a ladle, and everyone's saddest story."</div>
+          <div class="card-tags">
+            <span class="card-tag">SLICE OF LIFE</span>
+            <span class="card-tag acid">COZY</span>
+            <span class="card-tag">FOOD</span>
           </div>
+          <span class="card-cta">VIEW + SIMILAR →</span>
         </div>
       </a>
 
-    </div>
-
-    <div class="load-more-wrap">
-      <a href="/discover" class="btn btn-ink">WANT PERSONALIZED PICKS? → TRY THE APP</a>
-    </div>
+    </div><!-- /card-grid -->
   </main>
-
 </div>
 
-<!-- ═══ FOOTER ══════════════════════════════════════════════ -->
 <footer>
   <div class="foot-logo">OTAKULT<span>.</span></div>
   <p>© 2026 OTAKULT collective. Hand-curated in Tokyo, Berlin, Oakland.</p>
-  <nav>
-    <a href="/">HOME</a>
-    <a href="/browse">BROWSE</a>
-    <a href="/discover">APP</a>
-  </nav>
+  <nav><a href="/">HOME</a><a href="/browse">BROWSE</a><a href="/discover">APP</a></nav>
 </footer>
 
-<script>
-  function setTopFilter(btn, filter) {
-    document.querySelectorAll('.filter-bar .filter-btn').forEach(b => {
-      b.classList.remove('active','active-acid','active-electric');
-    });
-    btn.classList.add('active');
-  }
-
-  function toggleChip(btn) {
-    const cls = [...btn.classList].find(c => c.startsWith('genre-')) || '';
-    btn.classList.toggle('on');
-    if (cls) btn.classList.toggle(cls, btn.classList.contains('on'));
-  }
-
-  function handleSort(val) {
-    // Placeholder — will hook into real data fetch
-    console.log('sort:', val);
-  }
-
-  // Search input debounce placeholder
-  document.getElementById('searchInput').addEventListener('input', function() {
-    // Will wire to AniList / Firebase query
-  });
-</script>
 </body>
 </html>
