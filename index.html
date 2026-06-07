@@ -87,6 +87,7 @@
     /* MARQUEE */
     .marquee-bar{
       overflow:hidden;background:var(--ink);
+      border-top:3px solid var(--ink);
       border-bottom:3px solid var(--ink);
       padding:6px 0;
     }
@@ -98,7 +99,7 @@
     .marquee-item .sep{color:var(--hot);}
 
     /* HERO */
-    .hero{position:relative;overflow:hidden;}
+    .hero{position:relative;overflow-x:clip;}
     .hero-halftone{
       position:absolute;inset:0;pointer-events:none;z-index:0;opacity:.3;
       background-image:radial-gradient(var(--ink) 1.5px,transparent 1.6px);
@@ -106,9 +107,14 @@
     }
     .hero-inner{
       position:relative;z-index:1;
-      max-width:1280px;margin:0 auto;
-      padding:64px 24px 96px;
-      display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:flex-start;
+      display:grid;grid-template-columns:1fr 1fr;gap:0;align-items:flex-start;
+    }
+    /* Left column: dynamic padding matches a centered max-1280px container */
+    .hero-left{
+      padding-top:64px;
+      padding-bottom:96px;
+      padding-right:48px;
+      padding-left:max(24px, calc((100vw - 1280px) / 2 + 24px));
     }
     .hero-badge{
       display:inline-block;font-family:var(--font-display);font-size:11px;
@@ -156,7 +162,7 @@
     .avatars .avatar:first-child{margin-left:0;}
 
     /* CARD STACK */
-    .hero-cards{position:relative;height:520px;}
+    .hero-cards{position:relative;height:600px;}
     .picks-sticker{
       position:absolute;top:-8px;right:0;z-index:10;
       font-family:var(--font-display);font-size:11px;letter-spacing:.1em;
@@ -165,7 +171,7 @@
       animation:wobble 2.5s ease-in-out infinite;
     }
     .float-card{
-      position:absolute;width:192px;
+      position:absolute;width:224px;
       background:var(--cream);border:3px solid var(--ink);box-shadow:8px 8px 0 0 var(--ink);
       padding:8px;
     }
@@ -293,7 +299,8 @@
 
     /* RESPONSIVE */
     @media(max-width:960px){
-      .hero-inner{grid-template-columns:1fr;padding:48px 24px;}
+      .hero-inner{grid-template-columns:1fr;}
+      .hero-left{padding:48px 24px 40px;padding-left:24px;}
       .hero-cards{height:360px;}
       .stats-inner,.heat-grid{grid-template-columns:repeat(2,1fr);}
       .steps,.cult-grid{grid-template-columns:1fr;}
@@ -347,7 +354,7 @@
   <div class="hero-halftone"></div>
   <div class="hero-inner">
     <!-- LEFT -->
-    <div>
+    <div class="hero-left">
       <span class="hero-badge">BETA · v0.9 · 240,118 OTAKU</span>
       <h1 class="hero-title">
         <span class="line">FIND</span>
