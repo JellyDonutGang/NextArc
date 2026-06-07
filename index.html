@@ -85,9 +85,9 @@
     .nav-cta:hover{background:var(--hot);border-color:var(--hot);}
 
     /* MARQUEE */
+    .nav-divider{height:3px;background:var(--ink);}
     .marquee-bar{
       overflow:hidden;background:var(--ink);
-      border-top:3px solid var(--ink);
       border-bottom:3px solid var(--ink);
       padding:6px 0;
     }
@@ -108,11 +108,10 @@
     .hero-inner{
       position:relative;z-index:1;
       display:grid;grid-template-columns:1fr 1fr;gap:0;align-items:flex-start;
+      padding-top:128px;padding-bottom:96px;
     }
-    /* Left column: dynamic padding matches a centered max-1280px container */
+    /* Left column: dynamic horizontal padding matches a centered max-1280px container */
     .hero-left{
-      padding-top:64px;
-      padding-bottom:96px;
       padding-right:48px;
       padding-left:max(24px, calc((100vw - 1280px) / 2 + 24px));
     }
@@ -299,8 +298,8 @@
 
     /* RESPONSIVE */
     @media(max-width:960px){
-      .hero-inner{grid-template-columns:1fr;}
-      .hero-left{padding:48px 24px 40px;padding-left:24px;}
+      .hero-inner{grid-template-columns:1fr;padding-top:56px;padding-bottom:56px;}
+      .hero-left{padding-right:24px;padding-left:24px;padding-bottom:40px;}
       .hero-cards{height:360px;}
       .stats-inner,.heat-grid{grid-template-columns:repeat(2,1fr);}
       .steps,.cult-grid{grid-template-columns:1fr;}
@@ -330,7 +329,7 @@
       <a href="/discover" class="nav-cta">GET THE APP →</a>
     </nav>
   </div>
-  <!-- MARQUEE inside header, below nav -->
+  <div class="nav-divider"></div>
   <div class="marquee-bar">
     <div class="marquee-track">
       <span class="marquee-item">NEW DROPS WEEKLY <span class="sep">✦</span></span>
