@@ -205,7 +205,7 @@
     .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;}
     .step{padding:24px;position:relative;border:3px solid var(--ink);box-shadow:8px 8px 0 0 var(--ink);}
     .step-n{font-family:var(--font-display);font-size:72px;line-height:1;opacity:.9;margin-bottom:8px;}
-    .step-t{font-family:var(--font-display);font-size:22px;margin-bottom:8px;line-height:1.1;}
+    .step-t{font-family:var(--font-display);font-size:24px;margin-bottom:8px;line-height:1.1;}
     .step-d{font-size:15px;line-height:1.65;opacity:.9;}
     .step-hot{background:var(--hot);color:#fff;}
     .step-electric{background:var(--electric);color:#fff;}
@@ -218,7 +218,7 @@
     }
     .heat-inner{max-width:1280px;margin:0 auto;padding:80px 24px;}
     .heat-header{display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:40px;}
-    .heat-title{font-family:var(--font-display);font-size:clamp(40px,7vw,80px);line-height:.88;letter-spacing:.01em;}
+    .heat-title{font-family:var(--font-display);font-size:clamp(40px,7vw,80px);line-height:.85;letter-spacing:.01em;}
     .heat-label{
       display:inline-block;background:var(--electric);color:#fff;
       padding:0 12px;transform:rotate(-1deg);transform-origin:left bottom;
@@ -250,16 +250,16 @@
     .heat-score{position:absolute;top:8px;left:8px;z-index:1;background:var(--ink);color:var(--acid);font-family:var(--font-display);font-size:10px;padding:4px 8px;}
     .heat-jp{position:absolute;bottom:8px;right:8px;z-index:1;background:rgba(249,246,228,.9);font-family:var(--font-mono-jp);font-size:8px;padding:3px 7px;}
     .heat-body{padding:12px;border-top:3px solid var(--ink);}
-    .heat-card-title{font-family:var(--font-display);font-size:16px;line-height:1.1;margin-bottom:4px;}
+    .heat-card-title{font-family:var(--font-display);font-size:18px;line-height:1.1;margin-bottom:4px;}
     .heat-card-studio{font-size:11px;color:rgba(13,13,22,.6);margin-bottom:8px;}
     .heat-tags{display:flex;gap:4px;flex-wrap:wrap;}
-    .heat-tag{font-family:var(--font-display);font-size:8px;letter-spacing:.05em;padding:3px 8px;background:var(--acid);border:2px solid var(--ink);}
+    .heat-tag{font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;background:var(--acid);border:3px solid var(--ink);}
 
     /* TESTIMONIALS */
     .cult{max-width:1280px;margin:0 auto;padding:80px 24px;}
     .cult-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:40px;}
     .cult-card{padding:24px;border:3px solid var(--ink);box-shadow:8px 8px 0 0 var(--ink);}
-    .cult-q{font-family:var(--font-display);font-size:18px;line-height:1.4;margin-bottom:16px;}
+    .cult-q{font-family:var(--font-display);font-size:20px;line-height:1.35;margin-bottom:16px;}
     .cult-a{font-size:13px;}
     .cult-hot{background:var(--hot);color:#fff;transform:rotate(-1deg);}
     .cult-acid{background:var(--acid);color:var(--ink);transform:rotate(1deg);}
@@ -283,36 +283,49 @@
     .cta-title{font-family:var(--font-display);font-size:clamp(40px,7vw,96px);color:#fff;line-height:.88;letter-spacing:.01em;margin-bottom:40px;}
     .scrolling-hl{background:var(--hot);padding:0 8px;display:inline-block;transform:rotate(-1deg);}
     .cta-btns{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;}
-    .btn-acid{font-family:var(--font-display);font-size:16px;padding:16px 32px;background:var(--acid);color:var(--ink);text-decoration:none;border:3px solid var(--acid);box-shadow:4px 4px 0 rgba(255,255,255,.3);transition:transform .1s;}
-    .btn-acid:hover{transform:translate(2px,2px);}
-    .btn-cream-ghost{font-family:var(--font-display);font-size:16px;padding:16px 32px;background:var(--cream);color:var(--ink);text-decoration:none;border:3px solid var(--cream);box-shadow:4px 4px 0 rgba(255,255,255,.3);transition:transform .1s;}
-    .btn-cream-ghost:hover{background:var(--acid);transform:translate(2px,2px);}
-    .btn-electric{font-family:var(--font-display);font-size:16px;padding:16px 32px;background:var(--electric);color:#fff;text-decoration:none;border:3px solid var(--electric);box-shadow:4px 4px 0 rgba(255,255,255,.3);transition:transform .1s;}
-    .btn-electric:hover{transform:translate(2px,2px);}
+    .btn-acid{font-family:var(--font-display);font-size:16px;padding:16px 24px;background:var(--acid);color:var(--ink);text-decoration:none;border:3px solid var(--ink);box-shadow:4px 4px 0 0 var(--ink);transition:background .1s;cursor:pointer;}
+    .btn-acid:hover{background:var(--cream);}
+    .btn-cream-ghost{font-family:var(--font-display);font-size:16px;padding:16px 24px;background:var(--cream);color:var(--ink);text-decoration:none;border:3px solid var(--ink);box-shadow:4px 4px 0 0 var(--ink);transition:background .1s;cursor:pointer;}
+    .btn-cream-ghost:hover{background:var(--acid);}
+    .btn-electric{font-family:var(--font-display);font-size:16px;padding:16px 24px;background:var(--electric);color:#fff;text-decoration:none;border:3px solid var(--ink);box-shadow:4px 4px 0 0 var(--ink);transition:background .1s;}
+    .btn-electric:hover{background:var(--hot);}
 
-    /* FOOTER */
-    footer{background:var(--cream);border-top:3px solid var(--ink);padding:48px 24px;}
-    .foot-inner{max-width:1280px;margin:0 auto;display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:40px;}
-    .foot-logo{font-family:var(--font-display);font-size:22px;margin-bottom:12px;}
+    /* FOOTER — dark bg matching Lovable */
+    footer{
+      margin-top:96px;
+      border-top:3px solid var(--ink);
+      background:var(--ink);color:var(--cream);
+    }
+    .foot-inner{
+      max-width:1280px;margin:0 auto;
+      padding:48px 24px;
+      display:grid;grid-template-columns:1fr;gap:32px;
+    }
+    .foot-logo{font-family:var(--font-display);font-size:30px;}
     .foot-logo span{color:var(--hot);}
-    .foot-desc{font-size:13px;color:rgba(13,13,22,.6);line-height:1.7;max-width:240px;}
-    .foot-copy{font-size:11px;color:rgba(13,13,22,.4);margin-top:8px;}
-    .foot-col h4{font-family:var(--font-display);font-size:10px;letter-spacing:.15em;color:rgba(13,13,22,.4);margin-bottom:12px;}
-    .foot-col a{display:block;font-family:var(--font-display);font-size:11px;letter-spacing:.05em;color:var(--ink);text-decoration:none;margin-bottom:8px;}
-    .foot-col a:hover{color:var(--hot);}
+    .foot-desc{font-size:13px;color:rgba(249,246,228,.7);line-height:1.7;max-width:280px;margin-top:8px;}
+    .foot-links{display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:14px;}
+    .foot-links a{color:var(--cream);text-decoration:none;}
+    .foot-links a:hover{color:var(--acid);}
+    .foot-copy{font-size:13px;color:rgba(249,246,228,.7);}
+    .foot-copy p+p{margin-top:4px;}
 
     /* RESPONSIVE */
-    @media(max-width:1023px){
-      .stats-inner,.heat-grid{grid-template-columns:repeat(2,1fr);}
-      .steps,.cult-grid{grid-template-columns:1fr;}
-      .foot-inner{grid-template-columns:1fr 1fr;}
-      .cta-box{padding:40px 24px;}
-    }
+    /* stats: 2 cols default → 4 at 640px (sm) */
+    .stats-inner{grid-template-columns:repeat(2,1fr);}
+    @media(min-width:640px){.stats-inner{grid-template-columns:repeat(4,1fr);}}
+    /* heat grid: 1 col → 2 at sm → 4 at lg */
+    .heat-grid{grid-template-columns:1fr;}
+    @media(min-width:640px){.heat-grid{grid-template-columns:repeat(2,1fr);}}
+    @media(min-width:1024px){.heat-grid{grid-template-columns:repeat(4,1fr);}}
+    /* steps + testimonials: 1 col → 3 at md (768px) */
+    @media(min-width:768px){.steps,.cult-grid{grid-template-columns:repeat(3,1fr);}}
+    /* footer */
+    @media(min-width:640px){.foot-inner{grid-template-columns:repeat(3,1fr);}}
+    /* cta padding tightens on small */
     @media(max-width:600px){
       .nav-link.hidden-sm{display:none;}
-      .stats-inner{grid-template-columns:1fr 1fr;}
-      .heat-grid{grid-template-columns:1fr 1fr;}
-      .foot-inner{grid-template-columns:1fr;}
+      .cta-box{padding:40px 24px;}
     }
   </style>
 </head>
@@ -463,7 +476,7 @@
       <a href="/browse/neon-requiem" class="heat-card" style="transform:rotate(-1deg)">
         <div class="heat-art" style="background:linear-gradient(135deg,#ff2e8a,#7c3aed,#0ea5e9)">
           <div class="heat-art-halftone"></div>
-          <span style="position:relative;z-index:1">🤖</span>
+          <span style="position:relative;z-index:1;font-size:72px">🤖</span>
           <span class="heat-score">★ 9.1</span>
           <span class="heat-jp">ネオン・レクイエム</span>
         </div>
@@ -477,7 +490,7 @@
       <a href="/browse/spectral-koi" class="heat-card" style="transform:rotate(1deg)">
         <div class="heat-art" style="background:linear-gradient(135deg,#f97316,#ec4899,#a78bfa)">
           <div class="heat-art-halftone"></div>
-          <span style="position:relative;z-index:1">🐟</span>
+          <span style="position:relative;z-index:1;font-size:72px">🐟</span>
           <span class="heat-score">★ 8.7</span>
           <span class="heat-jp">幽霊の鯉</span>
         </div>
@@ -488,24 +501,24 @@
         </div>
       </a>
       <!-- Card 3: rotate(-1deg) -->
-      <a href="/browse/midnight-diner" class="heat-card" style="transform:rotate(-1deg)">
+      <a href="/browse/midnight-zaibatsu" class="heat-card" style="transform:rotate(-1deg)">
         <div class="heat-art" style="background:linear-gradient(135deg,#0a0a0a,#7f1d1d,#f59e0b)">
           <div class="heat-art-halftone"></div>
-          <span style="position:relative;z-index:1">🥃</span>
+          <span style="position:relative;z-index:1;font-size:72px">🥃</span>
           <span class="heat-score">★ 8.9</span>
-          <span class="heat-jp">深夜食堂</span>
+          <span class="heat-jp">深夜財閥</span>
         </div>
         <div class="heat-body">
-          <div class="heat-card-title">Midnight Diner</div>
-          <div class="heat-card-studio">TMS Entertainment · 2009</div>
+          <div class="heat-card-title">Midnight Zaibatsu</div>
+          <div class="heat-card-studio">Black Comet · 2023</div>
           <div class="heat-tags"><span class="heat-tag">Crime</span><span class="heat-tag">Noir</span></div>
         </div>
       </a>
       <!-- Card 4: rotate(+1deg) -->
-      <a href="/browse/cowboy-bebop" class="heat-card" style="transform:rotate(1deg)">
+      <a href="/browse/azure-hellscape" class="heat-card" style="transform:rotate(1deg)">
         <div class="heat-art" style="background:linear-gradient(135deg,#1e3a8a,#7e22ce,#f43f5e)">
           <div class="heat-art-halftone"></div>
-          <span style="position:relative;z-index:1">⚔️</span>
+          <span style="position:relative;z-index:1;font-size:72px">⚔️</span>
           <span class="heat-score">★ 9.3</span>
           <span class="heat-jp">蒼い地獄景</span>
         </div>
@@ -564,25 +577,18 @@
     <div>
       <div class="foot-logo">OTAKULT<span>.</span></div>
       <p class="foot-desc">A maximalist anime recommendation engine for people who take their obsessions seriously.</p>
-      <p class="foot-copy">© 2026 OTAKULT collective. Hand-curated in Tokyo, Berlin, Oakland.</p>
     </div>
-    <div class="foot-col">
-      <h4>GET IT</h4>
+    <div class="foot-links">
       <a href="/discover">iOS</a>
       <a href="/discover">Android</a>
       <a href="/discover">Discord</a>
-    </div>
-    <div class="foot-col">
-      <h4>READ</h4>
-      <a href="#">Manifesto</a>
       <a href="#">Press kit</a>
+      <a href="#">Manifesto</a>
       <a href="#">Tag glossary</a>
     </div>
-    <div class="foot-col">
-      <h4>EXPLORE</h4>
-      <a href="/browse">Directory</a>
-      <a href="/discover">App</a>
-      <a href="#">Newsletter</a>
+    <div class="foot-copy">
+      <p>© 2026 OTAKULT collective.</p>
+      <p>Hand-curated in Tokyo, Berlin, Oakland.</p>
     </div>
   </div>
 </footer>
