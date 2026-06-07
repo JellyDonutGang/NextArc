@@ -48,12 +48,15 @@
     header{
       position:sticky;top:0;z-index:50;
       border-top:3px solid var(--ink);
+      border-left:3px solid var(--ink);
+      border-right:3px solid var(--ink);
+      box-shadow:
+        -3px 0 0 0 var(--ink),
+         3px 0 0 0 var(--ink),
+         0 -3px 0 0 var(--ink);
       background:rgba(251,245,223,0.95);
       backdrop-filter:blur(8px);
     }
-    header::before,header::after{content:'';position:absolute;top:0;width:3px;height:64px;background:var(--ink);z-index:10;pointer-events:none;}
-    header::before{left:0;}
-    header::after{right:0;}
     /* No nav-divider — border comes from marquee border-top */
     .nav-inner{
       max-width:1280px;margin:0 auto;
