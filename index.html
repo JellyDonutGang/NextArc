@@ -185,12 +185,9 @@
       box-shadow:8px 8px 0 0 var(--ink);
       padding:8px;
       transform:rotate(var(--rot,0deg));
-      /* z-index: instant on hover, delayed on exit so card stays on top while animating back */
-      z-index:1;
       transition:
         transform .55s cubic-bezier(.23,1,.32,1),
-        box-shadow .55s cubic-bezier(.23,1,.32,1),
-        z-index 0s .55s;
+        box-shadow .55s cubic-bezier(.23,1,.32,1);
       cursor:pointer;
       will-change:transform;
     }
@@ -198,12 +195,6 @@
     .float-card:hover{
       transform:rotate(0deg) scale(1.07);
       box-shadow:16px 16px 0 0 var(--hot);
-      z-index:20;
-      /* no delay on hover — jump to front immediately */
-      transition:
-        transform .55s cubic-bezier(.23,1,.32,1),
-        box-shadow .55s cubic-bezier(.23,1,.32,1),
-        z-index 0s;
     }
     .float-card .art{aspect-ratio:3/4;display:grid;place-items:center;font-size:64px;}
     .float-card .card-meta{padding:8px 4px 4px;display:flex;align-items:center;justify-content:space-between;}
@@ -617,5 +608,23 @@
   </div>
 </footer>
 
+  <script>
+    /* Float card z-index — managed in JS so it fires synchronously,
+       no CSS transition lag. Card jumps to front on mouseenter,
+       holds there until the return animation finishes, then drops back. */
+    (function(){
+      var ANIM_MS = 550;
+      document.querySelectorAll('.float-card').forEach(function(card){
+        var timer;
+        card.addEventListener('mouseenter', function(){
+          clearTimeout(timer);
+          card.style.zIndex = '20';
+        });
+        card.addEventListener('mouseleave', function(){
+          timer = setTimeout(function(){ card.style.zIndex = ''; }, ANIM_MS);
+        });
+      });
+    })();
+  </script>
 </body>
 </html>
