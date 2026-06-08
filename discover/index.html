@@ -5350,15 +5350,30 @@ function showSaveToast() {
 }
 
 async function loadRecQueue() {
-  // Clear any stale card or error message from the container immediately
   const container = document.getElementById('rec-card-container');
-  container.innerHTML = '';
+  const recScreen  = document.getElementById('screen-recs');
+
+  // Clear stale cards/errors WITHOUT touching #recs-spinner.
+  // container.innerHTML='' was the bug: it nuked the spinner element so every
+  // subsequent call threw a null-reference TypeError and silently aborted.
+  [...container.children].forEach(child => {
+    if (child.id !== 'recs-spinner') child.remove();
+  });
+
+  // Re-create spinner if a previous innerHTML='' already wiped it
+  let spinner = document.getElementById('recs-spinner');
+  if (!spinner) {
+    spinner = document.createElement('div');
+    spinner.id        = 'recs-spinner';
+    spinner.className = 'spinner-wrap';
+    spinner.innerHTML = '<div class="spinner"></div>'
+      + '<span style="font-size:14px;color:var(--text-muted)">Finding your picks…</span>';
+    container.appendChild(spinner);
+  }
 
   // Only show spinner if rec screen is already active
-  const recScreen = document.getElementById('screen-recs');
-  if (recScreen.classList.contains('active')) {
-    document.getElementById('recs-spinner').style.display = 'flex';
-  }
+  if (recScreen.classList.contains('active')) spinner.style.display = 'flex';
+
   // Kick off gem fetch in parallel — doesn't block rec loading
   if (gemQueue.length - gemPos < 3 && !isGemFetching) fetchGems();
   try {
@@ -5370,15 +5385,16 @@ async function loadRecQueue() {
     console.error('loadRecQueue failed:', e);
     recQueue = [];
   }
-  document.getElementById('recs-spinner').style.display = 'none';
+  spinner = document.getElementById('recs-spinner');
+  if (spinner) spinner.style.display = 'none';
+
   // If we got nothing at all, show a retry message instead of a blank screen
   if (recQueue.length === 0 && recScreen.classList.contains('active')) {
-    const container = document.getElementById('rec-card-container');
-    container.innerHTML = `
-      <div style="text-align:center;padding:40px 20px;color:var(--text-muted);font-size:15px;line-height:1.7">
-        Couldn't load recommendations right now.<br>
-        <span id="retry-recs-btn" style="color:var(--accent);cursor:pointer;font-weight:600">Tap to try again</span>
-      </div>`;
+    const msg = document.createElement('div');
+    msg.style.cssText = 'text-align:center;padding:40px 20px;color:var(--text-muted);font-size:15px;line-height:1.7';
+    msg.innerHTML = 'Couldn’t load recommendations right now.<br>'
+      + '<span id="retry-recs-btn" style="color:var(--accent);cursor:pointer;font-weight:600">Tap to try again</span>';
+    container.appendChild(msg);
     document.getElementById('retry-recs-btn')?.addEventListener('click', () => loadRecQueue());
     return;
   }
