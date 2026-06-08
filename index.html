@@ -462,7 +462,8 @@
 </section>
 <script type="module">
   /* Real visit counter backed by Firestore.
-     Every page load increments the global count by 1 and displays the result.
+     sessionStorage tracks whether this browser tab has already been counted.
+     Refreshing the same tab does NOT re-increment; closing and reopening does.
      BASE_OFFSET seeds the displayed number so visit #1 shows 1,247. */
   import { initializeApp }     from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
   import { getFirestore, doc,
@@ -516,13 +517,27 @@
   tickEl('stat-accuracy', 98,    n => n + '%',             900);
 
   // Live otaku counter — fires once Firestore responds
-  setDoc(ref, { count: increment(1) }, { merge: true })
-    .then(() => getDoc(ref))
-    .then(snap => {
-      const target = (snap.data()?.count || 1) + BASE_OFFSET;
-      tickEl('stat-otaku', target, fmtOtaku, 1100, document.getElementById('badge-otaku'));
-    })
-    .catch(() => { /* Firestore unavailable — placeholder stays */ });
+  const SESS_KEY = 'otakult_counted';
+  const badge    = document.getElementById('badge-otaku');
+
+  function showOtaku(snap) {
+    const target = (snap.data()?.count || 1) + BASE_OFFSET;
+    tickEl('stat-otaku', target, fmtOtaku, 1100, badge);
+  }
+
+  if (!sessionStorage.getItem(SESS_KEY)) {
+    // First load in this tab — increment then display
+    sessionStorage.setItem(SESS_KEY, '1');
+    setDoc(ref, { count: increment(1) }, { merge: true })
+      .then(() => getDoc(ref))
+      .then(showOtaku)
+      .catch(() => { /* Firestore unavailable — placeholder stays */ });
+  } else {
+    // Refresh — read only, do not increment
+    getDoc(ref)
+      .then(showOtaku)
+      .catch(() => { /* Firestore unavailable — placeholder stays */ });
+  }
 </script>
 
 <!-- HOW IT WORKS -->
