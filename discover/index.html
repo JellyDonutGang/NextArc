@@ -2142,6 +2142,31 @@
       0%,100% { opacity:0.15; r:2; }
       50%     { opacity:0.55; r:3; }
     }
+
+    /* ── In-screen nav links ───────────────────────── */
+    .screen-nav-links {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .screen-nav-link {
+      font-family: 'Bungee', sans-serif;
+      font-size: 9px;
+      color: var(--ink);
+      text-decoration: none;
+      letter-spacing: 0.5px;
+      padding: 4px 8px;
+      border: 2px solid var(--ink);
+      box-shadow: 2px 2px 0 var(--ink);
+      background: var(--cream);
+      display: inline-block;
+      transition: transform 0.1s, box-shadow 0.1s;
+      line-height: 1;
+    }
+    .screen-nav-link:active { transform: translate(2px,2px); box-shadow: none; }
+    .screen-nav-link.alt { background: var(--ink); color: var(--cream); }
+    .welcome-site-links { display: flex; gap: 10px; margin-top: 8px; }
   </style>
 </head>
 <body>
@@ -2226,6 +2251,10 @@
   <div class="logo">OTAKULT.</div>
   <p class="tagline">Find your next obsession.</p>
   <button class="btn-primary" id="btn-start">Discover →</button>
+  <div class="welcome-site-links">
+    <a href="/" class="screen-nav-link">HOME</a>
+    <a href="/browse/" class="screen-nav-link alt">BROWSE</a>
+  </div>
 </section>
 
 <!-- ══════════════════════════════════════════════ -->
@@ -2271,7 +2300,12 @@
 <!-- ══════════════════════════════════════════════ -->
 <section id="screen-swipe" class="screen">
   <div class="swipe-header">
+    <div class="screen-nav-links">
+      <a href="/" class="screen-nav-link">HOME</a>
+      <a href="/browse/" class="screen-nav-link alt">BROWSE</a>
+    </div>
     <span class="swipe-title">Taste Check</span>
+    <div style="width:80px"></div>
   </div>
 
   <div class="gem-progress-wrap">
@@ -2438,6 +2472,10 @@
 
 <section id="screen-recs" class="screen">
   <div class="recs-header">
+    <div class="screen-nav-links" style="margin-right:8px;">
+      <a href="/" class="screen-nav-link">HOME</a>
+      <a href="/browse/" class="screen-nav-link alt">BROWSE</a>
+    </div>
     <div class="recs-header-text">
       <h1>For You</h1>
       <p id="recs-subtitle">Personalised picks based on your taste</p>
