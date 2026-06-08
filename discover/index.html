@@ -3275,8 +3275,9 @@ let isLoadingReserve    = false;
 let _reserveFetchPromise = null; // shared promise — concurrent callers wait for the same fetch
 let recQueue = [];
 let recPos   = 0;
-let seenIds        = new Set();
-let seenFranchises = new Set();
+let seenIds           = new Set();
+let seenFranchises    = new Set();
+let onboardSkippedIds = new Set(); // skipped during onboarding — blocked from re-showing in onboarding, but still eligible for recs
 let currentRecAnime = null;
 
 // ── Adaptive rec system state ─────────────────────
@@ -3623,7 +3624,7 @@ function fetchMoreForReserve() {
       const seen = new Set();
       const fresh = deduplicateByFranchise(
         combined.filter(a => {
-          if (seen.has(a.id) || seenIds.has(a.id) || !a.coverImage?.large) return false;
+          if (seen.has(a.id) || seenIds.has(a.id) || onboardSkippedIds.has(a.id) || !a.coverImage?.large) return false;
           seen.add(a.id); return true;
         })
       );
@@ -4400,9 +4401,9 @@ function onboardingSimilarity(a, b) {
 function replaceSkippedCard(skipped, index) {
   tasteAnime.splice(index, 1);
 
-  // Permanently exclude the skipped anime — prevents it being re-fetched
-  // into the reserve pool and shown again during onboarding
-  trackSeen(skipped);
+  // Block from re-appearing in the onboarding queue only.
+  // Do NOT call trackSeen — skipped ≠ seen, so it stays eligible for recs.
+  onboardSkippedIds.add(skipped.id);
 
   // Build a combined search pool: reserve first (fresh anime), then remaining queue
   const searchPool = [...reservePool, ...tasteAnime.slice(index)];
