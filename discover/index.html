@@ -4400,6 +4400,10 @@ function onboardingSimilarity(a, b) {
 function replaceSkippedCard(skipped, index) {
   tasteAnime.splice(index, 1);
 
+  // Permanently exclude the skipped anime — prevents it being re-fetched
+  // into the reserve pool and shown again during onboarding
+  trackSeen(skipped);
+
   // Build a combined search pool: reserve first (fresh anime), then remaining queue
   const searchPool = [...reservePool, ...tasteAnime.slice(index)];
 
