@@ -181,10 +181,30 @@
     }
     .float-card{
       position:absolute;width:192px;
-      background:var(--cream);border:3px solid var(--ink);box-shadow:8px 8px 0 0 var(--ink);
+      background:var(--cream);border:3px solid var(--ink);
+      box-shadow:8px 8px 0 0 var(--ink);
       padding:8px;
+      transform:rotate(var(--rot,0deg));
+      /* z-index: instant on hover, delayed on exit so card stays on top while animating back */
+      z-index:1;
+      transition:
+        transform .55s cubic-bezier(.23,1,.32,1),
+        box-shadow .55s cubic-bezier(.23,1,.32,1),
+        z-index 0s .55s;
+      cursor:pointer;
+      will-change:transform;
     }
     @media(min-width:640px){.float-card{width:224px;}}
+    .float-card:hover{
+      transform:rotate(0deg) scale(1.07);
+      box-shadow:16px 16px 0 0 var(--hot);
+      z-index:20;
+      /* no delay on hover — jump to front immediately */
+      transition:
+        transform .55s cubic-bezier(.23,1,.32,1),
+        box-shadow .55s cubic-bezier(.23,1,.32,1),
+        z-index 0s;
+    }
     .float-card .art{aspect-ratio:3/4;display:grid;place-items:center;font-size:64px;}
     .float-card .card-meta{padding:8px 4px 4px;display:flex;align-items:center;justify-content:space-between;}
     .float-card .card-title{font-family:var(--font-display);font-size:12px;}
@@ -409,28 +429,28 @@
     <!-- RIGHT: CARD STACK -->
     <div class="hero-cards">
       <span class="picks-sticker">TONIGHT'S PICKS ↓</span>
-      <div class="float-card" style="top:2%;left:2%;transform:rotate(-8deg)">
+      <div class="float-card" style="top:2%;left:2%;--rot:-8deg">
         <div class="art" style="aspect-ratio:3/4;overflow:hidden;"><img src="https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx127230-DdP4vAdssLoz.png" alt="Chainsaw Man" style="width:100%;height:100%;object-fit:cover;display:block;"></div>
         <div class="card-meta" style="padding:8px 4px 4px;display:flex;align-items:center;justify-content:space-between;">
           <span style="font-family:var(--font-display);font-size:12px;">CHAINSAW MAN</span>
           <span style="font-family:var(--font-display);font-size:9px;background:var(--ink);color:var(--cream);padding:2px 6px;">DARK ACTION</span>
         </div>
       </div>
-      <div class="float-card" style="top:18%;left:26%;transform:rotate(6deg)">
+      <div class="float-card" style="top:18%;left:26%;--rot:6deg">
         <div class="art" style="aspect-ratio:3/4;overflow:hidden;"><img src="https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx21519-SUo3ZQuCbYhJ.png" alt="Your Name." style="width:100%;height:100%;object-fit:cover;display:block;"></div>
         <div class="card-meta" style="padding:8px 4px 4px;display:flex;align-items:center;justify-content:space-between;">
           <span style="font-family:var(--font-display);font-size:12px;">YOUR NAME.</span>
           <span style="font-family:var(--font-display);font-size:9px;background:var(--ink);color:var(--cream);padding:2px 6px;">ROMANCE</span>
         </div>
       </div>
-      <div class="float-card" style="top:44%;left:4%;transform:rotate(-3deg)">
+      <div class="float-card" style="top:44%;left:4%;--rot:-3deg">
         <div class="art" style="aspect-ratio:3/4;overflow:hidden;"><img src="https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx21507-6YUSbh2m0N1p.jpg" alt="Mob Psycho 100" style="width:100%;height:100%;object-fit:cover;display:block;"></div>
         <div class="card-meta" style="padding:8px 4px 4px;display:flex;align-items:center;justify-content:space-between;">
           <span style="font-family:var(--font-display);font-size:12px;">MOB PSYCHO 100</span>
           <span style="font-family:var(--font-display);font-size:9px;background:var(--ink);color:var(--cream);padding:2px 6px;">SUPERNATURAL</span>
         </div>
       </div>
-      <div class="float-card" style="top:58%;left:30%;transform:rotate(9deg)">
+      <div class="float-card" style="top:58%;left:30%;--rot:9deg">
         <div class="art" style="aspect-ratio:3/4;overflow:hidden;"><img src="https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx97986-TQ7dCgbS3y5s.jpg" alt="Made in Abyss" style="width:100%;height:100%;object-fit:cover;display:block;"></div>
         <div class="card-meta" style="padding:8px 4px 4px;display:flex;align-items:center;justify-content:space-between;">
           <span style="font-family:var(--font-display);font-size:12px;">MADE IN ABYSS</span>
