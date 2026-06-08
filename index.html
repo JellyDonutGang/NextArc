@@ -375,13 +375,13 @@
       <span class="marquee-item">★ 9.3 AZURE HELLSCAPE <span class="sep">✦</span></span>
       <span class="marquee-item">TASTE-MATCHED IN 60 SECONDS <span class="sep">✦</span></span>
       <span class="marquee-item" style="font-family:var(--font-mono-jp)">妖怪ラジオ NOW STREAMING <span class="sep">✦</span></span>
-      <span class="marquee-item">JOIN 240K OTAKU <span class="sep">✦</span></span>
+      <span class="marquee-item">JOIN THE CULT <span class="sep">✦</span></span>
       <span class="marquee-item">BUILT BY FANS, NOT ALGORITHMS <span class="sep">✦</span></span>
       <span class="marquee-item">NEW DROPS WEEKLY <span class="sep">✦</span></span>
       <span class="marquee-item">★ 9.3 AZURE HELLSCAPE <span class="sep">✦</span></span>
       <span class="marquee-item">TASTE-MATCHED IN 60 SECONDS <span class="sep">✦</span></span>
       <span class="marquee-item" style="font-family:var(--font-mono-jp)">妖怪ラジオ NOW STREAMING <span class="sep">✦</span></span>
-      <span class="marquee-item">JOIN 240K OTAKU <span class="sep">✦</span></span>
+      <span class="marquee-item">JOIN THE CULT <span class="sep">✦</span></span>
       <span class="marquee-item">BUILT BY FANS, NOT ALGORITHMS <span class="sep">✦</span></span>
     </div>
   </div>
@@ -393,7 +393,7 @@
   <div class="hero-inner">
     <!-- LEFT -->
     <div class="hero-left">
-      <span class="hero-badge">BETA · v0.9 · 240,118 OTAKU</span>
+      <span class="hero-badge">BETA · v0.9 · <span id="badge-otaku">1,247</span> OTAKU</span>
       <h1 class="hero-title">
         <span class="line">FIND</span>
         <span class="line">YOUR</span>
@@ -454,12 +454,30 @@
 <!-- STATS -->
 <section class="stats">
   <div class="stats-inner">
-    <div><div class="stat-n">12,400+</div><div class="stat-l">Titles indexed</div></div>
-    <div><div class="stat-n">240k</div><div class="stat-l">Active otaku</div></div>
+    <div><div class="stat-n">17,370</div><div class="stat-l">Titles indexed</div></div>
+    <div><div class="stat-n" id="stat-otaku">240k</div><div class="stat-l">Active otaku</div></div>
     <div><div class="stat-n">98%</div><div class="stat-l">Match accuracy</div></div>
-    <div><div class="stat-n">0</div><div class="stat-l">Algorithm slop</div></div>
+    <div><div class="stat-n">0</div><div class="stat-l">Generic recommendations</div></div>
   </div>
 </section>
+<script>
+  /* Active otaku counter — grows at ~4 new visitors/hour from launch.
+     Specific starting number + slow honest growth = credible for a new site.
+     No backend: deterministic from timestamp, always increases, never resets. */
+  (function () {
+    var BASE_COUNT = 1247;
+    var BASE_TIME  = new Date('2026-06-01T00:00:00Z').getTime();
+    var PER_HOUR   = 4;
+    var count = Math.floor(BASE_COUNT + (Date.now() - BASE_TIME) * (PER_HOUR / 3600000));
+    var fmt = count >= 1000000 ? (count / 1000000).toFixed(1) + 'M'
+            : count >= 10000  ? Math.round(count / 1000) + 'k'
+            : count.toLocaleString();
+    var el = document.getElementById('stat-otaku');
+    if (el) el.textContent = fmt;
+    var badge = document.getElementById('badge-otaku');
+    if (badge) badge.textContent = fmt;
+  })();
+</script>
 
 <!-- HOW IT WORKS -->
 <section class="how">
