@@ -454,9 +454,9 @@
 <!-- STATS -->
 <section class="stats">
   <div class="stats-inner">
-    <div><div class="stat-n">17,370</div><div class="stat-l">Titles indexed</div></div>
+    <div><div class="stat-n" id="stat-titles">—</div><div class="stat-l">Titles indexed</div></div>
     <div><div class="stat-n" id="stat-otaku">—</div><div class="stat-l">Active otaku</div></div>
-    <div><div class="stat-n">98%</div><div class="stat-l">Match accuracy</div></div>
+    <div><div class="stat-n" id="stat-accuracy">—</div><div class="stat-l">Match accuracy</div></div>
     <div><div class="stat-n">0</div><div class="stat-l">Generic recommendations</div></div>
   </div>
 </section>
@@ -482,38 +482,46 @@
   const ref         = doc(db, 'stats', 'visitors');
   const BASE_OFFSET = 1246; // displayed = firestoreCount + BASE_OFFSET (visit #1 → 1,247)
 
-  function fmt(n) {
+  /* General-purpose stock-ticker count-up.
+     formatFn controls how the number is rendered (plain, %, k/M, etc.)
+     Starts at 85% of target, eases out over durationMs, locks on exact value. */
+  function tickEl(id, target, formatFn, durationMs = 1100, extraEl) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const startVal = Math.max(0, Math.floor(target * 0.85));
+    const range    = target - startVal;
+    const t0       = performance.now();
+    (function tick(now) {
+      const p     = Math.min((now - t0) / durationMs, 1);
+      const eased = 1 - Math.pow(1 - p, 3);
+      const s     = formatFn(Math.round(startVal + range * eased));
+      el.textContent = s;
+      if (extraEl) extraEl.textContent = s;
+      if (p < 1) requestAnimationFrame(tick);
+      else {
+        el.textContent = formatFn(target);
+        if (extraEl) extraEl.textContent = formatFn(target);
+      }
+    })(performance.now());
+  }
+
+  function fmtOtaku(n) {
     return n >= 1000000 ? (n / 1000000).toFixed(1) + 'M'
          : n >= 10000   ? Math.round(n / 1000) + 'k'
          : n.toLocaleString();
   }
 
-  function display(n) {
-    const s = fmt(n);
-    const stat  = document.getElementById('stat-otaku');
-    const badge = document.getElementById('badge-otaku');
-    if (stat)  stat.textContent  = s;
-    if (badge) badge.textContent = s;
-  }
+  // Static stats — fire immediately on load
+  tickEl('stat-titles',   17370, n => n.toLocaleString(), 1200);
+  tickEl('stat-accuracy', 98,    n => n + '%',             900);
 
-  /* Stock-ticker count-up: starts at 85% of target, ticks up rapidly,
-     decelerates with ease-out and locks onto the real number. */
-  function tickTo(target, durationMs = 1100) {
-    const startVal = Math.max(0, Math.floor(target * 0.85));
-    const range    = target - startVal;
-    const t0       = performance.now();
-    (function tick(now) {
-      const p      = Math.min((now - t0) / durationMs, 1);
-      const eased  = 1 - Math.pow(1 - p, 3);          // ease-out cubic
-      display(Math.round(startVal + range * eased));
-      if (p < 1) requestAnimationFrame(tick);
-      else display(target);                             // lock exact value
-    })(performance.now());
-  }
-
+  // Live otaku counter — fires once Firestore responds
   setDoc(ref, { count: increment(1) }, { merge: true })
     .then(() => getDoc(ref))
-    .then(snap => tickTo((snap.data()?.count || 1) + BASE_OFFSET))
+    .then(snap => {
+      const target = (snap.data()?.count || 1) + BASE_OFFSET;
+      tickEl('stat-otaku', target, fmtOtaku, 1100, document.getElementById('badge-otaku'));
+    })
     .catch(() => { /* Firestore unavailable — placeholder stays */ });
 </script>
 
