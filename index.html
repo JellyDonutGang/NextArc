@@ -189,7 +189,6 @@
         transform .55s cubic-bezier(.23,1,.32,1),
         box-shadow .55s cubic-bezier(.23,1,.32,1);
       cursor:pointer;
-      will-change:transform;
     }
     @media(min-width:640px){.float-card{width:224px;}}
     .float-card:hover{
@@ -609,19 +608,25 @@
 </footer>
 
   <script>
-    /* Float card z-index — managed in JS so it fires synchronously,
-       no CSS transition lag. Card jumps to front on mouseenter,
-       holds there until the return animation finishes, then drops back. */
+    /* Float card z-index — on mouseenter, instantly reset every other card
+       so two cards never share z-index 20 at the same time. */
     (function(){
       var ANIM_MS = 550;
-      document.querySelectorAll('.float-card').forEach(function(card){
-        var timer;
+      var cards = Array.from(document.querySelectorAll('.float-card'));
+      var timers = new WeakMap();
+      cards.forEach(function(card){
         card.addEventListener('mouseenter', function(){
-          clearTimeout(timer);
+          // Clear every other card's timer and drop them back immediately
+          cards.forEach(function(c){
+            if (c === card) return;
+            clearTimeout(timers.get(c));
+            c.style.zIndex = '';
+          });
+          clearTimeout(timers.get(card));
           card.style.zIndex = '20';
         });
         card.addEventListener('mouseleave', function(){
-          timer = setTimeout(function(){ card.style.zIndex = ''; }, ANIM_MS);
+          timers.set(card, setTimeout(function(){ card.style.zIndex = ''; }, ANIM_MS));
         });
       });
     })();
