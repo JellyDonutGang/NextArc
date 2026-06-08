@@ -1,106 +1,72 @@
 /**
- * Next Arc Service Worker
+ * OTAKULT Service Worker
+ *
  * Strategy:
- *   - HTML navigation (index.html, /): network-first so a refresh always
- *     fetches the latest build; falls back to cache when offline
- *   - JS / CSS / manifest / icons: cache-first (fast; busted by CACHE_VERSION bump)
- *   - AniList API (graphql.anilist.co): network-first, fallback to cache
- *   - Images (cover art): stale-while-revalidate
+ *   - Same-origin files (HTML, JS, CSS, manifest): network-first
+ *     → always serves the latest deployed version; no version-bump required
+ *   - AniList API (graphql.anilist.co): network-first, cache fallback
+ *   - Cover images (s4.anilist.co, img.anidb.net): stale-while-revalidate
+ *     → fast loads after first visit; updates silently in background
+ *
+ * Why no app-shell pre-caching:
+ *   Pre-caching index.html and animeTasteEngine.js sounds good but causes
+ *   version mismatches when only one file is updated — the cached JS and the
+ *   new HTML get out of sync and break the app. Since AniList API calls
+ *   require a network connection anyway, strict offline support for the JS
+ *   shell buys nothing. Network-first on all same-origin assets means every
+ *   deploy is live immediately on next load.
  */
 
-const CACHE_VERSION = 'otakult-v1';
-const APP_SHELL = [
-  '/discover/',
-  '/discover/index.html',
-  '/discover/animeTasteEngine.js',
-  '/discover/manifest.json',
-  '/discover/icons/icon-192.png',
-  '/discover/icons/icon-512.png',
-];
+const CACHE_VERSION  = 'otakult-v2';
+const IMAGE_CACHE    = 'otakult-images-v2';
+const API_CACHE      = 'otakult-api-v2';
 
 const ANILIST_ORIGIN = 'https://graphql.anilist.co';
-const IMAGE_ORIGINS = ['s4.anilist.co', 'img.anidb.net'];
+const IMAGE_ORIGINS  = ['s4.anilist.co', 'img.anidb.net'];
 
-/* ── Install: pre-cache app shell ──────────────── */
+/* ── Install: activate immediately, no pre-caching ─ */
 self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_VERSION).then(cache => {
-      return cache.addAll(APP_SHELL);
-    }).then(() => self.skipWaiting())
-  );
+  self.skipWaiting();
 });
 
-/* ── Activate: prune old caches ────────────────── */
+/* ── Activate: prune old caches, claim clients ────── */
 self.addEventListener('activate', event => {
+  const keep = new Set([CACHE_VERSION, IMAGE_CACHE, API_CACHE]);
   event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(
-        keys
-          .filter(k => k !== CACHE_VERSION)
-          .map(k => caches.delete(k))
-      )
-    ).then(() => self.clients.claim())
-     .then(() => {
-       // After claiming, tell every open tab to reload so it picks up
-       // the new JS/CSS cleanly — avoids old sub-resources under new SW
-       return self.clients.matchAll({ type: 'window' }).then(clients => {
-         clients.forEach(client => client.postMessage({ type: 'SW_UPDATED' }));
-       });
-     })
+    caches.keys()
+      .then(keys => Promise.all(
+        keys.filter(k => !keep.has(k)).map(k => caches.delete(k))
+      ))
+      .then(() => self.clients.claim())
   );
 });
 
-/* ── Fetch: routing logic ──────────────────────── */
+/* ── Fetch routing ────────────────────────────────── */
 self.addEventListener('fetch', event => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // 1. AniList API → network-first, cache fallback
+  // AniList API → network-first, cache fallback for offline
   if (url.origin === ANILIST_ORIGIN) {
-    event.respondWith(networkFirst(request, 'anilist-cache'));
+    event.respondWith(networkFirst(request, API_CACHE));
     return;
   }
 
-  // 2. Cover images → stale-while-revalidate
+  // Cover images → stale-while-revalidate (fast + always eventually fresh)
   if (IMAGE_ORIGINS.some(o => url.hostname.includes(o))) {
-    event.respondWith(staleWhileRevalidate(request, 'image-cache'));
+    event.respondWith(staleWhileRevalidate(request, IMAGE_CACHE));
     return;
   }
 
-  // 3. HTML navigation → network-first
-  //    request.mode === 'navigate' catches the browser's top-level page load
-  //    (manual refresh, address-bar Enter, link click). This ensures a refresh
-  //    always fetches the latest index.html from the server rather than serving
-  //    a stale cached copy; the cache is only used when offline.
-  if (request.mode === 'navigate') {
+  // Same-origin (index.html, animeTasteEngine.js, manifest, etc.)
+  // → network-first: always serve the latest deployed file
+  if (url.origin === self.location.origin && request.method === 'GET') {
     event.respondWith(networkFirst(request, CACHE_VERSION));
     return;
   }
-
-  // 4. JS / CSS / manifest / icons → cache-first (fast; invalidated by
-  //    CACHE_VERSION bump which pre-caches fresh copies on each deploy)
-  if (request.method === 'GET') {
-    event.respondWith(cacheFirst(request, CACHE_VERSION));
-  }
 });
 
-/* ── Strategies ────────────────────────────────── */
-
-async function cacheFirst(request, cacheName) {
-  const cache = await caches.open(cacheName);
-  const cached = await cache.match(request);
-  if (cached) return cached;
-  try {
-    const response = await fetch(request);
-    if (response.ok) cache.put(request, response.clone());
-    return response;
-  } catch {
-    return new Response('Offline — please reconnect.', {
-      status: 503,
-      headers: { 'Content-Type': 'text/plain' },
-    });
-  }
-}
+/* ── Strategies ───────────────────────────────────── */
 
 async function networkFirst(request, cacheName) {
   const cache = await caches.open(cacheName);
@@ -111,6 +77,13 @@ async function networkFirst(request, cacheName) {
   } catch {
     const cached = await cache.match(request);
     if (cached) return cached;
+    // Offline fallback
+    if (request.mode === 'navigate') {
+      return new Response('<h1>You\'re offline</h1><p>OTAKULT needs a connection to load.</p>', {
+        status: 503,
+        headers: { 'Content-Type': 'text/html' },
+      });
+    }
     return new Response(JSON.stringify({ errors: [{ message: 'Offline' }] }), {
       status: 503,
       headers: { 'Content-Type': 'application/json' },
@@ -119,7 +92,7 @@ async function networkFirst(request, cacheName) {
 }
 
 async function staleWhileRevalidate(request, cacheName) {
-  const cache = await caches.open(cacheName);
+  const cache  = await caches.open(cacheName);
   const cached = await cache.match(request);
   const fetchPromise = fetch(request).then(response => {
     if (response.ok) cache.put(request, response.clone());
