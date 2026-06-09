@@ -4363,7 +4363,10 @@ function swipeTaste(card, index, action) {
     if (action === 'skip') {
       replaceSkippedCard(anime, index);
     } else {
-      if (action === 'like' || action === 'superlike') likeCount++;
+      if (action === 'like' || action === 'superlike') {
+        likeCount++;
+        logLikeEvent(anime, 'onboarding');
+      }
       if (action === 'dislike') dislikeCount++;
       totalShown++;
       updateTasteBar();
@@ -5534,6 +5537,7 @@ function showNextRec(firstCard = false) {
         return;
       }
       saveAnime(anime, saveAsGem);
+      logLikeEvent(anime, 'heart');
       heartBtn.classList.add('saved');
       _syncToCloud(user);
       // Signed-in save → advance card like a like swipe after brief visual feedback
@@ -5578,6 +5582,7 @@ function recSwipe(card, anime, action) {
               action === 'supergood' ? 'up'    : 'right';
   flyCard(card, dir).then(() => {
     if (action !== 'skip') engine.update(anime, action === 'supergood' ? 'superlike' : action);
+    if (action === 'like' || action === 'supergood') logLikeEvent(anime, 'recs');
     totalCardsSwiped++;
     localStorage.setItem('nextarc_cards', totalCardsSwiped);
     _saveEngineState();
@@ -6080,6 +6085,22 @@ firebase.initializeApp(_FB_CONFIG);
 const _auth      = firebase.auth();
 const _db        = firebase.firestore();
 const _analytics = firebase.analytics();
+
+// ── Global like event logger ───────────────────────
+// Writes one small document to anime_likes on every like/superlike/heart.
+// Fire-and-forget: never awaited so it never slows down the swipe.
+function logLikeEvent(anime, source) {
+  if (!_db || !anime) return;
+  _db.collection('anime_likes').add({
+    anilist_id:  anime.id    || null,
+    mal_id:      anime.idMal || null,
+    title:       (anime.title && (anime.title.english || anime.title.romaji)) || 'Unknown',
+    coverImage:  (anime.coverImage && anime.coverImage.medium) || null,
+    timestamp:   firebase.firestore.FieldValue.serverTimestamp(),
+    source:      source,  // 'onboarding' | 'recs' | 'heart'
+    uid:         (_auth.currentUser && _auth.currentUser.uid) || null,
+  }).catch(() => { /* silent — never interrupt user flow */ });
+}
 
 // ── Auth state listener ────────────────────────────
 _auth.onAuthStateChanged(user => {

@@ -160,6 +160,7 @@
     }
     .btn-ghost:hover{background:var(--acid);}
     .avatar-row{display:flex;align-items:center;gap:12px;font-size:14px;}
+    .avatar-row > span{background:var(--cream);padding:6px 10px;}
     .avatars{display:flex;}
     .avatar{
       width:32px;height:32px;border-radius:50%;
@@ -303,9 +304,29 @@
     .btn-acid{font-family:var(--font-display);font-size:16px;padding:16px 24px;background:var(--acid);color:var(--ink);text-decoration:none;border:3px solid var(--ink);box-shadow:4px 4px 0 0 var(--ink);transition:background .1s;cursor:pointer;}
     .btn-acid:hover{background:var(--cream);}
     .btn-cream-ghost{font-family:var(--font-display);font-size:16px;padding:16px 24px;background:var(--cream);color:var(--ink);text-decoration:none;border:3px solid var(--ink);box-shadow:4px 4px 0 0 var(--ink);transition:background .1s;cursor:pointer;}
-    .btn-cream-ghost:hover{background:var(--acid);}
+    .btn-cream-ghost:hover{background:var(--hot);color:#fff;}
     .btn-electric{font-family:var(--font-display);font-size:16px;padding:16px 24px;background:var(--electric);color:#fff;text-decoration:none;border:3px solid var(--ink);box-shadow:4px 4px 0 0 var(--ink);transition:background .1s;}
     .btn-electric:hover{background:var(--hot);}
+    /* ── Waitlist modal ── */
+    .wl-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:2000;align-items:center;justify-content:center;padding:20px;}
+    .wl-overlay.open{display:flex;}
+    .wl-box{background:var(--cream);border:3px solid var(--ink);box-shadow:10px 10px 0 0 var(--ink);max-width:480px;width:100%;padding:40px;position:relative;}
+    .wl-close{position:absolute;top:12px;right:16px;font-family:var(--font-display);font-size:22px;background:none;border:none;cursor:pointer;color:var(--ink);line-height:1;}
+    .wl-close:hover{color:var(--hot);}
+    .wl-label{font-family:var(--font-mono-jp);font-size:12px;letter-spacing:.2em;color:var(--hot);margin-bottom:12px;display:block;}
+    .wl-title{font-family:var(--font-display);font-size:38px;line-height:1.05;color:var(--ink);margin-bottom:16px;}
+    .wl-title .hl{color:var(--hot);}
+    .wl-sub{font-size:15px;line-height:1.65;color:var(--ink);margin-bottom:28px;opacity:.85;}
+    .wl-input{width:100%;font-family:var(--font-body);font-size:15px;padding:13px 16px;border:3px solid var(--ink);background:#fff;color:var(--ink);outline:none;margin-bottom:12px;box-sizing:border-box;}
+    .wl-input:focus{border-color:var(--hot);}
+    .wl-btn{width:100%;font-family:var(--font-display);font-size:17px;padding:15px 24px;background:var(--hot);color:#fff;border:3px solid var(--ink);box-shadow:4px 4px 0 0 var(--ink);cursor:pointer;transition:background .1s;}
+    .wl-btn:hover{background:var(--ink);}
+    .wl-btn:disabled{opacity:.6;cursor:default;}
+    .wl-success{display:none;text-align:center;padding:16px 0;}
+    .wl-success.show{display:block;}
+    .wl-success-title{font-family:var(--font-display);font-size:32px;color:var(--ink);margin-bottom:10px;}
+    .wl-success-title span{color:var(--hot);}
+    .wl-success-sub{font-size:15px;line-height:1.6;opacity:.8;}
 
     /* FOOTER — dark bg matching Lovable */
     footer{
@@ -371,18 +392,18 @@
   </div>
   <div class="marquee-bar">
     <div class="marquee-track">
-      <span class="marquee-item">NEW DROPS WEEKLY <span class="sep">✦</span></span>
-      <span class="marquee-item">★ 9.3 AZURE HELLSCAPE <span class="sep">✦</span></span>
-      <span class="marquee-item">TASTE-MATCHED IN 60 SECONDS <span class="sep">✦</span></span>
-      <span class="marquee-item" style="font-family:var(--font-mono-jp)">妖怪ラジオ NOW STREAMING <span class="sep">✦</span></span>
+      <span class="marquee-item">CONNECT YOUR ANILIST ACCOUNT TO SUPERCHARGE YOUR RECOMMENDATIONS <span class="sep">✦</span></span>
+      <span class="marquee-item" id="ticker-hot-1">♥ <span class="sep">✦</span></span>
+      <span class="marquee-item">SWIPE YOUR TASTE CLUSTERS <span class="sep">✦</span></span>
+      <span class="marquee-item" id="ticker-airing-1">NOW STREAMING <span class="sep">✦</span></span>
       <span class="marquee-item">JOIN THE CULT <span class="sep">✦</span></span>
-      <span class="marquee-item">BUILT BY FANS, NOT ALGORITHMS <span class="sep">✦</span></span>
-      <span class="marquee-item">NEW DROPS WEEKLY <span class="sep">✦</span></span>
-      <span class="marquee-item">★ 9.3 AZURE HELLSCAPE <span class="sep">✦</span></span>
-      <span class="marquee-item">TASTE-MATCHED IN 60 SECONDS <span class="sep">✦</span></span>
-      <span class="marquee-item" style="font-family:var(--font-mono-jp)">妖怪ラジオ NOW STREAMING <span class="sep">✦</span></span>
+      <span class="marquee-item">BUILT BY A DISGRUNTLED FAN <span class="sep">✦</span></span>
+      <span class="marquee-item">CONNECT YOUR ANILIST ACCOUNT TO SUPERCHARGE YOUR RECOMMENDATIONS <span class="sep">✦</span></span>
+      <span class="marquee-item" id="ticker-hot-2">♥ <span class="sep">✦</span></span>
+      <span class="marquee-item">SWIPE YOUR TASTE CLUSTERS <span class="sep">✦</span></span>
+      <span class="marquee-item" id="ticker-airing-2">NOW STREAMING <span class="sep">✦</span></span>
       <span class="marquee-item">JOIN THE CULT <span class="sep">✦</span></span>
-      <span class="marquee-item">BUILT BY FANS, NOT ALGORITHMS <span class="sep">✦</span></span>
+      <span class="marquee-item">BUILT BY A DISGRUNTLED FAN <span class="sep">✦</span></span>
     </div>
   </div>
 </header>
@@ -544,7 +565,7 @@
 <section class="how">
   <div class="how-header">
     <h2 class="section-title">HOW IT <span class="col-hot">WORKS</span></h2>
-    <span class="jp-chip">// 60秒</span>
+    <span class="jp-chip">// 5分</span>
   </div>
   <div class="steps">
     <div class="step step-hot">
@@ -653,11 +674,11 @@
       <h2 class="cta-title">
         QUIT DOOM<br/>
         <span class="scrolling-hl">SCROLLING.</span><br/>
-        START WATCHING.
+        START SWIPING.
       </h2>
       <div class="cta-btns">
-        <a href="/discover" class="btn-acid">⬇ APP STORE</a>
-        <a href="/discover" class="btn-cream-ghost">⬇ GOOGLE PLAY</a>
+        <a href="/discover" class="btn-acid" id="btn-download-app">⬇ DOWNLOAD APP</a>
+        <a href="/discover" class="btn-cream-ghost">START SWIPING</a>
         <a href="/browse" class="btn-electric">BROWSE FIRST →</a>
       </div>
     </div>
@@ -707,6 +728,156 @@
         card.addEventListener('mouseleave', function(){
           timers.set(card, setTimeout(function(){ card.style.zIndex = ''; }, ANIM_MS));
         });
+      });
+    })();
+  </script>
+
+  <!-- Waitlist modal -->
+  <div class="wl-overlay" id="wl-overlay">
+    <div class="wl-box">
+      <button class="wl-close" id="wl-close" aria-label="Close">✕</button>
+      <div id="wl-form-wrap">
+        <span class="wl-label">// NATIVE APP</span>
+        <h2 class="wl-title">IT'S <span class="hl">DROPPING.</span><br>BE FIRST IN.</h2>
+        <p class="wl-sub">The OTAKULT app is coming to iOS & Android. Drop your email and we'll hit you the second it launches. No spam. Just anime.</p>
+        <form id="wl-form" autocomplete="off">
+          <input class="wl-input" id="wl-email" type="email" placeholder="YOUR EMAIL ADDRESS" required/>
+          <button class="wl-btn" type="submit" id="wl-submit">JOIN THE WAITLIST →</button>
+        </form>
+      </div>
+      <div class="wl-success" id="wl-success">
+        <div class="wl-success-title">YOU'RE <span>ON THE LIST.</span></div>
+        <p class="wl-success-sub">We'll find you when it drops.<br>Until then — keep swiping.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase (compat) — for live ticker data -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script>
+    // ── Dynamic ticker ──────────────────────────────────────────────────────
+    // Item 2: most-liked anime in the last 24 hours (from app swipes + hearts)
+    // Item 4: trending currently-airing show from AniList
+    (function() {
+      const FB_CONFIG = {
+        apiKey:    "AIzaSyDa6gig9xfZk_82t8h3aeSJciwUdnnBysw",
+        authDomain:"next-arc-b091b.firebaseapp.com",
+        projectId: "next-arc-b091b",
+      };
+      // Only init if not already initialised (avoids duplicate-app error)
+      const fbApp = firebase.apps.length
+        ? firebase.app()
+        : firebase.initializeApp(FB_CONFIG);
+      const db = firebase.firestore(fbApp);
+
+      // ── Most liked in last 24 hrs ─────────────────────────────────────────
+      function setHotTicker(text) {
+        ['ticker-hot-1','ticker-hot-2'].forEach(id => {
+          const el = document.getElementById(id);
+          if (!el) return;
+          el.innerHTML = '♥ ' + text + ' <span class="sep">✦</span>';
+        });
+      }
+
+      const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      db.collection('anime_likes')
+        .where('timestamp', '>=', since)
+        .get()
+        .then(snap => {
+          if (snap.empty) { setHotTicker('BE THE FIRST TO LIKE SOMETHING'); return; }
+          // Aggregate likes by anilist_id
+          const counts = {};
+          const titles = {};
+          snap.forEach(doc => {
+            const d = doc.data();
+            const key = d.anilist_id || d.mal_id;
+            if (!key) return;
+            counts[key] = (counts[key] || 0) + 1;
+            titles[key] = d.title || 'Unknown';
+          });
+          // Find the top anime
+          let topKey = null, topCount = 0;
+          for (const [k, n] of Object.entries(counts)) {
+            if (n > topCount) { topCount = n; topKey = k; }
+          }
+          if (topKey) {
+            const title = titles[topKey].toUpperCase();
+            setHotTicker(topCount + ' ♥ ' + title);
+          }
+        })
+        .catch(() => { /* Firestore unavailable — leave placeholder */ });
+
+      // ── Currently airing from AniList ─────────────────────────────────────
+      function setAiringTicker(text) {
+        ['ticker-airing-1','ticker-airing-2'].forEach(id => {
+          const el = document.getElementById(id);
+          if (!el) return;
+          el.innerHTML = text + ' — NEW <span class="sep">✦</span>';
+        });
+      }
+
+      fetch('https://graphql.anilist.co', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: `{
+          Page(page:1,perPage:5){
+            media(status:RELEASING,sort:[TRENDING_DESC],type:ANIME,isAdult:false){
+              title{ english romaji }
+            }
+          }
+        }` }),
+      })
+      .then(r => r.json())
+      .then(data => {
+        const list = data?.data?.Page?.media || [];
+        // Pick one at random from the top 5 for variety on each page load
+        const pick = list[Math.floor(Math.random() * list.length)];
+        if (pick) {
+          const title = (pick.title.english || pick.title.romaji || '').toUpperCase();
+          if (title) setAiringTicker(title);
+        }
+      })
+      .catch(() => { /* AniList unavailable — leave placeholder */ });
+
+      // ── Waitlist modal ────────────────────────────────────────────────────
+      const overlay  = document.getElementById('wl-overlay');
+      const btnOpen  = document.getElementById('btn-download-app');
+      const btnClose = document.getElementById('wl-close');
+      const form     = document.getElementById('wl-form');
+      const emailEl  = document.getElementById('wl-email');
+      const submitEl = document.getElementById('wl-submit');
+      const formWrap = document.getElementById('wl-form-wrap');
+      const success  = document.getElementById('wl-success');
+
+      function openModal(e) {
+        e.preventDefault();
+        overlay.classList.add('open');
+        setTimeout(() => emailEl.focus(), 100);
+      }
+      function closeModal() { overlay.classList.remove('open'); }
+
+      if (btnOpen)  btnOpen.addEventListener('click', openModal);
+      if (btnClose) btnClose.addEventListener('click', closeModal);
+      overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(); });
+      document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+      form.addEventListener('submit', async e => {
+        e.preventDefault();
+        const email = emailEl.value.trim();
+        if (!email) return;
+        submitEl.textContent = 'SAVING…';
+        submitEl.disabled = true;
+        try {
+          const app = firebase.apps.length ? firebase.app() : firebase.initializeApp(FB_CONFIG);
+          await firebase.firestore(app).collection('waitlist').add({
+            email:     email,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            source:    'app_waitlist',
+          });
+        } catch(_) { /* silent — still show success */ }
+        formWrap.style.display = 'none';
+        success.classList.add('show');
       });
     })();
   </script>
