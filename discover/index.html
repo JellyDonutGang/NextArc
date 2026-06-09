@@ -3304,11 +3304,16 @@ let onboardSkippedIds = new Set(); // skipped during onboarding — blocked from
 let currentRecAnime = null;
 
 // ── Signal learning caches ────────────────────────
-// _signalCache: animeId → Firestore anime_signals doc (pre-fetched before ranking)
-// _simSource:   animeId → liked-anime title that triggered this recommendation
-//               (powers "Because you liked X" chips on rec cards)
-const _signalCache = new Map();
-const _simSource   = new Map();
+// _signalCache:      animeId → Firestore anime_signals doc (pre-fetched before ranking)
+// _simSource:        animeId → liked-anime title that triggered this recommendation
+//                    (powers "Because you liked X" chips on rec cards)
+// _simCache:         animeId → anime_similarity similar[] array, pre-fetched on superlike
+//                    so fetchFirestoreSimilar() is instant when recs unlock
+// _dislikeExclusions: set of IDs that share DNA with disliked anime — filtered from candidates
+const _signalCache      = new Map();
+const _simSource        = new Map();
+const _simCache         = new Map();
+const _dislikeExclusions = new Set();
 
 // ── Adaptive rec system state ─────────────────────
 let nextRecQueue       = null;   // silently pre-loaded next batch
@@ -3464,6 +3469,8 @@ function _saveEngineState() {
       totalSwipes:    engine.totalSwipes,
       likedIds:       [...engine.likedIds],
       likedIdToTitle: [...engine.likedIdToTitle.entries()],
+      superlikedIds:  [...engine.superlikedIds],
+      dislikedIds:    [...engine.dislikedIds],
       // Signal learning state
       signalProfile:  engine.signalProfile,
       signalCount:    engine.signalCount,
@@ -3493,6 +3500,8 @@ function _loadEngineState() {
     engine.totalSwipes      = s.totalSwipes      ?? 0;
     if (Array.isArray(s.likedIds)) engine.likedIds = new Set(s.likedIds);
     if (Array.isArray(s.likedIdToTitle)) engine.likedIdToTitle = new Map(s.likedIdToTitle);
+    if (Array.isArray(s.superlikedIds)) engine.superlikedIds = new Set(s.superlikedIds);
+    if (Array.isArray(s.dislikedIds))   engine.dislikedIds   = new Set(s.dislikedIds);
     if (s.signalProfile && typeof s.signalProfile === 'object') engine.signalProfile = s.signalProfile;
     if (s.signalCount   != null) engine.signalCount = s.signalCount;
 
@@ -3590,6 +3599,52 @@ async function batchFetchSignals(animeIds) {
   } catch(e) {
     // Non-critical — ranking proceeds fine without cached signals
   }
+}
+
+/* ─── Superlike similarity pre-fetch (upgrade #1) ─
+   Fires immediately when the user superlikes during onboarding.
+   Populates _simCache with the Firestore anime_similarity list for
+   that anime so fetchFirestoreSimilar() returns it instantly (no
+   Firestore round-trip) when recs unlock after onboarding ends.
+   Also populates _signalCache so signal affinity scoring is ready.
+─────────────────────────────────────────────────── */
+async function _prefetchSuperlikeSimilarity(animeId) {
+  if (!_db || !animeId || _simCache.has(animeId)) return;
+  try {
+    const doc = await _db.collection('anime_similarity').doc(String(animeId)).get();
+    const similar = doc.exists ? (doc.data().similar || []) : [];
+    _simCache.set(animeId, similar);
+    // Also warm signal cache for the top-20 similar so ranking has them ready
+    if (similar.length > 0) {
+      const topIds = similar.slice(0, 20).map(s => s.id);
+      batchFetchSignals(topIds); // fire-and-forget, fills _signalCache in background
+    }
+  } catch(e) { /* silently ignore — not critical path */ }
+}
+
+/* ─── Dislike similarity pre-fetch (upgrade #2) ────
+   Fires when the user dislikes an anime (during onboarding or recs).
+   Fetches that anime's pre-computed similar list, then adds those IDs
+   to _dislikeExclusions — a blacklist that filters candidates before
+   ranking.  Effect: shows "in the same DNA space" as a disliked title
+   are softly excluded so they never surface as a first rec.
+─────────────────────────────────────────────────── */
+async function _prefetchDislikeSimilar(animeId) {
+  if (!_db || !animeId) return;
+  try {
+    // Use _simCache so we don't re-fetch similarity lists we already have
+    let similar = _simCache.get(animeId);
+    if (!similar) {
+      const doc = await _db.collection('anime_similarity').doc(String(animeId)).get();
+      similar = doc.exists ? (doc.data().similar || []) : [];
+      _simCache.set(animeId, similar);
+    }
+    // Top-15 most similar are likely to share the vibe the user disliked.
+    // We don't exclude ALL 50 — some distant similars might still be good picks.
+    for (const { id } of similar.slice(0, 15)) {
+      _dislikeExclusions.add(id);
+    }
+  } catch(e) { /* silently ignore */ }
 }
 
 function showOverlay(id) {
@@ -4474,6 +4529,11 @@ function swipeTaste(card, index, action) {
       tasteIndex = index + 1;
       // Start building signal profile from onboarding swipes — non-blocking
       learnSignals(anime.id, action);
+      // Pre-fetch similarity list for superlikes → warms _simCache so fetchFirestoreSimilar
+      // is instant (no Firestore round-trip) when recs unlock after onboarding
+      if (action === 'superlike') _prefetchSuperlikeSimilarity(anime.id);
+      // Pre-fetch disliked anime's similar list → builds _dislikeExclusions blacklist
+      if (action === 'dislike') _prefetchDislikeSimilar(anime.id);
       _saveEngineState();
       renderTasteCard(tasteIndex);
     }
@@ -4896,29 +4956,44 @@ async function fetchFirestoreSimilar() {
   // Pre-fetch liked anime titles for "Because you liked X" explanation chips
   const likedTitles = recentLiked.map(id => engine.likedIdToTitle.get(id) || '');
 
-  // Parallel Firestore lookups — one doc per liked anime
+  // Parallel Firestore lookups — one doc per liked anime.
+  // _simCache is pre-warmed by _prefetchSuperlikeSimilarity during onboarding,
+  // so superlikes typically resolve instantly (no Firestore round-trip needed).
   const simLists = await Promise.all(
-    recentLiked.map(id =>
-      _db.collection('anime_similarity').doc(String(id)).get()
-        .then(doc => (doc.exists ? doc.data().similar || [] : []))
-        .catch(() => [])
-    )
+    recentLiked.map(id => {
+      if (_simCache.has(id)) return Promise.resolve(_simCache.get(id));
+      return _db.collection('anime_similarity').doc(String(id)).get()
+        .then(doc => {
+          const list = doc.exists ? doc.data().similar || [] : [];
+          _simCache.set(id, list);
+          return list;
+        })
+        .catch(() => []);
+    })
   );
 
-  // Merge all lists — keep the highest similarity score when a show appears
-  // in multiple lists, and exclude anything the user has already seen.
-  // Also populate _simSource: track WHICH liked anime triggered each similar ID
-  // so the card can show "Because you liked [title]".
+  // Merge all lists with action-weighted scores:
+  //   superlike (weight 5×): dominates the pool — the show they loved most drives recs
+  //   like      (weight 1×): standard contribution
+  // Excludes:
+  //   • anything the user has already seen
+  //   • anything in _dislikeExclusions (shares DNA with disliked anime)
+  // Also populate _simSource: track WHICH liked anime triggered each similar ID.
   const idScores = new Map();
   for (let i = 0; i < simLists.length; i++) {
+    const sourceId    = recentLiked[i];
     const sourceTitle = likedTitles[i];
+    const actionWeight = engine.superlikedIds.has(sourceId) ? 5.0 : 1.0;
     for (const { id, score } of simLists[i]) {
-      if (!seenIds.has(id)) {
-        const prev = idScores.get(id) || 0;
-        if (score > prev) {
-          idScores.set(id, score);
-          // First/best source wins — no title override with a weaker match
-          if (sourceTitle && !_simSource.has(id)) {
+      if (seenIds.has(id) || _dislikeExclusions.has(id)) continue;
+      const weightedScore = score * actionWeight;
+      const prev = idScores.get(id) || 0;
+      if (weightedScore > prev) {
+        idScores.set(id, weightedScore);
+        // Best-weighted source wins — a superlike source overrides a like source
+        if (sourceTitle) {
+          const prevSource = _simSource.get(id);
+          if (!prevSource || actionWeight > (engine.superlikedIds.has(sourceId) ? 0 : 1)) {
             _simSource.set(id, sourceTitle);
           }
         }
@@ -5052,7 +5127,7 @@ async function fetchAndRankCandidates() {
   }
 
   const candidates = deduplicateByFranchise(allCandidates)
-    .filter(a => !seenIds.has(a.id));
+    .filter(a => !seenIds.has(a.id) && !_dislikeExclusions.has(a.id));
 
   // Pre-warm the signal cache for all candidates so rankRecommendations
   // can incorporate signal affinity without additional Firestore round trips.
@@ -5787,6 +5862,8 @@ function recSwipe(card, anime, action) {
 
     // Signal learning — async Firestore fetch, non-blocking
     if (action !== 'skip') learnSignals(anime.id, action);
+    // Build dislike exclusion set for negative swipes — filters similar-DNA shows from future recs
+    if (action === 'dislike') _prefetchDislikeSimilar(anime.id);
     totalCardsSwiped++;
     localStorage.setItem('nextarc_cards', totalCardsSwiped);
     _saveEngineState();

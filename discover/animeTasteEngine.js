@@ -875,6 +875,18 @@ class NextArcEngine {
     /** Relation-aware scoring — IDs of positively-rated anime (like/watch/superlike).
      *  Used to boost sequels, prequels, and side stories of shows the user loved. */
     this.likedIds = new Set();
+
+    /**
+     * Superliked anime IDs — used to apply 5× weight boost in fetchFirestoreSimilar
+     * so the most loved shows dominate the similarity merge pool.
+     */
+    this.superlikedIds = new Set();
+
+    /**
+     * Disliked anime IDs — used to trigger similarity pre-fetch so we can build
+     * an exclusion set of shows that share DNA with ones the user rejected.
+     */
+    this.dislikedIds = new Set();
   }
 
 
@@ -929,7 +941,10 @@ class NextArcEngine {
         this.likedIds.add(anime.id);
         const title = anime.title?.english || anime.title?.romaji || '';
         if (title) this.likedIdToTitle.set(anime.id, title);
+        if (isSuperLike) this.superlikedIds.add(anime.id);
       }
+    } else if (isDislike && anime.id) {
+      this.dislikedIds.add(anime.id);
     }
 
     // ── Boundary test resolution ───────────────────────────────────────
@@ -1016,7 +1031,7 @@ class NextArcEngine {
       // Signal affinity: adds up to 0.08 to total score.
       // Meaningful within similarly-scored groups without reversing dominant matches.
       const signalBonus = hasSignalProfile
-        ? this.computeSignalAffinity(signalLookup(p.anime.id)) * 0.08
+        ? this.computeSignalAffinity(signalLookup(p.anime.id)) * 0.12
         : 0;
 
       if (!multiCluster) {
@@ -1223,21 +1238,48 @@ class NextArcEngine {
     const profileKeys = Object.keys(this.signalProfile);
     if (profileKeys.length < 3) return 0;   // need some data before it's meaningful
 
-    let score = 0;
-    let count = 0;
-
+    // ── Average score (baseline: how well candidate matches across ALL signals) ──
+    let avgScore = 0, avgCount = 0;
     for (const key of profileKeys) {
-      const pref = this.signalProfile[key];
-      const val  = signals[key];
+      const val = signals[key];
       if (val === undefined || val === null) continue;
+      const dist = Math.abs(this.signalProfile[key] - val);
+      avgScore += Math.exp(-dist * dist * 8);
+      avgCount++;
+    }
+    avgScore = avgCount > 0 ? avgScore / avgCount : 0;
 
-      // Gaussian kernel: score = 1 when dist=0, ≈0.5 at dist=0.3, ≈0.05 at dist=0.55
-      const dist = Math.abs(pref - val);
-      score += Math.exp(-dist * dist * 8);
-      count++;
+    // ── Compound score (precision: geometric mean of DISTINCTIVE signal matches) ──
+    // "Distinctive" = the user has a clear preference on this dimension,
+    // i.e., their learned value has drifted >0.12 away from neutral (0.5).
+    // Using only these dimensions sharpens discrimination dramatically:
+    // a horror fan who scored 0.0 on darkness will ruthlessly penalise cozy anime.
+    const distinctive = profileKeys
+      .map(key => ({ key, deviation: Math.abs(this.signalProfile[key] - 0.5) }))
+      .filter(({ deviation }) => deviation > 0.12)
+      .sort((a, b) => b.deviation - a.deviation)
+      .slice(0, 4);
+
+    let compoundScore = avgScore;   // fall back to average if no distinctive dims yet
+    if (distinctive.length >= 2) {
+      let logSum = 0, cCount = 0;
+      for (const { key } of distinctive) {
+        const val = signals[key];
+        if (val === undefined || val === null) continue;
+        const dist = Math.abs(this.signalProfile[key] - val);
+        // Use log-space to compute geometric mean safely
+        logSum += Math.log(Math.exp(-dist * dist * 8) + 1e-9);
+        cCount++;
+      }
+      if (cCount > 0) {
+        compoundScore = Math.exp(logSum / cCount);
+      }
     }
 
-    return count > 0 ? score / count : 0;
+    // Blend: compound is sharper but less robust with few data points;
+    // average is more stable. Lean 65% compound once we have enough signal.
+    const compoundWeight = Math.min(0.65, distinctive.length * 0.20);
+    return compoundScore * compoundWeight + avgScore * (1 - compoundWeight);
   }
 
 
