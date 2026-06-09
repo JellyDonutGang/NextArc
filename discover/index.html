@@ -4776,9 +4776,63 @@ function buildQueryTargets() {
 }
 
 /**
+ * Firestore similarity lookup — fetches the top similar anime for each of the
+ * user's most recently liked shows, then retrieves their AniList metadata.
+ *
+ * Uses the pre-computed anime_similarity collection built from our 68-dim
+ * content vectors (genres, review signals, tone, era, demographics, etc.).
+ * Returns results in the same {Page:{media:[...]}} shape as AniList queries
+ * so it slots seamlessly into the fetchAndRankCandidates batch.
+ *
+ * Gracefully returns empty if Firestore is unavailable or no likes yet.
+ */
+async function fetchFirestoreSimilar() {
+  if (!_db || engine.likedIds.size === 0) return { Page: { media: [] } };
+
+  // Take up to 6 most recently liked IDs
+  const recentLiked = [...engine.likedIds].slice(-6);
+
+  // Parallel Firestore lookups — one doc per liked anime
+  const simLists = await Promise.all(
+    recentLiked.map(id =>
+      _db.collection('anime_similarity').doc(String(id)).get()
+        .then(doc => (doc.exists ? doc.data().similar || [] : []))
+        .catch(() => [])
+    )
+  );
+
+  // Merge all lists — keep the highest similarity score when a show appears
+  // in multiple lists, and exclude anything the user has already seen.
+  const idScores = new Map();
+  for (const list of simLists) {
+    for (const { id, score } of list) {
+      if (!seenIds.has(id)) {
+        idScores.set(id, Math.max(idScores.get(id) || 0, score));
+      }
+    }
+  }
+  if (idScores.size === 0) return { Page: { media: [] } };
+
+  // Sort by similarity score, cap at 50 (AniList id_in limit)
+  const topIds = [...idScores.entries()]
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, 50)
+    .map(([id]) => id);
+
+  // Fetch full metadata from AniList for these IDs
+  const result = await fetchAniList(SEED_POOL_QUERY, { ids: topIds });
+  return result || { Page: { media: [] } };
+}
+
+/**
  * Core fetch + rank logic shared by loadRecQueue and prefetchNextBatch.
- * Fires 7–10 parallel AniList queries (global genre/tag + per-cluster),
- * merges ~200–300 candidates, deduplicates, and returns a ranked queue.
+ * Fires 8–11 parallel queries (Firestore similarity + AniList genre/tag/cluster),
+ * merges ~200–350 candidates, deduplicates, and returns a ranked queue.
+ *
+ * Firestore similarity (slot 0) surfaces the most precise matches — anime
+ * that are intrinsically similar to shows the user has liked, scored by
+ * content vectors built from genres, review signals, tone, pacing, and more.
+ * AniList genre/tag queries (slots 1–10) ensure broad coverage and novelty.
  */
 async function fetchAndRankCandidates() {
   const { genres, tags, clusterTargets } = buildQueryTargets();
@@ -4788,6 +4842,11 @@ async function fetchAndRankCandidates() {
   const rp2 = (max = 15) => Math.floor(Math.random() * max) + 1;
 
   const batch = [];
+
+  // 0. Firestore similarity — content-signal-based, most precise source.
+  //    Looks up pre-computed top-50 similar anime for each recently liked show.
+  //    Runs in parallel with AniList queries; silently skipped if unavailable.
+  if (_db && engine.likedIds.size > 0) batch.push(fetchFirestoreSimilar());
 
   // 1. Primary genre, score-sorted — highest quality in top genre
   if (genres[0]) batch.push(
