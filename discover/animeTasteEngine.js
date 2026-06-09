@@ -36,6 +36,19 @@
 'use strict';
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   SIGNAL KEYS — the 20 AI-extracted floats stored in Firestore anime_signals.
+   Used by updateSignalProfile() and computeSignalAffinity().
+═══════════════════════════════════════════════════════════════════════════ */
+
+const SIGNAL_KEYS = [
+  'hype_factor', 'darkness', 'violence_factor', 'horror_factor', 'comfort_factor',
+  'romance_centrality', 'intellectual_depth', 'emotional_intensity', 'comedy_factor',
+  'fanservice_factor', 'pacing', 'binge_quality', 'rewatch_value', 'newcomer_accessible',
+  'quality_consensus', 'divisiveness', 'hidden_gem', 'visual_emphasis',
+  'soundtrack_emphasis', 'character_depth_focus',
+];
+
+/* ═══════════════════════════════════════════════════════════════════════════
    SCALAR DIMENSION TAG WEIGHTS
    score = Σ(tagRank × weight) + genreBoost, clamped [0, 10]
 ═══════════════════════════════════════════════════════════════════════════ */
@@ -844,6 +857,21 @@ class NextArcEngine {
     this.totalSwipes    = 0;
     this.firstBatchDone = false; // skip boundary probes on the very first post-onboarding batch
 
+    /**
+     * SIGNAL PROFILE — learned user preference vector over the 20 AI signal dimensions.
+     * Populated async as the user likes/dislikes anime; persisted to localStorage.
+     * signalProfile[key] ∈ [0,1]: how much of this signal the user prefers.
+     * signalCount: accumulated weight (grows with each learned swipe).
+     */
+    this.signalProfile = {};
+    this.signalCount   = 0;
+
+    /**
+     * Liked ID → title map — so fetchFirestoreSimilar can surface
+     * "Because you liked [title]" explanation chips on rec cards.
+     */
+    this.likedIdToTitle = new Map();
+
     /** Relation-aware scoring — IDs of positively-rated anime (like/watch/superlike).
      *  Used to boost sequels, prequels, and side stories of shows the user loved. */
     this.likedIds = new Set();
@@ -896,8 +924,12 @@ class NextArcEngine {
     if (isPositive) {
       const signal = isSuperLike ? 5.0 : isWatch ? 3.5 : (this.onboarded ? 2.0 : 3.0);
       this._absorbIntoCluster(features, signal, isSuperLike);
-      // Track liked IDs for relation-aware scoring
-      if (anime.id) this.likedIds.add(anime.id);
+      // Track liked IDs for relation-aware scoring and "Because you liked X" chips
+      if (anime.id) {
+        this.likedIds.add(anime.id);
+        const title = anime.title?.english || anime.title?.romaji || '';
+        if (title) this.likedIdToTitle.set(anime.id, title);
+      }
     }
 
     // ── Boundary test resolution ───────────────────────────────────────
@@ -941,7 +973,15 @@ class NextArcEngine {
    * Rank candidates using multi-cluster scoring when clusters are established,
    * falling back to the global profile during/after onboarding before clusters form.
    */
-  rankRecommendations(candidates, seenIds = []) {
+  /**
+   * @param {object[]} candidates   — raw anime objects from AniList
+   * @param {Array|Set} seenIds     — anime IDs to exclude
+   * @param {Function|null} signalLookup — optional: (animeId) → signal doc | null
+   *   When provided, blends the user's learned signal preferences into scoring.
+   *   Signal affinity adds up to 8% to total score — a meaningful tie-breaker
+   *   within similarly-ranked candidates without reversing confident matches.
+   */
+  rankRecommendations(candidates, seenIds = [], signalLookup = null) {
     const excluded = seenIds instanceof Set ? seenIds : new Set(seenIds);
     const pool = candidates.filter(a => !excluded.has(a.id));
     if (pool.length === 0) return [];
@@ -961,6 +1001,9 @@ class NextArcEngine {
     // ── Score every candidate ─────────────────────────────────────────
     const topClusterScore = multiCluster ? activeClusters[0].recencyScore : 1;
 
+    // Signal affinity is non-zero only when we have a learned profile AND a lookup fn
+    const hasSignalProfile = signalLookup && Object.keys(this.signalProfile).length >= 5;
+
     const scored = profiles.map(p => {
       const globalScore = this._scoreAgainstProfile(p.features, this.vectors, this.dims);
 
@@ -970,8 +1013,14 @@ class NextArcEngine {
       const avgScore    = p.anime.averageScore || 0;
       const qualityMult = avgScore > 0 ? 0.65 + 0.35 * (avgScore / 100) : 1.0;
 
+      // Signal affinity: adds up to 0.08 to total score.
+      // Meaningful within similarly-scored groups without reversing dominant matches.
+      const signalBonus = hasSignalProfile
+        ? this.computeSignalAffinity(signalLookup(p.anime.id)) * 0.08
+        : 0;
+
       if (!multiCluster) {
-        return { ...p, score: globalScore * qualityMult, clusterId: -1 };
+        return { ...p, score: globalScore * qualityMult + signalBonus, clusterId: -1 };
       }
 
       // Score against each cluster; take best-fit (weighted by cluster recency)
@@ -989,7 +1038,7 @@ class NextArcEngine {
 
       // Post-onboarding: clusters provide 65% of the signal; global provides 35%
       const blended = globalScore * 0.35 + bestClusterScore * 0.65;
-      return { ...p, score: blended * qualityMult, clusterId: bestClusterId };
+      return { ...p, score: blended * qualityMult + signalBonus, clusterId: bestClusterId };
     });
 
     // ── Apply cluster-rotation penalty ────────────────────────────────
@@ -1120,6 +1169,75 @@ class NextArcEngine {
 
     // Interleave, then cap any single bucket at 25% of the batch
     return this._enforceBucketDiversity(this._interleave(strong, boundary, wild, fresh, diversity));
+  }
+
+
+  /* ════════════════════════════════════════════════════════════════════
+     SIGNAL PROFILE — learned preference over 20 AI signal dimensions
+     ════════════════════════════════════════════════════════════════════ */
+
+  /**
+   * Update the running signal preference profile from a swipe event.
+   * Called asynchronously from learnSignals() in index.html after a Firestore fetch.
+   *
+   * @param {object} signals   — Firestore anime_signals doc data
+   * @param {number} weight    — swipe weight: +2.5 superlike, +1.0 like, -0.5 dislike
+   */
+  updateSignalProfile(signals, weight) {
+    // Imputed signals are less reliable — halve their contribution
+    const qualityMult = signals.signal_quality === 'ai_extracted' ? 1.0 : 0.5;
+    const effectiveW  = weight * qualityMult;
+    if (effectiveW === 0) return;
+
+    const newCount = this.signalCount + Math.abs(effectiveW);
+
+    for (const key of SIGNAL_KEYS) {
+      let val = signals[key];
+      if (val === undefined || val === null) continue;
+
+      // For dislikes: learn the opposite preference (move away from this anime's vibe)
+      if (effectiveW < 0) val = 1.0 - val;
+
+      if (this.signalProfile[key] === undefined) {
+        // First observation — seed directly
+        this.signalProfile[key] = val;
+      } else {
+        // Weighted running mean: lerp toward new value proportionally to its weight
+        const alpha = Math.abs(effectiveW) / newCount;
+        this.signalProfile[key] = this.signalProfile[key] * (1 - alpha) + val * alpha;
+      }
+    }
+
+    this.signalCount = newCount;
+  }
+
+  /**
+   * How well does an anime's signal vector match the user's learned preferences?
+   * Returns 0–1: 1.0 = perfect match, 0.0 = complete opposite.
+   * Uses a gaussian kernel so only signals with small preference distance score high.
+   *
+   * @param {object|null} signals — Firestore anime_signals doc, or null if not cached
+   */
+  computeSignalAffinity(signals) {
+    if (!signals) return 0;
+    const profileKeys = Object.keys(this.signalProfile);
+    if (profileKeys.length < 3) return 0;   // need some data before it's meaningful
+
+    let score = 0;
+    let count = 0;
+
+    for (const key of profileKeys) {
+      const pref = this.signalProfile[key];
+      const val  = signals[key];
+      if (val === undefined || val === null) continue;
+
+      // Gaussian kernel: score = 1 when dist=0, ≈0.5 at dist=0.3, ≈0.05 at dist=0.55
+      const dist = Math.abs(pref - val);
+      score += Math.exp(-dist * dist * 8);
+      count++;
+    }
+
+    return count > 0 ? score / count : 0;
   }
 
 

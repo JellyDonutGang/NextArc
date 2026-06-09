@@ -452,6 +452,29 @@
     .slot-badge--wildcard  { background: var(--acid);    color: var(--ink);   }
     .slot-badge--fresh     { background: var(--hot);     color: var(--cream); }
 
+    /* "Because you liked X" — Firestore similarity source chip */
+    .sim-source-chip {
+      display: inline-flex;
+      align-items: center;
+      font-size: 10px;
+      font-weight: 600;
+      font-family: 'Space Grotesk', sans-serif;
+      letter-spacing: 0.02em;
+      color: var(--cream);
+      background: rgba(11,12,22,0.72);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      padding: 3px 7px;
+      border-radius: 0;
+      border: 1px solid rgba(255,255,255,0.18);
+      margin-bottom: 4px;
+      width: fit-content;
+      max-width: 100%;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
     /* Vibe chips */
     .vibe-chip {
       border-radius: 0;
@@ -3280,6 +3303,13 @@ let seenFranchises    = new Set();
 let onboardSkippedIds = new Set(); // skipped during onboarding — blocked from re-showing in onboarding, but still eligible for recs
 let currentRecAnime = null;
 
+// ── Signal learning caches ────────────────────────
+// _signalCache: animeId → Firestore anime_signals doc (pre-fetched before ranking)
+// _simSource:   animeId → liked-anime title that triggered this recommendation
+//               (powers "Because you liked X" chips on rec cards)
+const _signalCache = new Map();
+const _simSource   = new Map();
+
 // ── Adaptive rec system state ─────────────────────
 let nextRecQueue       = null;   // silently pre-loaded next batch
 let isPrefetching      = false;  // guard: no concurrent pre-fetches
@@ -3433,6 +3463,10 @@ function _saveEngineState() {
       onboarded:      engine.onboarded,
       totalSwipes:    engine.totalSwipes,
       likedIds:       [...engine.likedIds],
+      likedIdToTitle: [...engine.likedIdToTitle.entries()],
+      // Signal learning state
+      signalProfile:  engine.signalProfile,
+      signalCount:    engine.signalCount,
       // App-level state
       likeCount, dislikeCount, totalShown, gemsClaimed, nextGemInterval,
       seenIds:        [...seenIds],
@@ -3458,6 +3492,9 @@ function _loadEngineState() {
     engine.onboarded        = s.onboarded        ?? false;
     engine.totalSwipes      = s.totalSwipes      ?? 0;
     if (Array.isArray(s.likedIds)) engine.likedIds = new Set(s.likedIds);
+    if (Array.isArray(s.likedIdToTitle)) engine.likedIdToTitle = new Map(s.likedIdToTitle);
+    if (s.signalProfile && typeof s.signalProfile === 'object') engine.signalProfile = s.signalProfile;
+    if (s.signalCount   != null) engine.signalCount = s.signalCount;
 
     // Restore clusters — re-inflate Sets from arrays
     if (Array.isArray(s.clusters)) {
@@ -3493,6 +3530,68 @@ function _loadEngineState() {
     return false;
   }
 }
+/* ─── Signal learning ────────────────────────────
+   Fires asynchronously on every positive/negative swipe.
+   Fetches the anime's signals from Firestore (if available) and
+   updates the engine's running signal preference profile.
+   Non-blocking — silently swallowed on Firestore unavailability.
+───────────────────────────────────────────────── */
+async function learnSignals(animeId, action) {
+  if (!_db || !animeId) return;
+  // Skip: already know signals for this anime (cache hit means we already learned from it)
+  // NOTE: we still fetch even if cached because the cache entry may be from batchFetch
+  // and we want to learn from every swipe, not just ranked ones.
+  const weight = action === 'supergood' || action === 'superlike' ? 2.5
+               : action === 'like'    ? 1.0
+               : action === 'dislike' ? -0.5
+               : 0;
+  if (weight === 0) return;
+
+  try {
+    let signals = _signalCache.get(animeId);
+    if (!signals) {
+      const doc = await _db.collection('anime_signals').doc(String(animeId)).get();
+      if (!doc.exists) return;
+      signals = doc.data();
+      _signalCache.set(animeId, signals);
+    }
+    engine.updateSignalProfile(signals, weight);
+    _saveEngineState();
+  } catch(e) {
+    // Silently ignore — signal learning is enhancement, not critical path
+  }
+}
+
+/* ─── Batch signal pre-fetch ──────────────────────
+   Called before rankRecommendations so the signal cache
+   is warm for the entire candidate pool.  Fires 30-ID
+   "in" queries in parallel (Firestore SDK limit = 30).
+───────────────────────────────────────────────── */
+async function batchFetchSignals(animeIds) {
+  if (!_db || animeIds.length === 0) return;
+  const uncached = animeIds.filter(id => !_signalCache.has(id));
+  if (uncached.length === 0) return;
+
+  // Split into chunks of 30 (Firestore 'in' query limit)
+  const chunks = [];
+  for (let i = 0; i < uncached.length; i += 30) {
+    chunks.push(uncached.slice(i, i + 30));
+  }
+
+  try {
+    await Promise.all(chunks.map(async chunk => {
+      const snap = await _db.collection('anime_signals')
+        .where('anilist_id', 'in', chunk).get();
+      snap.forEach(doc => {
+        const data = doc.data();
+        if (data.anilist_id) _signalCache.set(data.anilist_id, data);
+      });
+    }));
+  } catch(e) {
+    // Non-critical — ranking proceeds fine without cached signals
+  }
+}
+
 function showOverlay(id) {
   document.getElementById(id).classList.add('visible');
 }
@@ -4373,6 +4472,8 @@ function swipeTaste(card, index, action) {
       engine.update(anime, action);
       seenIds.add(anime.id); // exclude from rec queue — already rated during onboarding
       tasteIndex = index + 1;
+      // Start building signal profile from onboarding swipes — non-blocking
+      learnSignals(anime.id, action);
       _saveEngineState();
       renderTasteCard(tasteIndex);
     }
@@ -4792,6 +4893,9 @@ async function fetchFirestoreSimilar() {
   // Take up to 6 most recently liked IDs
   const recentLiked = [...engine.likedIds].slice(-6);
 
+  // Pre-fetch liked anime titles for "Because you liked X" explanation chips
+  const likedTitles = recentLiked.map(id => engine.likedIdToTitle.get(id) || '');
+
   // Parallel Firestore lookups — one doc per liked anime
   const simLists = await Promise.all(
     recentLiked.map(id =>
@@ -4803,11 +4907,21 @@ async function fetchFirestoreSimilar() {
 
   // Merge all lists — keep the highest similarity score when a show appears
   // in multiple lists, and exclude anything the user has already seen.
+  // Also populate _simSource: track WHICH liked anime triggered each similar ID
+  // so the card can show "Because you liked [title]".
   const idScores = new Map();
-  for (const list of simLists) {
-    for (const { id, score } of list) {
+  for (let i = 0; i < simLists.length; i++) {
+    const sourceTitle = likedTitles[i];
+    for (const { id, score } of simLists[i]) {
       if (!seenIds.has(id)) {
-        idScores.set(id, Math.max(idScores.get(id) || 0, score));
+        const prev = idScores.get(id) || 0;
+        if (score > prev) {
+          idScores.set(id, score);
+          // First/best source wins — no title override with a weaker match
+          if (sourceTitle && !_simSource.has(id)) {
+            _simSource.set(id, sourceTitle);
+          }
+        }
       }
     }
   }
@@ -4940,7 +5054,15 @@ async function fetchAndRankCandidates() {
   const candidates = deduplicateByFranchise(allCandidates)
     .filter(a => !seenIds.has(a.id));
 
-  return engine.rankRecommendations(candidates, [...seenIds]);
+  // Pre-warm the signal cache for all candidates so rankRecommendations
+  // can incorporate signal affinity without additional Firestore round trips.
+  await batchFetchSignals(candidates.map(a => a.id));
+
+  return engine.rankRecommendations(
+    candidates,
+    [...seenIds],
+    id => _signalCache.get(id) || null,
+  );
 }
 
 /** Lightweight profile fingerprint — detects meaningful taste drift. */
@@ -4956,7 +5078,8 @@ function snapshotProfile() {
 function rerankRemaining() {
   const tail = recQueue.slice(recPos);
   if (tail.length < 4) return;
-  const reranked = engine.rankRecommendations(tail, [...seenIds]);
+  // Pass signal lookup so re-ranks also benefit from the cached signal profiles
+  const reranked = engine.rankRecommendations(tail, [...seenIds], id => _signalCache.get(id) || null);
   recQueue           = [...recQueue.slice(0, recPos), ...reranked];
   lastRankSnapshot   = snapshotProfile();
   recSwipesSinceRank = 0;
@@ -5549,6 +5672,25 @@ function showNextRec(firstCard = false) {
   const explanation = generateRecExplanation(anime);
   const card = buildCard(anime, true, explanation);
 
+  // ── "Because you liked X" chip ─────────────────────────────────────────
+  // Surfaces when this rec was sourced from Firestore content similarity
+  // triggered by a specific liked anime.  Skipped on hidden gems (they have
+  // their own badge) and when no source is known.
+  if (!isGem) {
+    const simSrc = _simSource.get(anime.id);
+    if (simSrc) {
+      const srcChip = document.createElement('div');
+      srcChip.className = 'sim-source-chip';
+      // Truncate long titles so the chip stays compact
+      const displayTitle = simSrc.length > 28 ? simSrc.slice(0, 26) + '…' : simSrc;
+      srcChip.textContent = `✦ Because you liked ${displayTitle}`;
+      // Insert before .card-title inside .card-info
+      const cardInfo  = card.querySelector('.card-info');
+      const cardTitle = card.querySelector('.card-title');
+      if (cardInfo && cardTitle) cardInfo.insertBefore(srcChip, cardTitle);
+    }
+  }
+
   // Hidden Gem treatment
   if (isGem) {
     card.classList.add('is-gem');
@@ -5642,6 +5784,9 @@ function recSwipe(card, anime, action) {
   flyCard(card, dir).then(() => {
     if (action !== 'skip') engine.update(anime, action === 'supergood' ? 'superlike' : action);
     if (action === 'like' || action === 'supergood') logLikeEvent(anime, 'recs');
+
+    // Signal learning — async Firestore fetch, non-blocking
+    if (action !== 'skip') learnSignals(anime.id, action);
     totalCardsSwiped++;
     localStorage.setItem('nextarc_cards', totalCardsSwiped);
     _saveEngineState();

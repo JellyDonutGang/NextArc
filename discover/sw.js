@@ -17,9 +17,9 @@
  *   deploy is live immediately on next load.
  */
 
-const CACHE_VERSION  = 'otakult-v2';
-const IMAGE_CACHE    = 'otakult-images-v2';
-const API_CACHE      = 'otakult-api-v2';
+const CACHE_VERSION  = 'otakult-v3';
+const IMAGE_CACHE    = 'otakult-images-v3';
+const API_CACHE      = 'otakult-api-v3';
 
 const ANILIST_ORIGIN = 'https://graphql.anilist.co';
 const IMAGE_ORIGINS  = ['s4.anilist.co', 'img.anidb.net'];
