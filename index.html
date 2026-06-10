@@ -78,10 +78,10 @@
     .nav-link{
       font-family:var(--font-display);font-size:14px;
       padding:6px 12px;text-decoration:none;color:var(--ink);
+      border:3px solid var(--ink);
       transition:background .1s;
     }
     .nav-link:hover,.nav-link.active{background:var(--acid);}
-    .nav-link.active{border:3px solid var(--ink);}
     .nav-cta{
       font-family:var(--font-display);font-size:14px;
       padding:8px 16px;text-decoration:none;
@@ -423,8 +423,8 @@
       </h1>
       <p class="hero-body">OTAKULT learns your taste from every swipe and delivers anime that actually hits. <strong>No filler.</strong> No search bars. Just what you want to watch, before you even know you want it.</p>
       <div class="hero-btns">
-        <a href="/discover" class="btn-hot">START SWIPING</a>
         <a href="/browse" class="btn-ghost">BROWSE THE DIRECTORY →</a>
+        <a href="/discover" class="btn-hot">START SWIPING</a>
       </div>
       <div class="avatar-row">
         <div class="avatars">
@@ -593,7 +593,7 @@
       <h2 class="heat-title">TONIGHT'S<br/><span class="heat-label">HEAT INDEX</span></h2>
       <a href="/browse" class="see-all">SEE ALL →</a>
     </div>
-    <div class="heat-grid">
+    <div class="heat-grid" id="heat-grid">
       <a href="/browse/" class="heat-card" style="transform:rotate(-1deg)">
         <div class="heat-art">
           <img src="https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx21234-XmqW39aQ9o7O.jpg" alt="ERASED" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;">
@@ -840,6 +840,76 @@
         }
       })
       .catch(() => { /* AniList unavailable — leave placeholder */ });
+
+      // ── Tonight's Heat Index — hidden gem picks from Firestore ───────────
+      (async function loadHeatIndex() {
+        try {
+          // Fetch top hidden gem scored anime (ai_extracted quality only, >=0.7)
+          const snap = await db.collection('anime_signals')
+            .where('hidden_gem', '>=', 0.7)
+            .orderBy('hidden_gem', 'desc')
+            .limit(40)
+            .get();
+          if (snap.empty) return;
+
+          // Filter to ai_extracted only, shuffle for variety on each load, pick 4
+          const docs = [];
+          snap.forEach(d => { if (d.data().signal_quality === 'ai_extracted') docs.push(d.data()); });
+          if (docs.length < 4) return;
+          const picks = docs.sort(() => Math.random() - 0.5).slice(0, 4);
+          const ids   = picks.map(d => d.anilist_id);
+          const gemMap = {};
+          picks.forEach(d => { gemMap[d.anilist_id] = d.hidden_gem; });
+
+          // Fetch cover art + metadata from AniList
+          const res = await fetch('https://graphql.anilist.co', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query: `
+              query($ids:[Int]){
+                Page(page:1,perPage:4){
+                  media(id_in:$ids,type:ANIME){
+                    id
+                    title{ english romaji }
+                    coverImage{ medium }
+                    studios(isMain:true){ nodes{ name } }
+                    genres
+                    startDate{ year }
+                  }
+                }
+              }`, variables: { ids } }),
+          });
+          const data  = await res.json();
+          const media = data?.data?.Page?.media || [];
+          if (!media.length) return;
+
+          const rots = ['-1deg','1deg','-1deg','1deg'];
+          const grid = document.getElementById('heat-grid');
+          if (!grid) return;
+
+          grid.innerHTML = media.map((anime, i) => {
+            const title  = (anime.title.english || anime.title.romaji || '').toUpperCase();
+            const studio = anime.studios?.nodes?.[0]?.name || '';
+            const year   = anime.startDate?.year || '';
+            const genres = (anime.genres || []).slice(0, 2);
+            const gem    = gemMap[anime.id];
+            const badge  = gem ? `<span class="heat-score">💎 ${Math.round(gem * 100)}</span>` : '';
+            return `
+              <a href="/browse/" class="heat-card" style="transform:rotate(${rots[i % 4]})">
+                <div class="heat-art">
+                  <img src="${anime.coverImage.medium}" alt="${title}"
+                    style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;">
+                  ${badge}
+                </div>
+                <div class="heat-body">
+                  <div class="heat-card-title">${title}</div>
+                  <div class="heat-card-studio">${studio}${year ? ' · ' + year : ''}</div>
+                  <div class="heat-tags">${genres.map(g=>`<span class="heat-tag">${g}</span>`).join('')}</div>
+                </div>
+              </a>`;
+          }).join('');
+        } catch(e) { /* Firestore/AniList unavailable — static fallback cards remain */ }
+      })();
 
       // ── Waitlist modal ────────────────────────────────────────────────────
       const overlay  = document.getElementById('wl-overlay');
