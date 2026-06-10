@@ -270,7 +270,7 @@
     .heat-body{padding:12px;border-top:3px solid var(--ink);}
     .heat-card-title{font-family:var(--font-display);font-size:18px;line-height:1.1;margin-bottom:4px;}
     .heat-card-studio{font-size:11px;color:rgba(11,12,22,.6);margin-bottom:8px;}
-    .heat-tags{display:flex;gap:4px;flex-wrap:wrap;}
+    .heat-tags{display:flex;gap:4px;flex-wrap:nowrap;overflow:hidden;}
     .heat-tag{font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;background:var(--acid);border:3px solid var(--ink);}
 
     /* TESTIMONIALS */
@@ -868,12 +868,19 @@
 
           function renderCards(media, gemMap) {
             return media.map((anime, i) => {
-              const title  = (anime.title.english || anime.title.romaji || '').toUpperCase();
-              const studio = anime.studios?.nodes?.[0]?.name || '';
-              const year   = anime.startDate?.year || '';
-              const genres = (anime.genres || []).slice(0, 2);
-              const gem    = gemMap[anime.id];
-              const badge  = gem ? `💎 ${Math.round(gem * 100)}` : '';
+              const title    = (anime.title.english || anime.title.romaji || '').toUpperCase();
+              const studio   = anime.studios?.nodes?.[0]?.name || '';
+              const year     = anime.startDate?.year || '';
+              const eps      = anime.episodes ? `${anime.episodes} eps` : null;
+              const gem      = gemMap[anime.id];
+              const badge    = gem ? `💎 ${Math.round(gem * 100)}` : '';
+              // Prefer specific mood tags (rank >= 60) over broad genres
+              const moodTags = (anime.tags || [])
+                .filter(t => t.rank >= 60)
+                .slice(0, 3)
+                .map(t => t.name);
+              const tags = moodTags.length >= 2 ? moodTags : (anime.genres || []).slice(0, 2);
+              const meta = [studio, eps, year].filter(Boolean).join(' · ');
               return `
                 <a href="/browse/" class="heat-card" style="transform:rotate(${rots[i % 4]})">
                   <div class="heat-art">
@@ -883,8 +890,8 @@
                   </div>
                   <div class="heat-body">
                     <div class="heat-card-title">${title}</div>
-                    <div class="heat-card-studio">${studio}${year ? ' · ' + year : ''}</div>
-                    <div class="heat-tags">${genres.map(g=>`<span class="heat-tag">${g}</span>`).join('')}</div>
+                    <div class="heat-card-studio">${meta}</div>
+                    <div class="heat-tags">${tags.map(t=>`<span class="heat-tag">${t}</span>`).join('')}</div>
                   </div>
                 </a>`;
             }).join('');
@@ -917,7 +924,8 @@
                     id title{ english romaji }
                     coverImage{ extraLarge }
                     studios(isMain:true){ nodes{ name } }
-                    genres startDate{ year }
+                    genres episodes startDate{ year }
+                    tags(sort:RANK_DESC){ name rank }
                   }
                 }
               }`, variables: { ids } }),
