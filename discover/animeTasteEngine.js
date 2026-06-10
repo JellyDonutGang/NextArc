@@ -1199,8 +1199,10 @@ class NextArcEngine {
    * @param {number} weight    — swipe weight: +2.5 superlike, +1.0 like, -0.5 dislike
    */
   updateSignalProfile(signals, weight) {
-    // Imputed signals are less reliable — halve their contribution
-    const qualityMult = signals.signal_quality === 'ai_extracted' ? 1.0 : 0.5;
+    // Quality multiplier: ai_extracted (reviews) 1.0 > desc_extracted 0.7 > imputed 0.5
+    const qualityMult = signals.signal_quality === 'ai_extracted'   ? 1.0
+                      : signals.signal_quality === 'desc_extracted'  ? 0.7
+                      : 0.5;
     const effectiveW  = weight * qualityMult;
     if (effectiveW === 0) return;
 

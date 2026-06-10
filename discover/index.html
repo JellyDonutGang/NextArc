@@ -4956,29 +4956,38 @@ async function fetchFirestoreSimilar() {
   // Pre-fetch liked anime titles for "Because you liked X" explanation chips
   const likedTitles = recentLiked.map(id => engine.likedIdToTitle.get(id) || '');
 
-  // Parallel Firestore lookups — one doc per liked anime.
+  // Two parallel Firestore fetches in a single round-trip:
+  //   simLists       — content-based similarity (anime_similarity collection)
+  //   communityLists — AniList community recommendations (anime_community_recs collection)
   // _simCache is pre-warmed by _prefetchSuperlikeSimilarity during onboarding,
   // so superlikes typically resolve instantly (no Firestore round-trip needed).
-  const simLists = await Promise.all(
-    recentLiked.map(id => {
-      if (_simCache.has(id)) return Promise.resolve(_simCache.get(id));
-      return _db.collection('anime_similarity').doc(String(id)).get()
-        .then(doc => {
-          const list = doc.exists ? doc.data().similar || [] : [];
-          _simCache.set(id, list);
-          return list;
-        })
-        .catch(() => []);
-    })
-  );
+  const [simLists, communityLists] = await Promise.all([
+    Promise.all(
+      recentLiked.map(id => {
+        if (_simCache.has(id)) return Promise.resolve(_simCache.get(id));
+        return _db.collection('anime_similarity').doc(String(id)).get()
+          .then(doc => {
+            const list = doc.exists ? doc.data().similar || [] : [];
+            _simCache.set(id, list);
+            return list;
+          })
+          .catch(() => []);
+      })
+    ),
+    Promise.all(
+      recentLiked.map(id =>
+        _db.collection('anime_community_recs').doc(String(id)).get()
+          .then(doc => doc.exists ? (doc.data().recommendations || []) : [])
+          .catch(() => [])
+      )
+    )
+  ]);
 
-  // Merge all lists with action-weighted scores:
+  // ── Pass 1: content-based similarity ────────────────────────────────────────
   //   superlike (weight 5×): dominates the pool — the show they loved most drives recs
   //   like      (weight 1×): standard contribution
-  // Excludes:
-  //   • anything the user has already seen
-  //   • anything in _dislikeExclusions (shares DNA with disliked anime)
-  // Also populate _simSource: track WHICH liked anime triggered each similar ID.
+  // Excludes anything already seen or in _dislikeExclusions (DNA-similar to a disliked show).
+  // _simSource tracks WHICH liked anime triggered each similar ID (for "Because you liked X").
   const idScores = new Map();
   for (let i = 0; i < simLists.length; i++) {
     const sourceId    = recentLiked[i];
@@ -5000,9 +5009,34 @@ async function fetchFirestoreSimilar() {
       }
     }
   }
+
+  // ── Pass 2: community collaborative filtering ────────────────────────────────
+  // Blend AniList community rec edges as a supplementary signal (max 0.3× action weight).
+  // Ratings are normalized per source-list so relative strength within each list matters,
+  // not absolute values across all users. Community scores add to content scores additively.
+  // Content-based _simSource attributions take precedence; community only fills gaps.
+  for (let i = 0; i < communityLists.length; i++) {
+    const sourceId    = recentLiked[i];
+    const sourceTitle = likedTitles[i];
+    const actionWeight = engine.superlikedIds.has(sourceId) ? 5.0 : 1.0;
+    const recs         = communityLists[i];
+    if (!recs.length) continue;
+    const maxRating = Math.max(...recs.map(r => r.rating || 1));
+    for (const { id, rating } of recs) {
+      if (seenIds.has(id) || _dislikeExclusions.has(id)) continue;
+      // Community contribution: max 0.3 per liked anime (vs content similarity's 1.0 max)
+      const communityScore = (rating / maxRating) * 0.3 * actionWeight;
+      idScores.set(id, (idScores.get(id) || 0) + communityScore);
+      // Content-based source attribution takes priority over community
+      if (sourceTitle && !_simSource.has(id)) {
+        _simSource.set(id, sourceTitle);
+      }
+    }
+  }
+
   if (idScores.size === 0) return { Page: { media: [] } };
 
-  // Sort by similarity score, cap at 50 (AniList id_in limit)
+  // Sort by combined content + community score, cap at 50 (AniList id_in limit)
   const topIds = [...idScores.entries()]
     .sort(([, a], [, b]) => b - a)
     .slice(0, 50)
