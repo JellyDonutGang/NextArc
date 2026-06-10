@@ -852,12 +852,11 @@
             .orderBy('hidden_gem', 'desc')
             .limit(100)
             .get();
-          if (snap.empty) { console.warn('[HeatIndex] Firestore returned empty — check rules'); return; }
+          if (snap.empty) return;
 
           const pool = [];
           snap.forEach(d => { pool.push(d.data()); });
-          console.log('[HeatIndex] pool size:', pool.length);
-          if (pool.length < 4) { console.warn('[HeatIndex] pool too small:', pool.length); return; }
+          if (pool.length < 4) return;
 
           const rots = ['-1deg','1deg','-1deg','1deg'];
           const grid = document.getElementById('heat-grid');
@@ -872,8 +871,9 @@
               const eps      = anime.episodes ? `${anime.episodes} eps` : null;
               const gem      = gemMap[anime.id];
               const badge    = gem ? `💎 ${Math.round(gem * 100)}` : '';
-              // Prefer specific mood tags (rank >= 60) over broad genres
+              // Prefer specific mood tags (rank >= 60) over broad genres — sort client-side
               const moodTags = (anime.tags || [])
+                .sort((a, b) => (b.rank || 0) - (a.rank || 0))
                 .filter(t => t.rank >= 60)
                 .slice(0, 3)
                 .map(t => t.name);
@@ -923,7 +923,7 @@
                     coverImage{ extraLarge }
                     studios(isMain:true){ nodes{ name } }
                     genres episodes startDate{ year }
-                    tags(sort:RANK_DESC){ name rank }
+                    tags{ name rank }
                   }
                 }
               }`, variables: { ids } }),
