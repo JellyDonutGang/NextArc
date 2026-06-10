@@ -3094,6 +3094,15 @@ const SEED_POOL_IDS = [
   100526, // Fruits Basket 2019 — emotional supernatural romance, redemption
   9989,   // AnoHana            — bittersweet emotional romance, grief, short
   6045,   // Kimi ni Todoke     — slow-burn school romance, shy protagonist
+  // ── Active Learning Coverage Additions ───────────
+  //    Each fills a vector gap the bucket-anchor logic couldn't reliably hit:
+  477,    // Aria the Animation — definitive cozy_comfort adult iyashikei;
+          //   max distance from dark/hype cluster; near-zero violence/hype scalars
+  3420,   // Mononoke (2007)    — weird_niche + cinematic; episodic, folklore,
+          //   striking art; most dimensionally isolated show in the pool
+  10719,  // Hanasaku Iroha     — found_family ensemble (non-sports); work drama,
+          //   emotional depth, character growth; fills the gap left by sports-heavy
+          //   found_family bucket
 ];
 
 // ── Onboarding signal thresholds ──────────────────
@@ -3288,12 +3297,15 @@ function trackSeen(anime) {
 
 /* ─── State ────────────────────────────────────── */
 let engine = null;
-let tasteAnime     = [];   // active onboarding queue (cards to show)
-let reservePool    = [];   // loaded but not yet shown — used for skip replacement
+let tasteAnime     = [];   // active onboarding queue (grows one card at a time)
+let activeSeedPool = [];   // full curated pool; cards drawn via active learning
+let reservePool    = [];   // AniList overflow — only used when activeSeedPool exhausted
 let tasteIndex     = 0;
 let likeCount      = 0;    // real "good" signals collected
 let dislikeCount   = 0;    // real "bad" signals collected
 let totalShown     = 0;    // total onboarding cards shown (for hard cap)
+let onboardLikedIds    = new Set(); // tracked per-swipe for active learning bucket scoring
+let onboardDislikedIds = new Set();
 let isLoadingReserve    = false;
 let _reserveFetchPromise = null; // shared promise — concurrent callers wait for the same fetch
 let recQueue = [];
@@ -4350,10 +4362,24 @@ function flyCard(card, direction) {
   });
 }
 
+/* ─── Active learning: pick the single best next seed card ─────────────
+   Called after every swipe (and twice at init for the opening 2-card peek).
+   Removes the chosen card from activeSeedPool and appends it to tasteAnime.
+─────────────────────────────────────────────────────────────────────────── */
+function ensureNextCard(overrideShown = null) {
+  if (activeSeedPool.length === 0) return;
+  // "shown" = all cards the user has already rated (before current tasteIndex)
+  const shown = overrideShown ?? tasteAnime.slice(0, tasteIndex);
+  const next  = engine.pickNextSeedCard(activeSeedPool, shown, onboardLikedIds, onboardDislikedIds);
+  if (!next) return;
+  activeSeedPool = activeSeedPool.filter(a => a.id !== next.id);
+  tasteAnime.push(next);
+}
+
 /* ─── TASTE CHECK FLOW ──────────────────────────── */
 async function loadTasteAnime() {
   try {
-    // Fetch 60-anime curated pool in two parallel requests (AniList caps at 50/page)
+    // Fetch full curated pool in two parallel requests (AniList caps at 50/page)
     const half = Math.ceil(SEED_POOL_IDS.length / 2);
     const [r1, r2] = await Promise.allSettled([
       fetchAniList(SEED_POOL_QUERY, { ids: SEED_POOL_IDS.slice(0, half) }),
@@ -4367,19 +4393,24 @@ async function loadTasteAnime() {
     const pool = deduplicateByFranchise(raw);
     if (pool.length < 8) throw new Error('Seed pool too small, falling back');
 
-    // Do NOT mark the whole pool as seen — only track cards as they are
-    // actually shown/rated in renderTasteCard / swipeTaste. This lets
-    // pool items the user never reached appear in recommendations.
+    // Keep the whole pool available for active learning.
+    // Filter out any shows the user already rated (e.g. mid-session refresh).
+    // Do NOT bulk-mark as seen — trackShown fires per card in renderTasteCard.
+    activeSeedPool = pool.filter(a => !seenIds.has(a.id) && !onboardSkippedIds.has(a.id));
 
-    // Diversity-select the initial active queue (what the user sees first)
-    const initial = selectDiverseSeed(pool, Math.min(INITIAL_QUEUE_SIZE, pool.length));
-    tasteAnime = [...initial];
+    // Prime first 2 cards: cold start (no history) → highest quality;
+    // second card → farthest from first in scalar space.
+    tasteAnime = [];
+    const card1 = engine.pickNextSeedCard(activeSeedPool, [], onboardLikedIds, onboardDislikedIds);
+    if (card1) {
+      activeSeedPool = activeSeedPool.filter(a => a.id !== card1.id);
+      tasteAnime.push(card1);
+      // Pass card1 as the "already shown" context so card2 is maximally different
+      ensureNextCard([card1]);
+    }
 
-    // Everything else goes into the reserve for skip replacements & overflow
-    const initialSet = new Set(initial.map(a => a.id));
-    reservePool = pool
-      .filter(a => !initialSet.has(a.id))
-      .sort(() => Math.random() - 0.5);
+    // reservePool is AniList overflow — only tapped when activeSeedPool exhausted
+    reservePool = [];
 
   } catch (e) {
     console.warn('Curated seed fetch failed, using popularity fallback:', e);
@@ -4392,14 +4423,20 @@ async function loadTasteAnime() {
         ...(fb1.status === 'fulfilled' ? (fb1.value?.Page?.media || []) : []),
         ...(fb2.status === 'fulfilled' ? (fb2.value?.Page?.media || []) : []),
       ]).filter(a => a.coverImage?.large);
-      // Same as above: don't bulk-mark — track as shown/rated
-      const initial = selectDiverseSeed(all, Math.min(INITIAL_QUEUE_SIZE, all.length));
-      tasteAnime = [...initial];
-      const initialSet = new Set(initial.map(a => a.id));
-      reservePool = all.filter(a => !initialSet.has(a.id)).sort(() => Math.random() - 0.5);
+
+      activeSeedPool = all.filter(a => !seenIds.has(a.id));
+      tasteAnime = [];
+      const card1 = engine.pickNextSeedCard(activeSeedPool, [], onboardLikedIds, onboardDislikedIds);
+      if (card1) {
+        activeSeedPool = activeSeedPool.filter(a => a.id !== card1.id);
+        tasteAnime.push(card1);
+        ensureNextCard([card1]);
+      }
+      reservePool = [];
     } catch (e2) {
       console.error(e2);
       tasteAnime = [];
+      activeSeedPool = [];
       reservePool = [];
     }
   }
@@ -4409,9 +4446,12 @@ function renderTasteCard(index, isReplacement = false) {
   const stack = document.getElementById('card-stack');
   stack.querySelectorAll('.anime-card').forEach(c => c.remove());
 
-  // If we've used up the active queue, pull the next card from the reserve
+  // If we've used up the active queue, pull the next card:
+  // first try active learning pool, then AniList reserve, then fetch more
   if (index >= tasteAnime.length) {
-    if (reservePool.length > 0) {
+    if (activeSeedPool.length > 0) {
+      ensureNextCard(); // adds one card to tasteAnime via active learning
+    } else if (reservePool.length > 0) {
       tasteAnime.push(reservePool.shift());
     } else if (!shouldFinishOnboarding()) {
       // Reserve empty and minimum not met — show spinner and wait for fetch
@@ -4508,14 +4548,21 @@ function swipeTaste(card, index, action) {
     } else {
       if (action === 'like' || action === 'superlike') {
         likeCount++;
+        onboardLikedIds.add(anime.id);
         logLikeEvent(anime, 'onboarding');
       }
-      if (action === 'dislike') dislikeCount++;
+      if (action === 'dislike') {
+        dislikeCount++;
+        onboardDislikedIds.add(anime.id);
+      }
       totalShown++;
       updateTasteBar();
       engine.update(anime, action);
       seenIds.add(anime.id); // exclude from rec queue — already rated during onboarding
       tasteIndex = index + 1;
+      // Active learning: pick the next most informative seed card based on
+      // everything rated so far, then append it to tasteAnime as lookahead
+      ensureNextCard();
       // Start building signal profile from onboarding swipes — non-blocking
       learnSignals(anime.id, action);
       // Pre-fetch similarity list for superlikes → warms _simCache so fetchFirestoreSimilar
@@ -4554,56 +4601,45 @@ function onboardingSimilarity(a, b) {
 function replaceSkippedCard(skipped, index) {
   tasteAnime.splice(index, 1);
 
-  // Block from re-appearing in the onboarding queue only.
+  // Block from re-appearing in the onboarding queue.
   // Do NOT call trackSeen — skipped ≠ seen, so it stays eligible for recs.
   onboardSkippedIds.add(skipped.id);
+  activeSeedPool = activeSeedPool.filter(a => a.id !== skipped.id);
 
-  // Build a combined search pool: reserve first (fresh anime), then remaining queue
-  const searchPool = [...reservePool, ...tasteAnime.slice(index)];
+  // Active learning replacement: pick the card that is maximally
+  // informative given all cards rated so far (not similarity-based).
+  // "shown" = only cards the user has actually rated, not the skipped slot.
+  const shown = tasteAnime.slice(0, index);
 
-  if (searchPool.length === 0) {
-    // Nowhere to pull from — finish if we can, otherwise wait for fetch
-    if (shouldFinishOnboarding()) { finishTaste(); return; }
+  if (activeSeedPool.length > 0) {
+    const next = engine.pickNextSeedCard(activeSeedPool, shown, onboardLikedIds, onboardDislikedIds);
+    activeSeedPool = activeSeedPool.filter(a => a.id !== next.id);
+    tasteAnime.splice(index, 0, next);
+  } else if (reservePool.length > 0) {
+    tasteAnime.splice(index, 0, reservePool.shift());
+  } else if (shouldFinishOnboarding()) {
+    finishTaste();
+    return;
+  } else {
     showSwipeSpinner();
     fetchMoreForReserve().then(() => {
       hideSwipeSpinner();
       if (reservePool.length > 0) {
         tasteAnime.splice(index, 0, reservePool.shift());
-        renderTasteCard(index, true);
+        renderTasteCard(index);
       } else {
-        // Pool truly empty after fetch — advance with whatever signal we have
         finishTaste();
       }
     });
     return;
   }
 
-  // Find most genre/tag-similar anime to the one they skipped
-  let bestIdx = 0, bestScore = -1;
-  for (let i = 0; i < searchPool.length; i++) {
-    const s = onboardingSimilarity(skipped, searchPool[i]);
-    if (s > bestScore) { bestScore = s; bestIdx = i; }
-  }
-
-  const best = searchPool[bestIdx];
-
-  // Remove it from wherever it lived
-  if (bestIdx < reservePool.length) {
-    reservePool.splice(bestIdx, 1);
-  } else {
-    const queueIdx = index + (bestIdx - reservePool.length);
-    tasteAnime.splice(queueIdx, 1);
-  }
-
-  // Insert into the active slot
-  tasteAnime.splice(index, 0, best);
-
-  // Proactively refill reserve if it's running low
-  if (reservePool.length < RESERVE_LOW_THRESHOLD && !isLoadingReserve) {
+  // Proactively refill AniList reserve when activeSeedPool is nearly gone
+  if (activeSeedPool.length < RESERVE_LOW_THRESHOLD && !isLoadingReserve) {
     fetchMoreForReserve();
   }
 
-  renderTasteCard(index, true);
+  renderTasteCard(index);
 }
 
 function finishTaste() {

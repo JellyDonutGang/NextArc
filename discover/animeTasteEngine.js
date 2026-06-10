@@ -2105,6 +2105,98 @@ class NextArcEngine {
       recency:    +c.recencyScore.toFixed(2),
     }));
   }
+
+  /**
+   * Adaptive farthest-point seed selection for onboarding.
+   *
+   * Picks the single best next card from remainingPool to maximise
+   * information gain given everything already shown:
+   *   • Farthest from all shown cards in 17-dim normalised scalar space
+   *   • +2.5 bonus for introducing an emotional bucket not yet seen
+   *   • penalty if the candidate's bucket was consistently disliked
+   *
+   * Cold start (shownCards empty) → returns highest-quality show so the
+   * very first card is always a strong, universally-recognisable anchor.
+   *
+   * @param {object[]} remainingPool  AniList anime not yet shown
+   * @param {object[]} shownCards     AniList anime already shown/rated
+   * @param {Set}      likedIds       IDs liked or superliked during onboarding
+   * @param {Set}      dislikedIds    IDs disliked during onboarding
+   * @returns {object|null}
+   */
+  pickNextSeedCard(remainingPool, shownCards, likedIds = new Set(), dislikedIds = new Set()) {
+    if (!remainingPool.length) return null;
+
+    // Cold start: highest average score = best first card, most universally informative
+    if (!shownCards.length) {
+      return remainingPool.reduce((best, a) =>
+        (a.averageScore || 0) > (best.averageScore || 0) ? a : best);
+    }
+
+    const DIMS = [
+      'fanService','violence','darkness','romance','humor','pacing',
+      'niche','emotionalWeight','hype','psychologicalDepth',
+      'worldbuilding','characterDrama','moralComplexity',
+      'episodeAppetite','formatPreference','sourcePreference','eraPreference',
+    ];
+
+    // Pre-compute shown card profiles once
+    const shownProfiles = shownCards.map(a => {
+      const { scalars, keys } = extractFeatures(a);
+      return {
+        vec:      DIMS.map(d => (scalars[d] || 0) / 10),
+        buckets:  keys.emotionalBucket || [],
+        liked:    likedIds.has(a.id),
+        disliked: dislikedIds.has(a.id),
+      };
+    });
+
+    // Bucket-level like/dislike tallies from swipe history
+    const bucketLikes    = {};
+    const bucketDislikes = {};
+    for (const p of shownProfiles) {
+      for (const b of p.buckets) {
+        if (p.liked)    bucketLikes[b]    = (bucketLikes[b]    || 0) + 1;
+        if (p.disliked) bucketDislikes[b] = (bucketDislikes[b] || 0) + 1;
+      }
+    }
+
+    const seenBuckets = new Set(shownProfiles.flatMap(p => p.buckets));
+    const shownVecs   = shownProfiles.map(p => p.vec);
+
+    function sqDist(va, vb) {
+      let s = 0;
+      for (let i = 0; i < va.length; i++) s += (va[i] - vb[i]) ** 2;
+      return s;
+    }
+
+    let bestAnime = null, bestScore = -Infinity;
+
+    for (const candidate of remainingPool) {
+      const { scalars, keys } = extractFeatures(candidate);
+      const vec     = DIMS.map(d => (scalars[d] || 0) / 10);
+      const buckets = keys.emotionalBucket || [];
+
+      // Farthest-point: min squared distance to nearest shown card
+      const minDist = Math.min(...shownVecs.map(sv => sqDist(vec, sv)));
+
+      // Bucket novelty bonus: reward introducing a dimension not yet mapped
+      const novelBonus = buckets.some(b => !seenBuckets.has(b)) ? 2.5 : 0;
+
+      // Dislike penalty: avoid buckets the user has rejected more than liked
+      let dislikePenalty = 0;
+      for (const b of buckets) {
+        const dl = bucketDislikes[b] || 0;
+        const lk = bucketLikes[b]    || 0;
+        if (dl > 0 && dl > lk) dislikePenalty += dl * 0.4;
+      }
+
+      const score = minDist + novelBonus - dislikePenalty;
+      if (score > bestScore) { bestScore = score; bestAnime = candidate; }
+    }
+
+    return bestAnime || remainingPool[0];
+  }
 }
 
 
