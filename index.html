@@ -841,73 +841,99 @@
       })
       .catch(() => { /* AniList unavailable — leave placeholder */ });
 
-      // ── Tonight's Heat Index — hidden gem picks from Firestore ───────────
+      // ── Tonight's Heat Index — hidden gem rotation from Firestore ────────
+      // Queries anime_signals for ai_extracted anime with high hidden_gem scores,
+      // then fetches cover art + metadata from AniList. Rotates every 8 seconds.
       (async function loadHeatIndex() {
         try {
-          // Fetch top hidden gem scored anime (ai_extracted quality only, >=0.7)
+          // Pull top hidden gem candidates from Firestore
           const snap = await db.collection('anime_signals')
-            .where('hidden_gem', '>=', 0.7)
+            .where('hidden_gem', '>=', 0.72)
             .orderBy('hidden_gem', 'desc')
-            .limit(40)
+            .limit(50)
             .get();
           if (snap.empty) return;
 
-          // Filter to ai_extracted only, shuffle for variety on each load, pick 4
-          const docs = [];
-          snap.forEach(d => { if (d.data().signal_quality === 'ai_extracted') docs.push(d.data()); });
-          if (docs.length < 4) return;
-          const picks = docs.sort(() => Math.random() - 0.5).slice(0, 4);
-          const ids   = picks.map(d => d.anilist_id);
-          const gemMap = {};
-          picks.forEach(d => { gemMap[d.anilist_id] = d.hidden_gem; });
-
-          // Fetch cover art + metadata from AniList
-          const res = await fetch('https://graphql.anilist.co', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ query: `
-              query($ids:[Int]){
-                Page(page:1,perPage:4){
-                  media(id_in:$ids,type:ANIME){
-                    id
-                    title{ english romaji }
-                    coverImage{ medium }
-                    studios(isMain:true){ nodes{ name } }
-                    genres
-                    startDate{ year }
-                  }
-                }
-              }`, variables: { ids } }),
+          const pool = [];
+          snap.forEach(d => {
+            const doc = d.data();
+            if (doc.signal_quality === 'ai_extracted') pool.push(doc);
           });
-          const data  = await res.json();
-          const media = data?.data?.Page?.media || [];
-          if (!media.length) return;
+          if (pool.length < 4) return;
 
           const rots = ['-1deg','1deg','-1deg','1deg'];
           const grid = document.getElementById('heat-grid');
           if (!grid) return;
+          grid.style.transition = 'opacity 0.4s ease';
 
-          grid.innerHTML = media.map((anime, i) => {
-            const title  = (anime.title.english || anime.title.romaji || '').toUpperCase();
-            const studio = anime.studios?.nodes?.[0]?.name || '';
-            const year   = anime.startDate?.year || '';
-            const genres = (anime.genres || []).slice(0, 2);
-            const gem    = gemMap[anime.id];
-            const badge  = gem ? `<span class="heat-score">💎 ${Math.round(gem * 100)}</span>` : '';
-            return `
-              <a href="/browse/" class="heat-card" style="transform:rotate(${rots[i % 4]})">
-                <div class="heat-art">
-                  <img src="${anime.coverImage.medium}" alt="${title}"
-                    style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;">
-                  ${badge}
-                </div>
-                <div class="heat-body">
-                  <div class="heat-card-title">${title}</div>
-                  <div class="heat-card-studio">${studio}${year ? ' · ' + year : ''}</div>
-                  <div class="heat-tags">${genres.map(g=>`<span class="heat-tag">${g}</span>`).join('')}</div>
-                </div>
-              </a>`;
-          }).join('');
+          function renderCards(media, gemMap) {
+            return media.map((anime, i) => {
+              const title  = (anime.title.english || anime.title.romaji || '').toUpperCase();
+              const studio = anime.studios?.nodes?.[0]?.name || '';
+              const year   = anime.startDate?.year || '';
+              const genres = (anime.genres || []).slice(0, 2);
+              const gem    = gemMap[anime.id];
+              const badge  = gem ? `💎 ${Math.round(gem * 100)}` : '';
+              return `
+                <a href="/browse/" class="heat-card" style="transform:rotate(${rots[i % 4]})">
+                  <div class="heat-art">
+                    <img src="${anime.coverImage.medium}" alt="${title}"
+                      style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;">
+                    <span class="heat-score">${badge}</span>
+                  </div>
+                  <div class="heat-body">
+                    <div class="heat-card-title">${title}</div>
+                    <div class="heat-card-studio">${studio}${year ? ' · ' + year : ''}</div>
+                    <div class="heat-tags">${genres.map(g=>`<span class="heat-tag">${g}</span>`).join('')}</div>
+                  </div>
+                </a>`;
+            }).join('');
+          }
+
+          async function fetchAndShow(picks) {
+            const ids    = picks.map(d => d.anilist_id);
+            const gemMap = {};
+            picks.forEach(d => { gemMap[d.anilist_id] = d.hidden_gem; });
+
+            const res = await fetch('https://graphql.anilist.co', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ query: `
+                query($ids:[Int]){
+                  Page(page:1,perPage:4){
+                    media(id_in:$ids,type:ANIME){
+                      id title{ english romaji }
+                      coverImage{ medium }
+                      studios(isMain:true){ nodes{ name } }
+                      genres startDate{ year }
+                    }
+                  }
+                }`, variables: { ids } }),
+            });
+            const data  = await res.json();
+            const media = data?.data?.Page?.media || [];
+            if (!media.length) return;
+
+            grid.style.opacity = '0';
+            setTimeout(() => {
+              grid.innerHTML = renderCards(media, gemMap);
+              grid.style.opacity = '1';
+            }, 400);
+          }
+
+          // Rotate through pool — fresh random 4 every 8 seconds
+          let used = new Set();
+          async function showNext() {
+            if (used.size + 4 > pool.length) used = new Set();
+            const available = pool.filter((_, i) => !used.has(i));
+            const picks = available.sort(() => Math.random() - 0.5).slice(0, 4);
+            picks.forEach(p => used.add(pool.indexOf(p)));
+            await fetchAndShow(picks);
+          }
+
+          await showNext(); // initial render
+          setInterval(showNext, 8000);
+
         } catch(e) { console.error('[HeatIndex]', e); }
       })();
 

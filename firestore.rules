@@ -1,0 +1,48 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Public data collections (read-only for everyone) ──────────────────
+    // Powers the marketing site heat index, similarity lookups, and signals.
+    // Write is locked to pipeline service account (firebase-admin SDK only).
+    match /anime_signals/{doc} {
+      allow read: if true;
+      allow write: if false;
+    }
+    match /anime_community_recs/{doc} {
+      allow read: if true;
+      allow write: if false;
+    }
+    match /anime_similarity/{doc} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // ── App engagement data ───────────────────────────────────────────────
+    // Likes are publicly readable (powers the marquee ticker) and writable
+    // by authenticated users only.
+    match /anime_likes/{doc} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // ── Waitlist ──────────────────────────────────────────────────────────
+    // Anyone can submit (no auth required on the marketing page).
+    // Only the service account can read submissions.
+    match /waitlist/{doc} {
+      allow read: if false;
+      allow create: if true;
+    }
+
+    // ── User data ─────────────────────────────────────────────────────────
+    // Users can only read/write their own documents.
+    match /users/{userId}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // ── Default: deny everything else ─────────────────────────────────────
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
