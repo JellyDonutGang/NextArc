@@ -268,10 +268,10 @@
     .heat-score{position:absolute;top:8px;left:8px;z-index:1;background:var(--ink);color:var(--acid);font-family:var(--font-display);font-size:10px;padding:4px 8px;}
     .heat-jp{position:absolute;bottom:8px;right:8px;z-index:1;background:rgba(251,245,223,.9);font-family:var(--font-mono-jp);font-size:8px;padding:3px 7px;}
     .heat-body{padding:12px;border-top:3px solid var(--ink);}
-    .heat-card-title{font-family:var(--font-display);font-size:18px;line-height:1.1;margin-bottom:4px;}
-    .heat-card-studio{font-size:11px;color:rgba(11,12,22,.6);margin-bottom:8px;}
+    .heat-card-title{font-family:var(--font-display);font-size:18px;line-height:1.1;margin-bottom:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+    .heat-card-studio{font-size:11px;color:rgba(11,12,22,.6);margin-bottom:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
     .heat-tags{display:flex;gap:4px;flex-wrap:nowrap;overflow:hidden;}
-    .heat-tag{font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;background:var(--acid);border:3px solid var(--ink);}
+    .heat-tag{font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;background:var(--acid);border:3px solid var(--ink);white-space:nowrap;}
     .heat-error{grid-column:1/-1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;padding:60px 24px;border:3px solid var(--ink);box-shadow:8px 8px 0 0 var(--ink);text-align:center;}
     .heat-error-msg{font-family:var(--font-display);font-size:22px;line-height:1.3;letter-spacing:.04em;}
     .heat-report-btn{font-family:var(--font-display);font-size:13px;letter-spacing:.08em;padding:10px 20px;background:var(--hot);color:#fff;border:3px solid var(--ink);box-shadow:4px 4px 0 0 var(--ink);text-decoration:none;transition:background .15s,color .15s;}
@@ -919,30 +919,42 @@
           const shuffled = [...pool].sort((a, b) =>
             seededRandom(dateSeed + pool.indexOf(a)) - seededRandom(dateSeed + pool.indexOf(b))
           );
-          const picks  = shuffled.slice(0, 4);
-          const ids    = picks.map(d => d.anilist_id);
-          const gemMap = {};
-          picks.forEach(d => { gemMap[d.anilist_id] = d.hidden_gem; });
+          // Pull 20 candidates so we can filter after AniList quality check
+          const picks20 = shuffled.slice(0, 20);
+          const ids20   = picks20.map(d => d.anilist_id);
+          const gemMap  = {};
+          picks20.forEach(d => { gemMap[d.anilist_id] = d.hidden_gem; });
 
           const res = await fetch('https://graphql.anilist.co', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ query: `
               query($ids:[Int]){
-                Page(page:1,perPage:4){
+                Page(page:1,perPage:20){
                   media(id_in:$ids,type:ANIME){
                     id title{ english romaji }
                     coverImage{ extraLarge }
                     studios(isMain:true){ nodes{ name } }
                     genres episodes startDate{ year }
                     tags{ name rank }
+                    popularity averageScore
                   }
                 }
-              }`, variables: { ids } }),
+              }`, variables: { ids: ids20 } }),
           });
-          const data  = await res.json();
-          const media = data?.data?.Page?.media || [];
-          if (!media.length) { showError(); return; }
+          const data = await res.json();
+          const allMedia = data?.data?.Page?.media || [];
+
+          // Filter to shows a real person would recognise — no 1-ep OVAs or unknown shorts
+          const media = allMedia
+            .filter(a =>
+              (a.popularity   || 0) >= 3000 &&  // has some actual audience
+              (a.averageScore || 0) >= 60   &&  // not a dumpster fire
+              (a.episodes == null || a.episodes >= 4)  // no single-episode shorts
+            )
+            .slice(0, 4);
+
+          if (media.length < 4) { showError(); return; }
 
           grid.style.opacity = '0';
           setTimeout(() => {
