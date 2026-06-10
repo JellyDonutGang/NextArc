@@ -85,11 +85,11 @@
     .nav-cta{
       font-family:var(--font-display);font-size:14px;
       padding:8px 16px;text-decoration:none;
-      background:var(--ink);color:var(--cream);
+      background:var(--hot);color:#fff;
       border:3px solid var(--ink);box-shadow:4px 4px 0 0 var(--ink);
-      transition:background .1s;
+      transition:background .1s, color .1s;
     }
-    .nav-cta:hover{background:var(--hot);}
+    .nav-cta:hover{background:var(--acid);color:var(--ink);}
 
     /* MARQUEE */
     .marquee-bar{
@@ -151,7 +151,7 @@
       border:3px solid var(--ink);box-shadow:4px 4px 0 0 var(--ink);
       transition:background .1s;
     }
-    .btn-hot:hover{background:var(--ink);}
+    .btn-hot:hover{background:var(--acid);color:var(--ink);}
     .btn-ghost{
       font-family:var(--font-display);font-size:18px;padding:16px 24px;
       background:var(--cream);color:var(--ink);text-decoration:none;
@@ -387,7 +387,7 @@
     <nav class="nav-links">
       <a href="/" class="nav-link active hidden-sm">HOME</a>
       <a href="/browse" class="nav-link">DIRECTORY</a>
-      <a href="/discover" class="nav-cta">GET THE APP →</a>
+      <a href="/discover" class="nav-cta">SWIPE →</a>
     </nav>
   </div>
   <div class="marquee-bar">
@@ -423,8 +423,8 @@
       </h1>
       <p class="hero-body">OTAKULT learns your taste from every swipe and delivers anime that actually hits. <strong>No filler.</strong> No search bars. Just what you want to watch, before you even know you want it.</p>
       <div class="hero-btns">
-        <a href="/browse" class="btn-hot">BROWSE THE DIRECTORY →</a>
-        <a href="/discover" class="btn-ghost">⬇ GET THE APP</a>
+        <a href="/discover" class="btn-hot">START SWIPING</a>
+        <a href="/browse" class="btn-ghost">BROWSE THE DIRECTORY →</a>
       </div>
       <div class="avatar-row">
         <div class="avatars">
