@@ -848,18 +848,16 @@
         try {
           // Pull top hidden gem candidates from Firestore
           const snap = await db.collection('anime_signals')
-            .where('hidden_gem', '>=', 0.72)
+            .where('hidden_gem', '>=', 0.65)
             .orderBy('hidden_gem', 'desc')
-            .limit(50)
+            .limit(100)
             .get();
-          if (snap.empty) return;
+          if (snap.empty) { console.warn('[HeatIndex] Firestore returned empty — check rules'); return; }
 
           const pool = [];
-          snap.forEach(d => {
-            const doc = d.data();
-            if (doc.signal_quality === 'ai_extracted') pool.push(doc);
-          });
-          if (pool.length < 4) return;
+          snap.forEach(d => { pool.push(d.data()); });
+          console.log('[HeatIndex] pool size:', pool.length);
+          if (pool.length < 4) { console.warn('[HeatIndex] pool too small:', pool.length); return; }
 
           const rots = ['-1deg','1deg','-1deg','1deg'];
           const grid = document.getElementById('heat-grid');
