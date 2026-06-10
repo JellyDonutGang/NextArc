@@ -908,7 +908,7 @@
                 </div>
               </a>`;
           }).join('');
-        } catch(e) { /* Firestore/AniList unavailable — static fallback cards remain */ }
+        } catch(e) { console.error('[HeatIndex]', e); }
       })();
 
       // ── Waitlist modal ────────────────────────────────────────────────────
