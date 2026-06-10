@@ -44,66 +44,6 @@
     .animate-wobble{animation:wobble 2.5s ease-in-out infinite;}
     .animate-flash{animation:flash 1.6s ease-in-out infinite;}
 
-    /* NAV */
-    header{
-      position:sticky;top:0;z-index:50;
-      border-top:3px solid var(--ink);
-      border-left:3px solid var(--ink);
-      border-right:3px solid var(--ink);
-      box-shadow:
-        -3px 0 0 0 var(--ink),
-         3px 0 0 0 var(--ink),
-         0 -3px 0 0 var(--ink);
-      background:rgba(251,245,223,0.95);
-      backdrop-filter:blur(8px);
-    }
-    /* No nav-divider — border comes from marquee border-top */
-    .nav-inner{
-      max-width:1280px;margin:0 auto;
-      display:flex;align-items:center;justify-content:space-between;
-      padding:12px 24px;
-    }
-    .nav-logo{display:flex;align-items:center;gap:8px;text-decoration:none;color:var(--ink);}
-    .logo-badge{
-      width:40px;height:40px;border-radius:50%;
-      background:var(--hot);color:#fff;
-      display:grid;place-items:center;
-      font-family:var(--font-display);font-size:20px;
-      border:3px solid var(--ink);
-      animation:wobble 2.5s ease-in-out infinite;
-    }
-    .logo-text{font-family:var(--font-display);font-size:24px;letter-spacing:-.025em;}
-    .logo-text .dot{color:var(--hot);}
-    .nav-links{display:flex;align-items:center;gap:8px;}
-    .nav-link{
-      font-family:var(--font-display);font-size:14px;
-      padding:6px 12px;text-decoration:none;color:var(--ink);
-      border:3px solid var(--ink);
-      transition:background .1s;
-    }
-    .nav-link:hover,.nav-link.active{background:var(--acid);}
-    .nav-cta{
-      font-family:var(--font-display);font-size:14px;
-      padding:8px 16px;text-decoration:none;
-      background:var(--hot);color:#fff;
-      border:3px solid var(--ink);box-shadow:4px 4px 0 0 var(--ink);
-      transition:background .1s, color .1s;
-    }
-    .nav-cta:hover{background:var(--acid);color:var(--ink);}
-
-    /* MARQUEE */
-    .marquee-bar{
-      overflow:hidden;background:var(--ink);color:var(--cream);
-      border-top:3px solid var(--ink);
-      padding:6px 0;
-    }
-    .marquee-track{display:flex;width:max-content;animation:marquee 30s linear infinite;}
-    .marquee-item{
-      font-family:var(--font-display);font-size:11px;color:var(--cream);
-      letter-spacing:.15em;padding:0 24px;white-space:nowrap;
-    }
-    .marquee-item .sep{color:var(--hot);}
-
     /* HERO */
     .hero{position:relative;overflow:hidden;border-left:3px solid var(--ink);border-right:3px solid var(--ink);}
     .hero-halftone{
@@ -379,39 +319,12 @@
       .cta-title{font-size:72px;}
     }
   </style>
+  <script src="/components/nav.js"></script>
 </head>
 <body>
 
 <!-- NAV -->
-<header>
-  <div class="nav-inner">
-    <a href="/" class="nav-logo">
-      <div class="logo-badge">O!</div>
-      <span class="logo-text">OTAKULT<span class="dot">.</span></span>
-    </a>
-    <nav class="nav-links">
-      <a href="/" class="nav-link active hidden-sm">HOME</a>
-      <a href="/browse" class="nav-link">DIRECTORY</a>
-      <a href="/discover" class="nav-cta">SWIPE →</a>
-    </nav>
-  </div>
-  <div class="marquee-bar">
-    <div class="marquee-track">
-      <span class="marquee-item">NO FILLER <span class="sep">✦</span></span>
-      <span class="marquee-item" id="ticker-hot-1">♥ <span class="sep">✦</span></span>
-      <span class="marquee-item">SWIPE YOUR TASTE CLUSTERS <span class="sep">✦</span></span>
-      <span class="marquee-item" id="ticker-airing-1">NOW STREAMING <span class="sep">✦</span></span>
-      <span class="marquee-item">JOIN THE CULT <span class="sep">✦</span></span>
-      <span class="marquee-item">BUILT AT 2AM OUT OF SPITE <span class="sep">✦</span></span>
-      <span class="marquee-item">NO FILLER <span class="sep">✦</span></span>
-      <span class="marquee-item" id="ticker-hot-2">♥ <span class="sep">✦</span></span>
-      <span class="marquee-item">SWIPE YOUR TASTE CLUSTERS <span class="sep">✦</span></span>
-      <span class="marquee-item" id="ticker-airing-2">NOW STREAMING <span class="sep">✦</span></span>
-      <span class="marquee-item">JOIN THE CULT <span class="sep">✦</span></span>
-      <span class="marquee-item">BUILT AT 2AM OUT OF SPITE <span class="sep">✦</span></span>
-    </div>
-  </div>
-</header>
+<otakult-nav></otakult-nav>
 
 <!-- HERO -->
 <section class="hero">
@@ -599,7 +512,7 @@
       <a href="/browse" class="see-all">SEE ALL →</a>
     </div>
     <div class="heat-grid" id="heat-grid">
-      <a href="/browse/" class="heat-card" style="transform:rotate(-1deg)">
+      <a href="/browse/anime-like-erased" class="heat-card" style="transform:rotate(-1deg)">
         <div class="heat-art">
           <img src="https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx21234-XmqW39aQ9o7O.jpg" alt="ERASED" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;">
           <span class="heat-score">★ 8.1</span>
@@ -611,7 +524,7 @@
           <div class="heat-tags"><span class="heat-tag">Mystery</span><span class="heat-tag">Thriller</span></div>
         </div>
       </a>
-      <a href="/browse/" class="heat-card" style="transform:rotate(1deg)">
+      <a href="/browse/anime-like-the-promised-neverland" class="heat-card" style="transform:rotate(1deg)">
         <div class="heat-art">
           <img src="https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx101759-8UR7r9MNVpz2.jpg" alt="The Promised Neverland" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;">
           <span class="heat-score">★ 8.4</span>
@@ -623,7 +536,7 @@
           <div class="heat-tags"><span class="heat-tag">Psychological</span><span class="heat-tag">Fantasy</span></div>
         </div>
       </a>
-      <a href="/browse/" class="heat-card" style="transform:rotate(-1deg)">
+      <a href="/browse/anime-like-a-silent-voice" class="heat-card" style="transform:rotate(-1deg)">
         <div class="heat-art">
           <img src="https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx20954-sYRfE5jQRtSB.jpg" alt="A Silent Voice" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;">
           <span class="heat-score">★ 8.8</span>
@@ -635,7 +548,7 @@
           <div class="heat-tags"><span class="heat-tag">Drama</span><span class="heat-tag">Romance</span></div>
         </div>
       </a>
-      <a href="/browse/" class="heat-card" style="transform:rotate(1deg)">
+      <a href="/browse/anime-like-your-lie-in-april" class="heat-card" style="transform:rotate(1deg)">
         <div class="heat-art">
           <img src="https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx20665-TLgkL8T8IRFd.png" alt="Your Lie in April" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;">
           <span class="heat-score">★ 8.4</span>
@@ -874,7 +787,7 @@
           if (!grid) return;
           grid.style.transition = 'opacity 0.4s ease';
 
-          function renderCards(media, gemMap) {
+          function renderCards(media, gemMap, slugMap) {
             return media.map((anime, i) => {
               const title    = (anime.title.english || anime.title.romaji || '').toUpperCase();
               const studio   = anime.studios?.nodes?.[0]?.name || '';
@@ -882,6 +795,8 @@
               const eps      = anime.episodes ? `${anime.episodes} eps` : null;
               const gem      = gemMap[anime.id];
               const badge    = gem ? `💎 ${Math.round(gem * 100)}` : '';
+              const slug     = slugMap?.[anime.id];
+              const href     = slug ? `/browse/${slug}` : '/browse';
               // Pick highest-ranked tags that fit without clipping.
               // Greedy: try each tag in rank order, add it if it fits in the
               // remaining character budget, skip it and try the next if it doesn't.
@@ -903,7 +818,7 @@
               const tags = fitTags.length > 0 ? fitTags : (anime.genres || []).slice(0, 2);
               const meta = [studio, eps, year].filter(Boolean).join(' · ');
               return `
-                <a href="/browse/" class="heat-card" style="transform:rotate(${rots[i % 4]})">
+                <a href="${href}" class="heat-card" style="transform:rotate(${rots[i % 4]})">
                   <div class="heat-art">
                     <img src="${anime.coverImage.extraLarge}" alt="${title}"
                       style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;">
@@ -935,6 +850,15 @@
           const gemMap = {};
           picks.forEach(d => { gemMap[d.anilist_id] = d.hidden_gem; });
 
+          // Fetch slugs from anime_catalog so cards link to slug pages
+          const slugMap = {};
+          await Promise.all(ids.map(async id => {
+            try {
+              const doc = await db.collection('anime_catalog').doc(String(id)).get();
+              if (doc.exists) slugMap[id] = doc.data().slug;
+            } catch(e) { /* slug unavailable — card falls back to /browse */ }
+          }));
+
           const res = await fetch('https://graphql.anilist.co', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -957,7 +881,7 @@
 
           grid.style.opacity = '0';
           setTimeout(() => {
-            grid.innerHTML = renderCards(media, gemMap);
+            grid.innerHTML = renderCards(media, gemMap, slugMap);
             grid.style.opacity = '1';
           }, 400);
 
