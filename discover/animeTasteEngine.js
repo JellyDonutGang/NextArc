@@ -48,6 +48,11 @@ const SIGNAL_KEYS = [
   'soundtrack_emphasis', 'character_depth_focus',
 ];
 
+// Parallel desc vector keys — prefixed fields in the same Firestore doc.
+// Represent "what the show looks like" from its description/tags,
+// independent of what reviewers actually experienced.
+const DESC_SIGNAL_KEYS = SIGNAL_KEYS.map(k => `desc_${k}`);
+
 /* ═══════════════════════════════════════════════════════════════════════════
    SCALAR DIMENSION TAG WEIGHTS
    score = Σ(tagRank × weight) + genreBoost, clamped [0, 10]
@@ -1028,11 +1033,19 @@ class NextArcEngine {
       const avgScore    = p.anime.averageScore || 0;
       const qualityMult = avgScore > 0 ? 0.65 + 0.35 * (avgScore / 100) : 1.0;
 
-      // Signal affinity: adds up to 0.08 to total score.
-      // Meaningful within similarly-scored groups without reversing dominant matches.
-      const signalBonus = hasSignalProfile
-        ? this.computeSignalAffinity(signalLookup(p.anime.id)) * 0.12
-        : 0;
+      // Signal affinity bonus — two sources blended:
+      //   review affinity (0.12 weight): "what it is" based on user reviews
+      //   desc affinity   (0.05 weight): "what it looks like" from description/tags
+      //                                  trust-discounted by divergence score
+      // Combined adds up to ~0.17 at most — meaningful within similarly-scored
+      // groups without reversing dominant tag/cluster matches.
+      let signalBonus = 0;
+      if (hasSignalProfile) {
+        const cached = signalLookup(p.anime.id);
+        const reviewAffinity = this.computeSignalAffinity(cached) * 0.12;
+        const descAffinity   = this.computeDescAffinity(cached)   * 0.05;
+        signalBonus = reviewAffinity + descAffinity;
+      }
 
       if (!multiCluster) {
         return { ...p, score: globalScore * qualityMult + signalBonus, clusterId: -1 };
@@ -1282,6 +1295,46 @@ class NextArcEngine {
     // average is more stable. Lean 65% compound once we have enough signal.
     const compoundWeight = Math.min(0.65, distinctive.length * 0.20);
     return compoundScore * compoundWeight + avgScore * (1 - compoundWeight);
+  }
+
+  /**
+   * How well does an anime's DESCRIPTION vector match the user's learned preferences?
+   * Uses the desc_* prefixed fields — "what the show looks like" rather than
+   * "what it actually is". Weighted lower than review affinity in ranking.
+   *
+   * Also applies a trust discount when the show has a high divergence score —
+   * if the description doesn't match what reviewers experienced, the desc vector
+   * is less reliable as a matching signal.
+   *
+   * @param {object|null} signals — Firestore anime_signals doc, or null if not cached
+   * @returns {number} 0–1 affinity score, or 0 if no desc signals available
+   */
+  computeDescAffinity(signals) {
+    if (!signals) return 0;
+    // Check at least one desc field is present
+    if (signals.desc_hype_factor === undefined && signals.desc_darkness === undefined) return 0;
+
+    const profileKeys = Object.keys(this.signalProfile);
+    if (profileKeys.length < 3) return 0;
+
+    let avgScore = 0, avgCount = 0;
+    for (const key of profileKeys) {
+      const descKey = `desc_${key}`;
+      const val = signals[descKey];
+      if (val === undefined || val === null) continue;
+      const dist = Math.abs(this.signalProfile[key] - val);
+      avgScore += Math.exp(-dist * dist * 8);
+      avgCount++;
+    }
+    if (avgCount === 0) return 0;
+    avgScore = avgScore / avgCount;
+
+    // Trust discount: high divergence means description misrepresents the show.
+    // A divergence of 0.3 cuts the weight roughly in half.
+    const divergence = signals.desc_divergence ?? 0;
+    const trustFactor = Math.exp(-divergence * 3);
+
+    return avgScore * trustFactor;
   }
 
 
