@@ -882,13 +882,25 @@
               const eps      = anime.episodes ? `${anime.episodes} eps` : null;
               const gem      = gemMap[anime.id];
               const badge    = gem ? `💎 ${Math.round(gem * 100)}` : '';
-              // Prefer specific mood tags (rank >= 60) over broad genres — sort client-side
-              const moodTags = (anime.tags || [])
+              // Pick highest-ranked tags that fit without clipping.
+              // Greedy: try each tag in rank order, add it if it fits in the
+              // remaining character budget, skip it and try the next if it doesn't.
+              const CHAR_BUDGET = 28;
+              const ranked = (anime.tags || [])
                 .sort((a, b) => (b.rank || 0) - (a.rank || 0))
                 .filter(t => t.rank >= 60)
-                .slice(0, 3)
                 .map(t => t.name);
-              const tags = moodTags.length >= 2 ? moodTags : (anime.genres || []).slice(0, 2);
+              const fitTags = [];
+              let used = 0;
+              for (const tag of ranked) {
+                if (fitTags.length >= 3) break;
+                if (used + tag.length <= CHAR_BUDGET) {
+                  fitTags.push(tag);
+                  used += tag.length;
+                }
+                // too long — skip and try the next shorter one
+              }
+              const tags = fitTags.length > 0 ? fitTags : (anime.genres || []).slice(0, 2);
               const meta = [studio, eps, year].filter(Boolean).join(' · ');
               return `
                 <a href="/browse/" class="heat-card" style="transform:rotate(${rots[i % 4]})">
