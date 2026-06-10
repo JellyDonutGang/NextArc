@@ -3660,53 +3660,42 @@ function updateTasteBar() {
   const marker2 = document.getElementById('taste-gem-marker-2');
   if (!fill || !marker2) return;
 
-  // ── Phase 1 progress (internal, drives first half of bar) ──
-  const p1Like    = Math.min(1, likeCount    / MIN_LIKES_P1);
-  const p1Dislike = Math.min(1, dislikeCount / MIN_DISLIKES_P1);
-  const p1Mixed   = (p1Like + p1Dislike) / 2;
-  const p1Solo    = Math.min(1, likeCount / MIN_LIKES_P1_SOLO);
-  const phase1Pct  = Math.max(p1Mixed, p1Solo);
-  const phase1Done = (likeCount >= MIN_LIKES_P1 && dislikeCount >= MIN_DISLIKES_P1)
-                  || likeCount >= MIN_LIKES_P1_SOLO;
+  // ── Multi-path formula: every path includes a totalShown term ─────────────
+  // This guarantees the bar moves on EVERY swipe (like, dislike, or skip).
+  // Each path hits exactly 1.0 when its shouldFinishOnboarding() condition fires.
+  // Weights within each path sum to 1.0 so max = 1.0 = 100%.
 
-  // ── Phase 2 progress (internal, drives second half of bar) ──
-  const p2Like    = Math.min(1, likeCount    / MIN_LIKES);
-  const p2Dislike = Math.min(1, dislikeCount / MIN_DISLIKES);
-  const p2Total   = Math.min(1, totalShown   / MIN_TOTAL_SHOWN);
-  const p2Mixed   = (p2Like + p2Dislike + p2Total) / 3;
-  const p2Solo    = Math.min(1, likeCount / MIN_LIKES_SOLO) * 0.75
-                  + Math.min(1, totalShown / MIN_TOTAL_SOLO) * 0.25;
-  const phase2Pct  = Math.max(p2Mixed, p2Solo);
-  const phase2Done = (likeCount >= MIN_LIKES && dislikeCount >= MIN_DISLIKES && totalShown >= MIN_TOTAL_SHOWN)
-                  || (likeCount >= MIN_LIKES_SOLO && totalShown >= MIN_TOTAL_SOLO);
+  // Path 1: full mixed signal  (8 likes + 6 dislikes + 18 total)
+  const p1 = Math.min(1, likeCount    / MIN_LIKES)         * 0.40
+           + Math.min(1, dislikeCount / MIN_DISLIKES)       * 0.35
+           + Math.min(1, totalShown   / MIN_TOTAL_SHOWN)    * 0.25;
 
-  // Single smooth bar: first half = phase 1, second half = phase 2
-  const barPct = phase2Done ? 100
-               : phase1Done ? Math.round(50 + phase2Pct * 50)
-               : Math.round(phase1Pct * 50);
+  // Path 2: likes-only          (10 likes + 20 total)
+  const p2 = Math.min(1, likeCount  / MIN_LIKES_SOLO)      * 0.65
+           + Math.min(1, totalShown / MIN_TOTAL_SOLO)       * 0.35;
 
+  // Path 3: skipper escape      (8 likes + 24 total) — keeps moving after 18
+  const p3 = Math.min(1, likeCount  / MIN_LIKES)           * 0.55
+           + Math.min(1, totalShown / 24)                   * 0.45;
+
+  // Path 4: hard cap            (40 total) — slowest, always advances
+  const p4 = Math.min(1, totalShown / MAX_ONBOARDING_SHOWN);
+
+  const barPct = Math.min(100, Math.round(Math.max(p1, p2, p3, p4) * 100));
   fill.style.width = barPct + '%';
 
-  // ── Fill charge states (glow animation feedback) ──
-  const towardP2    = phase1Done && !phase2Done;
-  const p2LeftMixed = Math.max(MIN_LIKES - likeCount, MIN_DISLIKES - dislikeCount, 0);
-  const p2LeftSolo  = Math.max(MIN_LIKES_SOLO - likeCount, 0);
-  const p2Left      = Math.min(p2LeftMixed, p2LeftSolo);
-  const p1Left      = Math.max(
-    Math.min(MIN_LIKES_P1 - likeCount, MIN_DISLIKES_P1 - dislikeCount),
-    MIN_LIKES_P1_SOLO - likeCount, 0
-  );
-  const isCharging  = towardP2 ? p2Left <= 2 : (!phase1Done && p1Left <= 1);
+  // ── Glow states ──
+  const almostDone = barPct >= 85 && barPct < 100;
+  fill.classList.toggle('charging',  almostDone);
+  fill.classList.toggle('triggered', barPct >= 100);
 
-  fill.classList.toggle('charging',  isCharging && !phase2Done);
-  fill.classList.toggle('triggered', phase2Done);
-
-  // ── Single end lock ──
-  if (phase2Done) {
+  // ── End lock: primed at 90%, unlocks at 100% ──
+  if (barPct >= 100) {
     marker2.classList.add('active');
+    marker2.classList.remove('primed');
   } else {
     marker2.classList.remove('active', 'filled');
-    marker2.classList.toggle('primed', towardP2 && p2Left <= 2);
+    marker2.classList.toggle('primed', barPct >= 90);
   }
 }
 
