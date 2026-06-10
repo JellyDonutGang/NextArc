@@ -4,9 +4,10 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
   <title>The Directory — OTAKULT</title>
-  <meta name="description" content="12 anime hand-picked by the cult. Click anything to read why it slaps."/>
+  <meta name="description" content="Browse 17,000+ anime. Filter by genre, sort by score or popularity. Every show has a page."/>
   <link rel="canonical" href="https://otakult.app/browse"/>
-  <script type="application/ld+json">{"@context":"https://schema.org","@type":"CollectionPage","name":"OTAKULT Anime Directory","url":"https://otakult.app/browse"}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"CollectionPage","name":"OTAKULT Anime Directory","url":"https://otakult.app/browse","description":"Browse 17,000+ anime titles with genre filters and sorting."}</script>
+  <link rel="icon" href="/icons/icon-192.png"/>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Space+Grotesk:wght@400;500;600;700&family=M+PLUS+1+Code:wght@400;500&display=swap" rel="stylesheet"/>
@@ -28,23 +29,17 @@
       background-position:0 0,16px 16px;
       background-attachment:fixed;
     }
-    .brutal-border{border:3px solid var(--ink);}
-    .sticker{border:3px solid var(--ink);box-shadow:4px 4px 0 0 var(--ink);}
     @keyframes marquee{from{transform:translateX(0);}to{transform:translateX(-50%);}}
     @keyframes wobble{0%,100%{transform:rotate(-2deg);}50%{transform:rotate(2deg);}}
-    .animate-marquee{animation:marquee 30s linear infinite;}
-    .animate-wobble{animation:wobble 2.5s ease-in-out infinite;}
+    @keyframes spin{to{transform:rotate(360deg);}}
+    @keyframes shimmer{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
 
-    /* NAV */
+    /* ── NAV ────────────────────────────────────────────────────────────────── */
     header{
       position:sticky;top:0;z-index:50;
       border-top:3px solid var(--ink);
       border-left:3px solid var(--ink);
       border-right:3px solid var(--ink);
-      box-shadow:
-        -3px 0 0 0 var(--ink),
-         3px 0 0 0 var(--ink),
-         0 -3px 0 0 var(--ink);
       background:rgba(251,245,223,0.95);
       backdrop-filter:blur(8px);
     }
@@ -57,20 +52,22 @@
     .nav-link{font-family:var(--font-display);font-size:14px;padding:6px 12px;text-decoration:none;color:var(--ink);transition:background .1s;}
     .nav-link:hover{background:var(--acid);}
     .nav-link.active{background:var(--acid);border:3px solid var(--ink);}
-    .nav-cta{font-family:var(--font-display);font-size:14px;padding:8px 16px;text-decoration:none;background:var(--ink);color:var(--cream);border:3px solid var(--ink);box-shadow:4px 4px 0 0 var(--ink);transition:background .1s;}
+    .nav-cta{font-family:var(--font-display);font-size:14px;padding:8px 16px;text-decoration:none;background:var(--ink);color:var(--cream);border:3px solid var(--ink);box-shadow:4px 4px 0 0 var(--hot);transition:background .1s;}
     .nav-cta:hover{background:var(--hot);}
     .marquee-bar{overflow:hidden;background:var(--ink);border-top:3px solid var(--ink);padding:6px 0;}
     .marquee-track{display:flex;width:max-content;animation:marquee 30s linear infinite;}
     .marquee-item{font-family:var(--font-display);font-size:11px;color:var(--cream);letter-spacing:.15em;padding:0 24px;white-space:nowrap;}
     .marquee-item .sep{color:var(--hot);}
 
-    /* PAGE HEADER — flex row: title left, search right, aligned to bottom */
+    /* ── PAGE HEADER ─────────────────────────────────────────────────────────── */
     .page-header{max-width:1280px;margin:0 auto;padding:48px 24px 24px;}
     .page-header-inner{display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:16px;}
     .dir-jp-label{font-family:var(--font-mono-jp);font-size:13px;background:var(--ink);color:var(--cream);padding:4px 8px;display:inline-block;}
     .dir-h1{font-family:var(--font-display);font-size:60px;line-height:.85;letter-spacing:.01em;margin-top:12px;}
     .dir-h1 .directory-word{background:var(--hot);color:var(--cream);padding:0 12px;display:inline-block;transform:rotate(-1deg);}
     .dir-subtitle{font-size:16px;color:rgba(11,12,22,.7);max-width:560px;line-height:1.6;margin-top:16px;}
+    .dir-count{font-family:var(--font-mono-jp);font-size:12px;color:rgba(11,12,22,.5);margin-top:8px;}
+    .search-wrap{display:flex;flex-direction:column;gap:8px;align-items:flex-end;}
     .dir-search{
       width:320px;max-width:100%;
       font-family:var(--font-display);font-size:13px;letter-spacing:.05em;
@@ -78,8 +75,13 @@
       background:var(--cream);color:var(--ink);outline:none;
     }
     .dir-search:focus{background:var(--acid);}
+    .sort-row{display:flex;gap:6px;}
+    .sort-btn{font-family:var(--font-display);font-size:10px;letter-spacing:.08em;padding:6px 10px;border:2px solid var(--ink);background:transparent;color:var(--ink);cursor:pointer;transition:background .1s;}
+    .sort-btn:hover{background:var(--acid);}
+    .sort-btn.active{background:var(--ink);color:var(--acid);}
+    @media(min-width:640px){.dir-h1{font-size:96px;}}
 
-    /* FILTER PILLS */
+    /* ── GENRE PILLS ─────────────────────────────────────────────────────────── */
     .pill-row{max-width:1280px;margin:0 auto;padding:32px 24px 0;}
     .gpills{display:flex;flex-wrap:wrap;gap:8px;}
     .gpill{
@@ -90,66 +92,81 @@
     .gpill:hover{background:var(--acid);}
     .gpill.active{background:var(--ink);color:var(--acid);box-shadow:8px 8px 0 0 var(--hot);}
 
-    /* CARD GRID */
+    /* ── CARD GRID ────────────────────────────────────────────────────────────── */
     .dir-grid{
-      max-width:1280px;margin:0 auto;padding:0 24px 80px;
-      display:grid;grid-template-columns:repeat(3,1fr);gap:24px;
+      max-width:1280px;margin:32px auto 0;padding:0 24px;
+      display:grid;gap:24px;
+      grid-template-columns:1fr;
     }
+    @media(min-width:640px){.dir-grid{grid-template-columns:repeat(2,1fr);}}
+    @media(min-width:1024px){.dir-grid{grid-template-columns:repeat(3,1fr);}}
+
     .dir-card{
       display:block;text-decoration:none;color:var(--ink);
       background:var(--cream);border:3px solid var(--ink);box-shadow:8px 8px 0 0 var(--ink);
       transition:transform .15s,box-shadow .15s;
     }
-    .dir-card:hover{transform:translate(4px,4px) !important;box-shadow:none !important;}
+    .dir-card:hover{transform:translate(4px,4px);box-shadow:none;}
     .dir-art{
-      aspect-ratio:16/10;display:grid;place-items:center;
-      position:relative;overflow:hidden;
+      aspect-ratio:16/10;position:relative;overflow:hidden;
       border-bottom:3px solid var(--ink);
     }
-    .dir-art-halftone{
-      position:absolute;inset:0;
-      background-image:radial-gradient(var(--ink) 1.5px,transparent 1.6px);
-      background-size:8px 8px;opacity:.2;
+    .dir-art img{width:100%;height:100%;object-fit:cover;display:block;}
+    .dir-art-fallback{
+      width:100%;height:100%;display:flex;align-items:center;justify-content:center;
+      font-size:64px;
     }
     .dir-score{position:absolute;top:12px;left:12px;z-index:1;background:var(--ink);color:var(--acid);font-family:var(--font-display);font-size:10px;padding:4px 8px;}
-    .dir-ep{position:absolute;top:12px;right:12px;z-index:1;background:var(--acid);font-family:var(--font-display);font-size:10px;padding:4px 8px;border:3px solid var(--ink);}
+    .dir-ep{position:absolute;top:12px;right:12px;z-index:1;background:var(--acid);font-family:var(--font-display);font-size:10px;padding:4px 8px;border:2px solid var(--ink);}
     .dir-jp{position:absolute;bottom:12px;right:12px;z-index:1;background:rgba(251,245,223,.95);font-family:var(--font-mono-jp);font-size:9px;padding:3px 8px;}
     .dir-body{padding:16px;}
     .dir-title-row{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:4px;}
-    .dir-title{font-family:var(--font-display);font-size:24px;line-height:1.1;}
+    .dir-title{font-family:var(--font-display);font-size:20px;line-height:1.1;}
     .dir-year{font-family:var(--font-mono-jp);font-size:11px;color:rgba(11,12,22,.5);white-space:nowrap;}
     .dir-studio{font-size:11px;color:rgba(11,12,22,.5);margin-bottom:8px;}
-    .dir-vibe{font-size:13px;font-style:italic;color:rgba(11,12,22,.8);line-height:1.55;margin-bottom:10px;}
+    .dir-desc{font-size:13px;color:rgba(11,12,22,.8);line-height:1.5;margin-bottom:10px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}
     .dir-tags{display:flex;flex-wrap:wrap;gap:6px;}
+    .dir-tag{font-family:var(--font-display);font-size:9px;letter-spacing:.05em;padding:2px 6px;border:2px solid var(--ink);background:var(--cream);}
 
-    /* EMPTY STATE */
-    .empty{
-      grid-column:1/-1;
-      border:3px solid var(--ink);box-shadow:8px 8px 0 0 var(--ink);
-      padding:40px;text-align:center;
-      font-family:var(--font-display);font-size:22px;
-      background:var(--cream);
+    /* ── SKELETONS ────────────────────────────────────────────────────────────── */
+    .dir-card.skeleton{pointer-events:none;}
+    .skel{
+      background:linear-gradient(90deg,rgba(11,12,22,.06) 25%,rgba(11,12,22,.12) 50%,rgba(11,12,22,.06) 75%);
+      background-size:200% 100%;animation:shimmer 1.5s infinite;
+    }
+    .skel-art{aspect-ratio:16/10;border-bottom:3px solid var(--ink);}
+    .skel-line{height:14px;margin:8px 16px;border-radius:2px;}
+    .skel-line.short{width:40%;margin-top:12px;}
+    .skel-line.long{width:90%;}
+    .skel-line.med{width:65%;}
+
+    /* ── LOAD MORE ────────────────────────────────────────────────────────────── */
+    .load-more-wrap{max-width:1280px;margin:40px auto 80px;padding:0 24px;text-align:center;}
+    .load-more-btn{
+      font-family:var(--font-display);font-size:14px;letter-spacing:.1em;
+      padding:14px 40px;border:3px solid var(--ink);
+      background:var(--ink);color:var(--acid);
+      box-shadow:6px 6px 0 0 var(--hot);cursor:pointer;transition:all .1s;
+    }
+    .load-more-btn:hover{background:var(--hot);border-color:var(--hot);}
+    .load-more-btn:disabled{opacity:.4;cursor:not-allowed;}
+    .load-spinner{display:inline-block;width:14px;height:14px;border:3px solid var(--acid);border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:8px;}
+
+    /* ── EMPTY / ERROR ────────────────────────────────────────────────────────── */
+    .dir-status{
+      grid-column:1/-1;border:3px solid var(--ink);box-shadow:8px 8px 0 0 var(--ink);
+      padding:48px;text-align:center;font-family:var(--font-display);font-size:20px;background:var(--cream);
     }
 
-    /* FOOTER — dark matching Lovable SiteFooter */
+    /* ── FOOTER ───────────────────────────────────────────────────────────────── */
     footer{margin-top:96px;border-top:3px solid var(--ink);background:var(--ink);color:var(--cream);}
     .foot-inner{max-width:1280px;margin:0 auto;padding:48px 24px;display:grid;grid-template-columns:1fr;gap:32px;}
     @media(min-width:640px){.foot-inner{grid-template-columns:repeat(3,1fr);}}
-    .foot-logo{font-family:var(--font-display);font-size:30px;}
-    .foot-logo span{color:var(--hot);}
+    .foot-logo{font-family:var(--font-display);font-size:30px;}.foot-logo span{color:var(--hot);}
     .foot-desc{font-size:13px;color:rgba(251,245,223,.7);line-height:1.7;max-width:280px;margin-top:8px;}
     .foot-links{display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:14px;}
-    .foot-links a{color:var(--cream);text-decoration:none;}
-    .foot-links a:hover{color:var(--acid);}
-    .foot-copy{font-size:13px;color:rgba(251,245,223,.7);}
-    .foot-copy p+p{margin-top:4px;}
-
-    /* RESPONSIVE GRID */
-    .dir-grid{grid-template-columns:1fr;}
-    @media(min-width:640px){.dir-grid{grid-template-columns:repeat(2,1fr);}}
-    @media(min-width:1024px){.dir-grid{grid-template-columns:repeat(3,1fr);}}
-
-    @media(min-width:640px){.dir-h1{font-size:96px;}}
+    .foot-links a{color:var(--cream);text-decoration:none;}.foot-links a:hover{color:var(--acid);}
+    .foot-copy{font-size:13px;color:rgba(251,245,223,.7);}.foot-copy p+p{margin-top:4px;}
   </style>
 </head>
 <body>
@@ -168,15 +185,16 @@
   </div>
   <div class="marquee-bar">
     <div class="marquee-track">
-      <span class="marquee-item">CONNECT YOUR ANILIST ACCOUNT TO SUPERCHARGE YOUR RECOMMENDATIONS <span class="sep">✦</span></span>
+      <span class="marquee-item">17,000+ ANIME AND COUNTING <span class="sep">✦</span></span>
+      <span class="marquee-item">EVERY SHOW HAS A PAGE <span class="sep">✦</span></span>
       <span class="marquee-item">SWIPE YOUR TASTE CLUSTERS <span class="sep">✦</span></span>
-      <span class="marquee-item">JOIN THE CULT <span class="sep">✦</span></span>
       <span class="marquee-item">BUILT BY A DISGRUNTLED FAN <span class="sep">✦</span></span>
-      <span class="marquee-item">CONNECT YOUR ANILIST ACCOUNT TO SUPERCHARGE YOUR RECOMMENDATIONS <span class="sep">✦</span></span>
+      <span class="marquee-item">JOIN THE CULT <span class="sep">✦</span></span>
+      <span class="marquee-item">17,000+ ANIME AND COUNTING <span class="sep">✦</span></span>
+      <span class="marquee-item">EVERY SHOW HAS A PAGE <span class="sep">✦</span></span>
       <span class="marquee-item">SWIPE YOUR TASTE CLUSTERS <span class="sep">✦</span></span>
-      <span class="marquee-item">JOIN THE CULT <span class="sep">✦</span></span>
       <span class="marquee-item">BUILT BY A DISGRUNTLED FAN <span class="sep">✦</span></span>
-    
+      <span class="marquee-item">JOIN THE CULT <span class="sep">✦</span></span>
     </div>
   </div>
 </header>
@@ -184,239 +202,51 @@
 <div class="page-header">
   <div class="page-header-inner">
     <div>
-      <span class="dir-jp-label">// 全作品 · ALL</span>
+      <span class="dir-jp-label">// 全作品 · ALL ANIME</span>
       <h1 class="dir-h1">THE<br/><span class="directory-word">DIRECTORY</span></h1>
-      <p class="dir-subtitle">12 titles hand-picked by the cult. Click anything to read why it slaps.</p>
+      <p class="dir-subtitle">Every anime. Indexed, sorted, and ready to swipe.</p>
+      <p class="dir-count" id="count-label">Loading catalog…</p>
     </div>
-    <input class="dir-search" type="text" placeholder="search titles, studios, tags…" id="search-input" oninput="runFilter()"/>
+    <div class="search-wrap">
+      <input class="dir-search" type="text" placeholder="search titles, studios, genres…" id="search-input" autocomplete="off"/>
+      <div class="sort-row">
+        <button class="sort-btn active" data-sort="popularity_sort" onclick="setSort(this)">POPULAR</button>
+        <button class="sort-btn" data-sort="score_sort" onclick="setSort(this)">TOP RATED</button>
+        <button class="sort-btn" data-sort="season_year" onclick="setSort(this)">NEWEST</button>
+      </div>
+    </div>
   </div>
 </div>
 
 <div class="pill-row">
   <div class="gpills" id="gpills">
-    <button class="gpill active" data-genre="ALL" onclick="filterCards(this,'ALL')">ALL</button><button class="gpill" data-genre="Action" onclick="filterCards(this,'Action')">Action</button><button class="gpill" data-genre="Adventure" onclick="filterCards(this,'Adventure')">Adventure</button><button class="gpill" data-genre="Classic" onclick="filterCards(this,'Classic')">Classic</button><button class="gpill" data-genre="Comedy" onclick="filterCards(this,'Comedy')">Comedy</button><button class="gpill" data-genre="Coming of Age" onclick="filterCards(this,'Coming of Age')">Coming of Age</button><button class="gpill" data-genre="Cozy" onclick="filterCards(this,'Cozy')">Cozy</button><button class="gpill" data-genre="Cyberpunk" onclick="filterCards(this,'Cyberpunk')">Cyberpunk</button><button class="gpill" data-genre="Dark Fantasy" onclick="filterCards(this,'Dark Fantasy')">Dark Fantasy</button><button class="gpill" data-genre="Existential" onclick="filterCards(this,'Existential')">Existential</button><button class="gpill" data-genre="Family" onclick="filterCards(this,'Family')">Family</button><button class="gpill" data-genre="Food" onclick="filterCards(this,'Food')">Food</button><button class="gpill" data-genre="Found Family" onclick="filterCards(this,'Found Family')">Found Family</button><button class="gpill" data-genre="Jazz" onclick="filterCards(this,'Jazz')">Jazz</button><button class="gpill" data-genre="Mecha" onclick="filterCards(this,'Mecha')">Mecha</button><button class="gpill" data-genre="Melancholy" onclick="filterCards(this,'Melancholy')">Melancholy</button><button class="gpill" data-genre="Music" onclick="filterCards(this,'Music')">Music</button><button class="gpill" data-genre="Mystical" onclick="filterCards(this,'Mystical')">Mystical</button><button class="gpill" data-genre="Noir" onclick="filterCards(this,'Noir')">Noir</button><button class="gpill" data-genre="Ocean" onclick="filterCards(this,'Ocean')">Ocean</button><button class="gpill" data-genre="Philosophy" onclick="filterCards(this,'Philosophy')">Philosophy</button><button class="gpill" data-genre="Political" onclick="filterCards(this,'Political')">Political</button><button class="gpill" data-genre="Psychological" onclick="filterCards(this,'Psychological')">Psychological</button><button class="gpill" data-genre="Rivals" onclick="filterCards(this,'Rivals')">Rivals</button><button class="gpill" data-genre="Romance" onclick="filterCards(this,'Romance')">Romance</button><button class="gpill" data-genre="Sci-Fi" onclick="filterCards(this,'Sci-Fi')">Sci-Fi</button><button class="gpill" data-genre="Slice of Life" onclick="filterCards(this,'Slice of Life')">Slice of Life</button><button class="gpill" data-genre="Sports" onclick="filterCards(this,'Sports')">Sports</button><button class="gpill" data-genre="Supernatural" onclick="filterCards(this,'Supernatural')">Supernatural</button><button class="gpill" data-genre="Tearjerker" onclick="filterCards(this,'Tearjerker')">Tearjerker</button><button class="gpill" data-genre="Titans" onclick="filterCards(this,'Titans')">Titans</button><button class="gpill" data-genre="Tragedy" onclick="filterCards(this,'Tragedy')">Tragedy</button>
+    <button class="gpill active" data-genre="ALL" onclick="setGenre(this)">ALL</button>
+    <button class="gpill" data-genre="Action" onclick="setGenre(this)">ACTION</button>
+    <button class="gpill" data-genre="Adventure" onclick="setGenre(this)">ADVENTURE</button>
+    <button class="gpill" data-genre="Comedy" onclick="setGenre(this)">COMEDY</button>
+    <button class="gpill" data-genre="Drama" onclick="setGenre(this)">DRAMA</button>
+    <button class="gpill" data-genre="Fantasy" onclick="setGenre(this)">FANTASY</button>
+    <button class="gpill" data-genre="Horror" onclick="setGenre(this)">HORROR</button>
+    <button class="gpill" data-genre="Mahou Shoujo" onclick="setGenre(this)">MAHOU SHOUJO</button>
+    <button class="gpill" data-genre="Mecha" onclick="setGenre(this)">MECHA</button>
+    <button class="gpill" data-genre="Music" onclick="setGenre(this)">MUSIC</button>
+    <button class="gpill" data-genre="Mystery" onclick="setGenre(this)">MYSTERY</button>
+    <button class="gpill" data-genre="Psychological" onclick="setGenre(this)">PSYCHOLOGICAL</button>
+    <button class="gpill" data-genre="Romance" onclick="setGenre(this)">ROMANCE</button>
+    <button class="gpill" data-genre="Sci-Fi" onclick="setGenre(this)">SCI-FI</button>
+    <button class="gpill" data-genre="Slice of Life" onclick="setGenre(this)">SLICE OF LIFE</button>
+    <button class="gpill" data-genre="Sports" onclick="setGenre(this)">SPORTS</button>
+    <button class="gpill" data-genre="Supernatural" onclick="setGenre(this)">SUPERNATURAL</button>
+    <button class="gpill" data-genre="Thriller" onclick="setGenre(this)">THRILLER</button>
   </div>
 </div>
 
-<div class="dir-grid" id="card-grid">
-  
-    <a href="/browse/attack-on-titan" class="dir-card" style="transform:rotate(-1deg)">
-      <div class="dir-art" style="background:linear-gradient(135deg,#141414 0%,#c81e1e 50%,#505050 100%)">
-        <div class="dir-art-halftone"></div>
-        <span style="position:relative;z-index:1;font-size:72px">⚔️</span>
-        <span class="dir-score">★ 9.0</span>
-        <span class="dir-ep">EP 87</span>
-        <span class="dir-jp">進撃の巨人</span>
-      </div>
-      <div class="dir-body">
-        <div class="dir-title-row">
-          <span class="dir-title">ATTACK ON TITAN</span>
-          <span class="dir-year">2013</span>
-        </div>
-        <div class="dir-studio">MAPPA</div>
-        <p class="dir-vibe">"Walls don't keep the enemy out. They keep the truth in."</p>
-        <div class="dir-tags"><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Action</span><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Dark Fantasy</span><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Political</span><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Titans</span></div>
-      </div>
-    </a>
-    <a href="/browse/evangelion" class="dir-card" style="transform:rotate(0deg)">
-      <div class="dir-art" style="background:linear-gradient(135deg,#b41e50 0%,#640090 50%,#f0c832 100%)">
-        <div class="dir-art-halftone"></div>
-        <span style="position:relative;z-index:1;font-size:72px">🤖</span>
-        <span class="dir-score">★ 9.0</span>
-        <span class="dir-ep">EP 26</span>
-        <span class="dir-jp">エヴァンゲリオン</span>
-      </div>
-      <div class="dir-body">
-        <div class="dir-title-row">
-          <span class="dir-title">NEON GENESIS EVANGELION</span>
-          <span class="dir-year">1995</span>
-        </div>
-        <div class="dir-studio">Gainax</div>
-        <p class="dir-vibe">"Get in the robot. Also your mom is in the robot."</p>
-        <div class="dir-tags"><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Mecha</span><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Psychological</span><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Existential</span><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Classic</span></div>
-      </div>
-    </a>
-    <a href="/browse/neon-requiem" class="dir-card" style="transform:rotate(1deg)">
-      <div class="dir-art" style="background:linear-gradient(135deg,#ff2e8a 0%,#7c3aed 50%,#0ea5e9 100%)">
-        <div class="dir-art-halftone"></div>
-        <span style="position:relative;z-index:1;font-size:72px">🎸</span>
-        <span class="dir-score">★ 9.1</span>
-        <span class="dir-ep">EP 24</span>
-        <span class="dir-jp">ネオン・レクイエム</span>
-      </div>
-      <div class="dir-body">
-        <div class="dir-title-row">
-          <span class="dir-title">NEON REQUIEM</span>
-          <span class="dir-year">2021</span>
-        </div>
-        <div class="dir-studio">Studio Kaiju</div>
-        <p class="dir-vibe">"City lights that only work when you're falling apart."</p>
-        <div class="dir-tags"><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Cyberpunk</span><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Music</span><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Tragedy</span></div>
-      </div>
-    </a>
-    <a href="/browse/fullmetal-alchemist" class="dir-card" style="transform:rotate(-1deg)">
-      <div class="dir-art" style="background:linear-gradient(135deg,#fdb41e 0%,#c83200 50%,#321e0a 100%)">
-        <div class="dir-art-halftone"></div>
-        <span style="position:relative;z-index:1;font-size:72px">⚗️</span>
-        <span class="dir-score">★ 9.1</span>
-        <span class="dir-ep">EP 64</span>
-        <span class="dir-jp">鋼の錬金術師</span>
-      </div>
-      <div class="dir-body">
-        <div class="dir-title-row">
-          <span class="dir-title">FULLMETAL ALCHEMIST</span>
-          <span class="dir-year">2009</span>
-        </div>
-        <div class="dir-studio">Bones</div>
-        <p class="dir-vibe">"Equivalent exchange: everything costs everything."</p>
-        <div class="dir-tags"><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Action</span><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Philosophy</span><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Adventure</span></div>
-      </div>
-    </a>
-    <a href="/browse/cowboy-bebop" class="dir-card" style="transform:rotate(0deg)">
-      <div class="dir-art" style="background:linear-gradient(135deg,#f97316 0%,#ec4899 50%,#a78bfa 100%)">
-        <div class="dir-art-halftone"></div>
-        <span style="position:relative;z-index:1;font-size:72px">🎺</span>
-        <span class="dir-score">★ 9.3</span>
-        <span class="dir-ep">EP 26</span>
-        <span class="dir-jp">カウボーイビバップ</span>
-      </div>
-      <div class="dir-body">
-        <div class="dir-title-row">
-          <span class="dir-title">COWBOY BEBOP</span>
-          <span class="dir-year">1998</span>
-        </div>
-        <div class="dir-studio">Sunrise</div>
-        <p class="dir-vibe">"You're gonna carry that weight."</p>
-        <div class="dir-tags"><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Sci-Fi</span><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Jazz</span><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Noir</span><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Classic</span></div>
-      </div>
-    </a>
-    <a href="/browse/mob-psycho-100" class="dir-card" style="transform:rotate(1deg)">
-      <div class="dir-art" style="background:linear-gradient(135deg,#fde047 0%,#fb7185 50%,#a78bfa 100%)">
-        <div class="dir-art-halftone"></div>
-        <span style="position:relative;z-index:1;font-size:72px">💥</span>
-        <span class="dir-score">★ 8.9</span>
-        <span class="dir-ep">EP 37</span>
-        <span class="dir-jp">モブサイコ100</span>
-      </div>
-      <div class="dir-body">
-        <div class="dir-title-row">
-          <span class="dir-title">MOB PSYCHO 100</span>
-          <span class="dir-year">2016</span>
-        </div>
-        <div class="dir-studio">Bones</div>
-        <p class="dir-vibe">"The kindest boy in anime has the power to end the world."</p>
-        <div class="dir-tags"><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Supernatural</span><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Coming of Age</span><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Comedy</span></div>
-      </div>
-    </a>
-    <a href="/browse/demon-slayer" class="dir-card" style="transform:rotate(-1deg)">
-      <div class="dir-art" style="background:linear-gradient(135deg,#ff6432 0%,#ff0064 50%,#320064 100%)">
-        <div class="dir-art-halftone"></div>
-        <span style="position:relative;z-index:1;font-size:72px">🗡️</span>
-        <span class="dir-score">★ 8.7</span>
-        <span class="dir-ep">EP 44</span>
-        <span class="dir-jp">鬼滅の刃</span>
-      </div>
-      <div class="dir-body">
-        <div class="dir-title-row">
-          <span class="dir-title">DEMON SLAYER</span>
-          <span class="dir-year">2019</span>
-        </div>
-        <div class="dir-studio">ufotable</div>
-        <p class="dir-vibe">"The most beautiful thing ufotable ever made breathes fire."</p>
-        <div class="dir-tags"><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Action</span><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Supernatural</span><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Family</span></div>
-      </div>
-    </a>
-    <a href="/browse/haikyuu" class="dir-card" style="transform:rotate(0deg)">
-      <div class="dir-art" style="background:linear-gradient(135deg,#ffa000 0%,#141414 50%,#3c3c3c 100%)">
-        <div class="dir-art-halftone"></div>
-        <span style="position:relative;z-index:1;font-size:72px">🏐</span>
-        <span class="dir-score">★ 8.7</span>
-        <span class="dir-ep">EP 85</span>
-        <span class="dir-jp">ハイキュー!!</span>
-      </div>
-      <div class="dir-body">
-        <div class="dir-title-row">
-          <span class="dir-title">HAIKYUU!!</span>
-          <span class="dir-year">2014</span>
-        </div>
-        <div class="dir-studio">Production I.G</div>
-        <p class="dir-vibe">"No superpowers. No magic. Just will and volleyball."</p>
-        <div class="dir-tags"><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Sports</span><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Found Family</span><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Rivals</span></div>
-      </div>
-    </a>
-    <a href="/browse/spectral-koi" class="dir-card" style="transform:rotate(1deg)">
-      <div class="dir-art" style="background:linear-gradient(135deg,#f97316 0%,#ec4899 50%,#a78bfa 100%)">
-        <div class="dir-art-halftone"></div>
-        <span style="position:relative;z-index:1;font-size:72px">🐟</span>
-        <span class="dir-score">★ 8.7</span>
-        <span class="dir-ep">EP 13</span>
-        <span class="dir-jp">幽霊の鯉</span>
-      </div>
-      <div class="dir-body">
-        <div class="dir-title-row">
-          <span class="dir-title">SPECTRAL KOI</span>
-          <span class="dir-year">2019</span>
-        </div>
-        <div class="dir-studio">Hanabira Works</div>
-        <p class="dir-vibe">"Lantern-lit summers, ghost fish, a softness that hurts."</p>
-        <div class="dir-tags"><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Supernatural</span><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Slice of Life</span><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Melancholy</span></div>
-      </div>
-    </a>
-    <a href="/browse/children-of-the-sea" class="dir-card" style="transform:rotate(-1deg)">
-      <div class="dir-art" style="background:linear-gradient(135deg,#0050a0 0%,#00c8c8 50%,#a0dcff 100%)">
-        <div class="dir-art-halftone"></div>
-        <span style="position:relative;z-index:1;font-size:72px">🌊</span>
-        <span class="dir-score">★ 8.4</span>
-        <span class="dir-ep">EP 1</span>
-        <span class="dir-jp">海獣の子供</span>
-      </div>
-      <div class="dir-body">
-        <div class="dir-title-row">
-          <span class="dir-title">CHILDREN OF THE SEA</span>
-          <span class="dir-year">2019</span>
-        </div>
-        <div class="dir-studio">Studio 4°C</div>
-        <p class="dir-vibe">"What the ocean remembers, the living have forgotten."</p>
-        <div class="dir-tags"><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Supernatural</span><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Mystical</span><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Ocean</span></div>
-      </div>
-    </a>
-    <a href="/browse/your-lie-in-april" class="dir-card" style="transform:rotate(0deg)">
-      <div class="dir-art" style="background:linear-gradient(135deg,#a78bfa 0%,#ec4899 50%,#f97316 100%)">
-        <div class="dir-art-halftone"></div>
-        <span style="position:relative;z-index:1;font-size:72px">🎻</span>
-        <span class="dir-score">★ 8.2</span>
-        <span class="dir-ep">EP 22</span>
-        <span class="dir-jp">四月は君の嘘</span>
-      </div>
-      <div class="dir-body">
-        <div class="dir-title-row">
-          <span class="dir-title">YOUR LIE IN APRIL</span>
-          <span class="dir-year">2014</span>
-        </div>
-        <div class="dir-studio">A-1 Pictures</div>
-        <p class="dir-vibe">"Music as grief. Grief as music. You will not be okay."</p>
-        <div class="dir-tags"><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Romance</span><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Music</span><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Tearjerker</span></div>
-      </div>
-    </a>
-    <a href="/browse/midnight-diner" class="dir-card" style="transform:rotate(1deg)">
-      <div class="dir-art" style="background:linear-gradient(135deg,#281e14 0%,#b42828 50%,#dca050 100%)">
-        <div class="dir-art-halftone"></div>
-        <span style="position:relative;z-index:1;font-size:72px">🍜</span>
-        <span class="dir-score">★ 7.9</span>
-        <span class="dir-ep">EP 30</span>
-        <span class="dir-jp">深夜食堂</span>
-      </div>
-      <div class="dir-body">
-        <div class="dir-title-row">
-          <span class="dir-title">MIDNIGHT DINER</span>
-          <span class="dir-year">2009</span>
-        </div>
-        <div class="dir-studio">TMS Entertainment</div>
-        <p class="dir-vibe">"A counter, a ladle, and everyone's saddest story."</p>
-        <div class="dir-tags"><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Slice of Life</span><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Food</span><span style="font-family:var(--font-display);font-size:10px;letter-spacing:.05em;padding:2px 6px;border:3px solid var(--ink);background:var(--cream)">Cozy</span></div>
-      </div>
-    </a>
-  <div class="empty" id="empty-state" style="display:none">NOTHING MATCHES. UNCLENCH THE FILTERS.</div>
+<div class="dir-grid" id="card-grid"></div>
+
+<div class="load-more-wrap">
+  <button class="load-more-btn" id="load-more-btn" onclick="loadMore()" style="display:none">
+    LOAD MORE
+  </button>
 </div>
 
 <footer>
@@ -426,39 +256,250 @@
       <p class="foot-desc">A maximalist anime recommendation engine for people who take their obsessions seriously.</p>
     </div>
     <div class="foot-links">
-      <a href="/discover">iOS</a>
-      <a href="/discover">Android</a>
+      <a href="/discover">App</a>
+      <a href="/browse">Directory</a>
       <a href="/discover">Discord</a>
-      <a href="#">Press kit</a>
       <a href="#">Manifesto</a>
+      <a href="#">Press kit</a>
       <a href="#">Tag glossary</a>
     </div>
     <div class="foot-copy">
       <p>© 2026 OTAKULT collective.</p>
-      <p>Hand-curated in Tokyo, Berlin, Oakland.</p>
+      <p>Hand-curated obsession engine.</p>
     </div>
   </div>
 </footer>
 
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script>
-let activeGenre = 'ALL';
-function filterCards(btn, genre) {
-  document.querySelectorAll('.gpill').forEach(p => p.classList.remove('active'));
+// ─── Firebase init ────────────────────────────────────────────────────────────
+firebase.initializeApp({
+  apiKey:            "AIzaSyDa6gig9xfZk_82t8h3aeSJciwUdnnBysw",
+  authDomain:        "next-arc-b091b.firebaseapp.com",
+  projectId:         "next-arc-b091b",
+  storageBucket:     "next-arc-b091b.firebasestorage.app",
+  messagingSenderId: "488355535109",
+  appId:             "1:488355535109:web:40d86bfeae685d3dba3f6c",
+});
+const db = firebase.firestore();
+
+// ─── State ────────────────────────────────────────────────────────────────────
+const PAGE_SIZE = 24;
+let activeGenre  = 'ALL';
+let activeSort   = 'popularity_sort';
+let lastDoc      = null;
+let isLoading    = false;
+let hasMore      = true;
+
+// ─── Genre → gradient fallback ─────────────────────────────────────────────────
+const GENRE_GRADIENTS = {
+  Action:          'linear-gradient(135deg,#141414 0%,#c81e1e 50%,#505050 100%)',
+  Adventure:       'linear-gradient(135deg,#fdb41e 0%,#c83200 50%,#321e0a 100%)',
+  Comedy:          'linear-gradient(135deg,#efef00 0%,#ff086b 50%,#0b0c16 100%)',
+  Drama:           'linear-gradient(135deg,#a78bfa 0%,#ec4899 50%,#1e0050 100%)',
+  Fantasy:         'linear-gradient(135deg,#8625fe 0%,#00d4f6 50%,#0b0c16 100%)',
+  Horror:          'linear-gradient(135deg,#141414 0%,#640014 50%,#c80000 100%)',
+  Mecha:           'linear-gradient(135deg,#00d4f6 0%,#0050c8 50%,#0b0c16 100%)',
+  Music:           'linear-gradient(135deg,#ec4899 0%,#a78bfa 50%,#f97316 100%)',
+  Mystery:         'linear-gradient(135deg,#1e1e3c 0%,#8625fe 50%,#00d4f6 100%)',
+  Psychological:   'linear-gradient(135deg,#8625fe 0%,#ff086b 50%,#141414 100%)',
+  Romance:         'linear-gradient(135deg,#ec4899 0%,#f97316 50%,#a78bfa 100%)',
+  'Sci-Fi':        'linear-gradient(135deg,#00d4f6 0%,#8625fe 50%,#0b0c16 100%)',
+  'Slice of Life': 'linear-gradient(135deg,#a7d4a0 0%,#efef00 50%,#0b5c14 100%)',
+  Sports:          'linear-gradient(135deg,#ffa000 0%,#141414 50%,#3c3c3c 100%)',
+  Supernatural:    'linear-gradient(135deg,#8625fe 0%,#00d4f6 50%,#141414 100%)',
+  Thriller:        'linear-gradient(135deg,#141414 0%,#c80000 50%,#3c0000 100%)',
+};
+const FORMAT_EMOJI = {TV:'📺',MOVIE:'🎬',OVA:'💿',ONA:'🌐',SPECIAL:'⭐',MUSIC:'🎵'};
+const DEFAULT_GRADIENT = 'linear-gradient(135deg,#0b0c16 0%,#8625fe 50%,#00d4f6 100%)';
+
+function cardGradient(genres) {
+  const g = (genres||[]).find(g => GENRE_GRADIENTS[g]);
+  return GENRE_GRADIENTS[g] || DEFAULT_GRADIENT;
+}
+
+// ─── Build card element ────────────────────────────────────────────────────────
+function buildCard(docData) {
+  const d     = docData;
+  const slug  = d.slug || `anime-${d.anilist_id}`;
+  const title = (d.title_english || d.title_romaji || 'Unknown').toUpperCase();
+  const year  = d.season_year || '';
+  const score = d.anilist_score ? `★ ${(d.anilist_score/10).toFixed(1)}` : '';
+  const fmt   = d.format ? (FORMAT_EMOJI[d.format] || d.format) : '';
+  const eps   = d.episodes ? `EP ${d.episodes}` : (fmt || '');
+  const jp    = d.title_native || '';
+  const studio= (d.studios||[])[0] || '';
+  const genres= d.genres || [];
+  const tags  = (d.tags||[]).filter(t => !genres.includes(t)).slice(0,2);
+  const grad  = cardGradient(genres);
+
+  const card  = document.createElement('a');
+  card.href   = `/browse/${slug}`;
+  card.className = 'dir-card';
+
+  let artInner;
+  if (d.cover_large) {
+    artInner = `<img src="${d.cover_large}" alt="${title.replace(/"/g,"'")}" loading="lazy"
+      onerror="this.parentNode.style.background='${grad}';this.replaceWith(Object.assign(document.createElement('div'),{className:'dir-art-fallback',textContent:'${FORMAT_EMOJI[d.format]||'🎌'}'}))"/>`;
+  } else {
+    artInner = `<div class="dir-art-fallback">${FORMAT_EMOJI[d.format]||'🎌'}</div>`;
+  }
+
+  card.innerHTML = `
+    <div class="dir-art" style="background:${d.cover_large?'#111':grad}">
+      ${artInner}
+      ${score ? `<span class="dir-score">${score}</span>` : ''}
+      ${eps   ? `<span class="dir-ep">${eps}</span>`      : ''}
+      ${jp    ? `<span class="dir-jp">${jp}</span>`       : ''}
+    </div>
+    <div class="dir-body">
+      <div class="dir-title-row">
+        <span class="dir-title">${title}</span>
+        ${year ? `<span class="dir-year">${year}</span>` : ''}
+      </div>
+      ${studio ? `<div class="dir-studio">${studio}</div>` : ''}
+      ${d.description ? `<p class="dir-desc">${d.description.replace(/[<>]/g,'')}</p>` : ''}
+      <div class="dir-tags">
+        ${genres.slice(0,3).map(g=>`<span class="dir-tag">${g}</span>`).join('')}
+        ${tags.map(t=>`<span class="dir-tag">${t}</span>`).join('')}
+      </div>
+    </div>`;
+
+  return card;
+}
+
+// ─── Skeleton loaders ──────────────────────────────────────────────────────────
+function showSkeletons(n=6) {
+  const grid = document.getElementById('card-grid');
+  for (let i=0;i<n;i++) {
+    const sk = document.createElement('div');
+    sk.className = 'dir-card skeleton';
+    sk.innerHTML = `<div class="skel skel-art"></div>
+      <div class="skel skel-line short"></div>
+      <div class="skel skel-line long"></div>
+      <div class="skel skel-line med"></div>`;
+    grid.appendChild(sk);
+  }
+}
+function removeSkeletons() {
+  document.querySelectorAll('.dir-card.skeleton').forEach(s=>s.remove());
+}
+
+// ─── Firestore query ───────────────────────────────────────────────────────────
+function buildQuery() {
+  let q = db.collection('anime_catalog');
+  if (activeGenre !== 'ALL') {
+    q = q.where('genres','array-contains', activeGenre);
+  }
+  return q.orderBy(activeSort,'desc').limit(PAGE_SIZE);
+}
+
+// ─── Load first page (reset) ───────────────────────────────────────────────────
+async function loadFirst() {
+  if (isLoading) return;
+  isLoading = true;
+  lastDoc   = null;
+  hasMore   = true;
+
+  const grid = document.getElementById('card-grid');
+  grid.innerHTML = '';
+  document.getElementById('load-more-btn').style.display = 'none';
+  showSkeletons(6);
+
+  try {
+    const snap = await buildQuery().get();
+    removeSkeletons();
+    if (snap.empty) {
+      grid.innerHTML = '<div class="dir-status">NOTHING HERE. TRY A DIFFERENT FILTER.</div>';
+      document.getElementById('count-label').textContent = '0 results';
+    } else {
+      snap.forEach(doc => grid.appendChild(buildCard(doc.data())));
+      lastDoc = snap.docs[snap.docs.length-1];
+      hasMore = snap.size === PAGE_SIZE;
+      updateCount(snap.size, hasMore);
+    }
+  } catch(e) {
+    removeSkeletons();
+    console.error(e);
+    grid.innerHTML = `<div class="dir-status">FAILED TO LOAD.<br/><span style="font-size:14px">${e.message}</span></div>`;
+    document.getElementById('count-label').textContent = '';
+  }
+
+  const btn = document.getElementById('load-more-btn');
+  btn.style.display = hasMore ? 'inline-block' : 'none';
+  btn.disabled = false;
+  isLoading = false;
+}
+
+// ─── Load next page ────────────────────────────────────────────────────────────
+async function loadMore() {
+  if (isLoading||!hasMore||!lastDoc) return;
+  isLoading = true;
+
+  const btn  = document.getElementById('load-more-btn');
+  btn.innerHTML = '<span class="load-spinner"></span>LOADING…';
+  btn.disabled  = true;
+
+  try {
+    const snap = await buildQuery().startAfter(lastDoc).get();
+    const grid  = document.getElementById('card-grid');
+    snap.forEach(doc => grid.appendChild(buildCard(doc.data())));
+    if (snap.size > 0) lastDoc = snap.docs[snap.docs.length-1];
+    hasMore = snap.size === PAGE_SIZE;
+    const shown = document.querySelectorAll('.dir-card:not(.skeleton)').length;
+    updateCount(shown, hasMore);
+  } catch(e) {
+    console.error('loadMore error:', e);
+  }
+
+  btn.innerHTML = 'LOAD MORE';
+  btn.disabled  = false;
+  btn.style.display = hasMore ? 'inline-block' : 'none';
+  isLoading = false;
+}
+
+function updateCount(shown, more) {
+  document.getElementById('count-label').textContent =
+    more ? `Showing ${shown.toLocaleString()} of 17,000+` : `${shown.toLocaleString()} results`;
+}
+
+// ─── Genre / sort controls ─────────────────────────────────────────────────────
+function setGenre(btn) {
+  document.querySelectorAll('.gpill').forEach(p=>p.classList.remove('active'));
   btn.classList.add('active');
-  activeGenre = genre;
-  runFilter();
+  activeGenre = btn.dataset.genre;
+  loadFirst();
 }
-function runFilter() {
-  const q = document.getElementById('search-input').value.toLowerCase();
+
+function setSort(btn) {
+  document.querySelectorAll('.sort-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  activeSort = btn.dataset.sort;
+  loadFirst();
+}
+
+// ─── Search — filters loaded cards immediately ─────────────────────────────────
+document.getElementById('search-input').addEventListener('input', function() {
+  const q = this.value.trim().toLowerCase();
   let shown = 0;
-  document.querySelectorAll('.dir-card').forEach(card => {
-    const text = card.textContent.toLowerCase();
-    const ok = (!q || text.includes(q)) && (activeGenre === 'ALL' || text.includes(activeGenre.toLowerCase()));
-    card.style.display = ok ? '' : 'none';
-    if (ok) shown++;
+  document.querySelectorAll('.dir-card:not(.skeleton)').forEach(card => {
+    const match = !q || card.textContent.toLowerCase().includes(q);
+    card.style.display = match ? '' : 'none';
+    if (match) shown++;
   });
-  document.getElementById('empty-state').style.display = shown === 0 ? '' : 'none';
-}
+  const existing = document.querySelector('.dir-status');
+  if (existing) existing.remove();
+  if (shown === 0 && q) {
+    const msg = document.createElement('div');
+    msg.className = 'dir-status';
+    msg.textContent = 'NOTHING MATCHES. UNCLENCH THE FILTERS.';
+    document.getElementById('card-grid').appendChild(msg);
+  }
+});
+
+// ─── Boot ──────────────────────────────────────────────────────────────────────
+loadFirst();
 </script>
 </body>
 </html>

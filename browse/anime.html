@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <!-- Dynamic meta tags are set by JS after Firestore load -->
+  <title>Anime — OTAKULT</title>
+  <meta name="description" content="Anime on OTAKULT"/>
+  <link rel="icon" href="/icons/icon-192.png"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Space+Grotesk:wght@400;500;600;700&family=M+PLUS+1+Code:wght@400;500&display=swap" rel="stylesheet"/>
+  <style>
+    :root{
+      --ink:#0b0c16;--cream:#fbf5df;--hot:#ff086b;--electric:#8625fe;--acid:#efef00;--cyan:#00d4f6;
+      --font-display:'Bungee',system-ui,sans-serif;
+      --font-mono-jp:'M PLUS 1 Code',ui-monospace,monospace;
+      --font-body:'Space Grotesk',system-ui,sans-serif;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    body{
+      font-family:var(--font-body);color:var(--ink);overflow-x:hidden;
+      background-color:var(--cream);
+      background-image:
+        radial-gradient(var(--ink) 1px,transparent 1px),
+        radial-gradient(var(--ink) 1px,transparent 1px);
+      background-size:32px 32px,32px 32px;
+      background-position:0 0,16px 16px;
+      background-attachment:fixed;
+    }
+    @keyframes marquee{from{transform:translateX(0);}to{transform:translateX(-50%);}}
+    @keyframes wobble{0%,100%{transform:rotate(-2deg);}50%{transform:rotate(2deg);}}
+    @keyframes spin{to{transform:rotate(360deg);}}
+    @keyframes shimmer{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+
+    /* ── NAV ─────────────────────────────────────────────────────────────────── */
+    header{
+      position:sticky;top:0;z-index:50;
+      border-top:3px solid var(--ink);
+      border-left:3px solid var(--ink);
+      border-right:3px solid var(--ink);
+      background:rgba(251,245,223,0.95);
+      backdrop-filter:blur(8px);
+    }
+    .nav-inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:12px 24px;}
+    .nav-logo{display:flex;align-items:center;gap:8px;text-decoration:none;color:var(--ink);}
+    .logo-badge{width:40px;height:40px;border-radius:50%;background:var(--hot);color:#fff;display:grid;place-items:center;font-family:var(--font-display);font-size:20px;border:3px solid var(--ink);animation:wobble 2.5s ease-in-out infinite;}
+    .logo-text{font-family:var(--font-display);font-size:24px;letter-spacing:-.025em;}
+    .logo-text .dot{color:var(--hot);}
+    .nav-links{display:flex;align-items:center;gap:8px;}
+    .nav-link{font-family:var(--font-display);font-size:14px;padding:6px 12px;text-decoration:none;color:var(--ink);transition:background .1s;}
+    .nav-link:hover{background:var(--acid);}
+    .nav-cta{font-family:var(--font-display);font-size:14px;padding:8px 16px;text-decoration:none;background:var(--ink);color:var(--cream);border:3px solid var(--ink);box-shadow:4px 4px 0 0 var(--hot);transition:background .1s;}
+    .nav-cta:hover{background:var(--hot);}
+    .marquee-bar{overflow:hidden;background:var(--ink);border-top:3px solid var(--ink);padding:6px 0;}
+    .marquee-track{display:flex;width:max-content;animation:marquee 30s linear infinite;}
+    .marquee-item{font-family:var(--font-display);font-size:11px;color:var(--cream);letter-spacing:.15em;padding:0 24px;white-space:nowrap;}
+    .marquee-item .sep{color:var(--hot);}
+
+    /* ── BREADCRUMB ──────────────────────────────────────────────────────────── */
+    .breadcrumb{max-width:1280px;margin:0 auto;padding:20px 24px 0;font-family:var(--font-display);font-size:12px;letter-spacing:.08em;}
+    .breadcrumb a{color:var(--ink);text-decoration:none;}
+    .breadcrumb a:hover{color:var(--hot);}
+    .breadcrumb span{color:rgba(11,12,22,.4);margin:0 8px;}
+
+    /* ── HERO ────────────────────────────────────────────────────────────────── */
+    .hero{max-width:1280px;margin:24px auto 0;padding:0 24px;}
+    .hero-inner{
+      display:grid;grid-template-columns:1fr;gap:32px;
+      border:3px solid var(--ink);box-shadow:10px 10px 0 0 var(--ink);
+      background:var(--cream);overflow:hidden;
+    }
+    @media(min-width:768px){.hero-inner{grid-template-columns:280px 1fr;}}
+    .hero-cover{
+      position:relative;border-right:3px solid var(--ink);
+      min-height:300px;overflow:hidden;
+    }
+    .hero-cover img{width:100%;height:100%;object-fit:cover;display:block;}
+    .hero-cover-fallback{
+      width:100%;height:100%;min-height:300px;
+      display:flex;align-items:center;justify-content:center;font-size:96px;
+    }
+    .hero-score-badge{
+      position:absolute;bottom:12px;left:12px;
+      background:var(--ink);color:var(--acid);
+      font-family:var(--font-display);font-size:16px;padding:6px 12px;
+    }
+    .hero-body{padding:32px;}
+    .hero-jp{font-family:var(--font-mono-jp);font-size:13px;color:rgba(11,12,22,.5);margin-bottom:8px;}
+    .hero-title{font-family:var(--font-display);font-size:36px;line-height:1;letter-spacing:.01em;margin-bottom:4px;}
+    @media(min-width:768px){.hero-title{font-size:48px;}}
+    .hero-romaji{font-family:var(--font-mono-jp);font-size:14px;color:rgba(11,12,22,.6);margin-bottom:20px;}
+    .hero-meta-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px;}
+    .meta-chip{
+      font-family:var(--font-display);font-size:10px;letter-spacing:.08em;
+      padding:5px 10px;border:2px solid var(--ink);background:var(--cream);
+    }
+    .meta-chip.highlight{background:var(--acid);}
+    .hero-desc{font-size:15px;line-height:1.7;color:rgba(11,12,22,.85);margin-bottom:24px;max-width:640px;}
+    .hero-genres{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px;}
+    .genre-pill{
+      font-family:var(--font-display);font-size:10px;letter-spacing:.1em;
+      padding:5px 12px;border:3px solid var(--ink);background:var(--cream);
+      text-decoration:none;color:var(--ink);cursor:pointer;transition:background .1s;
+    }
+    .genre-pill:hover{background:var(--acid);}
+    .hero-links{display:flex;gap:10px;flex-wrap:wrap;}
+    .ext-link{
+      font-family:var(--font-display);font-size:12px;letter-spacing:.05em;
+      padding:10px 18px;border:3px solid var(--ink);text-decoration:none;
+      background:var(--ink);color:var(--cream);box-shadow:4px 4px 0 0 var(--hot);
+      transition:background .1s;
+    }
+    .ext-link:hover{background:var(--hot);}
+    .ext-link.outline{background:var(--cream);color:var(--ink);box-shadow:4px 4px 0 0 var(--ink);}
+    .ext-link.outline:hover{background:var(--acid);}
+
+    /* ── STATS ROW ────────────────────────────────────────────────────────────── */
+    .stats-row{max-width:1280px;margin:32px auto 0;padding:0 24px;display:grid;gap:16px;grid-template-columns:repeat(2,1fr);}
+    @media(min-width:640px){.stats-row{grid-template-columns:repeat(4,1fr);}}
+    .stat-box{
+      border:3px solid var(--ink);box-shadow:6px 6px 0 0 var(--ink);
+      background:var(--cream);padding:20px;text-align:center;
+    }
+    .stat-label{font-family:var(--font-mono-jp);font-size:10px;letter-spacing:.1em;color:rgba(11,12,22,.5);margin-bottom:6px;}
+    .stat-val{font-family:var(--font-display);font-size:28px;line-height:1;}
+    .stat-val.hot{color:var(--hot);}
+    .stat-val.electric{color:var(--electric);}
+
+    /* ── TAGS SECTION ─────────────────────────────────────────────────────────── */
+    .section{max-width:1280px;margin:40px auto 0;padding:0 24px;}
+    .section-head{display:flex;align-items:center;gap:12px;margin-bottom:20px;}
+    .section-label{font-family:var(--font-mono-jp);font-size:11px;background:var(--ink);color:var(--cream);padding:3px 8px;}
+    .section-title{font-family:var(--font-display);font-size:28px;}
+    .tags-cloud{display:flex;flex-wrap:wrap;gap:8px;}
+    .tag-chip{
+      font-family:var(--font-display);font-size:10px;letter-spacing:.05em;
+      padding:5px 10px;border:2px solid var(--ink);background:var(--cream);
+    }
+
+    /* ── SWIPE CTA ────────────────────────────────────────────────────────────── */
+    .swipe-cta{
+      max-width:1280px;margin:40px auto 0;padding:0 24px;
+    }
+    .swipe-cta-inner{
+      border:3px solid var(--ink);box-shadow:10px 10px 0 0 var(--hot);
+      background:var(--ink);color:var(--cream);
+      padding:40px 48px;display:flex;align-items:center;justify-content:space-between;
+      flex-wrap:wrap;gap:24px;
+    }
+    .cta-text h2{font-family:var(--font-display);font-size:32px;line-height:1;}
+    .cta-text p{font-size:14px;color:rgba(251,245,223,.7);margin-top:8px;max-width:360px;line-height:1.6;}
+    .cta-btn{
+      font-family:var(--font-display);font-size:16px;letter-spacing:.1em;
+      padding:14px 32px;background:var(--hot);color:#fff;border:3px solid var(--hot);
+      text-decoration:none;box-shadow:6px 6px 0 0 var(--acid);transition:background .1s;white-space:nowrap;
+    }
+    .cta-btn:hover{background:var(--acid);color:var(--ink);border-color:var(--acid);}
+
+    /* ── SKELETON ─────────────────────────────────────────────────────────────── */
+    .skel{
+      background:linear-gradient(90deg,rgba(11,12,22,.06) 25%,rgba(11,12,22,.12) 50%,rgba(11,12,22,.06) 75%);
+      background-size:200% 100%;animation:shimmer 1.5s infinite;
+    }
+    .skel-block{border-radius:2px;}
+
+    /* ── NOT FOUND ────────────────────────────────────────────────────────────── */
+    .not-found{
+      max-width:640px;margin:80px auto;padding:0 24px;text-align:center;
+    }
+    .not-found h1{font-family:var(--font-display);font-size:48px;margin-bottom:16px;}
+    .not-found p{font-size:16px;color:rgba(11,12,22,.7);line-height:1.6;margin-bottom:24px;}
+    .not-found a{
+      font-family:var(--font-display);font-size:13px;padding:10px 20px;
+      border:3px solid var(--ink);background:var(--ink);color:var(--acid);
+      text-decoration:none;display:inline-block;box-shadow:4px 4px 0 0 var(--hot);
+    }
+
+    /* ── PAGE CONTENT (hidden until loaded) ─────────────────────────────────── */
+    #page-content{animation:fadeIn .3s ease both;}
+
+    /* ── FOOTER ───────────────────────────────────────────────────────────────── */
+    footer{margin-top:96px;border-top:3px solid var(--ink);background:var(--ink);color:var(--cream);}
+    .foot-inner{max-width:1280px;margin:0 auto;padding:48px 24px;display:grid;grid-template-columns:1fr;gap:32px;}
+    @media(min-width:640px){.foot-inner{grid-template-columns:repeat(3,1fr);}}
+    .foot-logo{font-family:var(--font-display);font-size:30px;}.foot-logo span{color:var(--hot);}
+    .foot-desc{font-size:13px;color:rgba(251,245,223,.7);line-height:1.7;max-width:280px;margin-top:8px;}
+    .foot-links{display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:14px;}
+    .foot-links a{color:var(--cream);text-decoration:none;}.foot-links a:hover{color:var(--acid);}
+    .foot-copy{font-size:13px;color:rgba(251,245,223,.7);}.foot-copy p+p{margin-top:4px;}
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="nav-inner">
+    <a href="/" class="nav-logo">
+      <div class="logo-badge">O!</div>
+      <span class="logo-text">OTAKULT<span class="dot">.</span></span>
+    </a>
+    <nav class="nav-links">
+      <a href="/" class="nav-link">HOME</a>
+      <a href="/browse" class="nav-link">DIRECTORY</a>
+      <a href="/discover" class="nav-cta">GET THE APP →</a>
+    </nav>
+  </div>
+  <div class="marquee-bar">
+    <div class="marquee-track">
+      <span class="marquee-item">17,000+ ANIME AND COUNTING <span class="sep">✦</span></span>
+      <span class="marquee-item">SWIPE YOUR TASTE CLUSTERS <span class="sep">✦</span></span>
+      <span class="marquee-item">JOIN THE CULT <span class="sep">✦</span></span>
+      <span class="marquee-item">BUILT BY A DISGRUNTLED FAN <span class="sep">✦</span></span>
+      <span class="marquee-item">17,000+ ANIME AND COUNTING <span class="sep">✦</span></span>
+      <span class="marquee-item">SWIPE YOUR TASTE CLUSTERS <span class="sep">✦</span></span>
+      <span class="marquee-item">JOIN THE CULT <span class="sep">✦</span></span>
+      <span class="marquee-item">BUILT BY A DISGRUNTLED FAN <span class="sep">✦</span></span>
+    </div>
+  </div>
+</header>
+
+<!-- Loading state -->
+<div id="loading-state" style="max-width:1280px;margin:48px auto;padding:0 24px;">
+  <div style="height:16px;width:200px;margin-bottom:32px;" class="skel skel-block"></div>
+  <div style="display:grid;grid-template-columns:280px 1fr;gap:0;border:3px solid var(--ink);overflow:hidden;">
+    <div style="height:400px;" class="skel skel-block"></div>
+    <div style="padding:32px;">
+      <div style="height:14px;width:160px;margin-bottom:12px;" class="skel skel-block"></div>
+      <div style="height:48px;width:80%;margin-bottom:8px;" class="skel skel-block"></div>
+      <div style="height:16px;width:40%;margin-bottom:24px;" class="skel skel-block"></div>
+      <div style="height:14px;width:95%;margin-bottom:8px;" class="skel skel-block"></div>
+      <div style="height:14px;width:90%;margin-bottom:8px;" class="skel skel-block"></div>
+      <div style="height:14px;width:70%;margin-bottom:24px;" class="skel skel-block"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Not found state (hidden until needed) -->
+<div id="not-found-state" style="display:none">
+  <div class="not-found">
+    <h1>404</h1>
+    <p>This anime doesn't exist in the catalog — or not yet. Check back after the next upload.</p>
+    <a href="/browse">← BACK TO DIRECTORY</a>
+  </div>
+</div>
+
+<!-- Main page content (hidden until loaded) -->
+<div id="page-content" style="display:none">
+
+  <div class="breadcrumb" id="breadcrumb">
+    <a href="/">HOME</a>
+    <span>→</span>
+    <a href="/browse">DIRECTORY</a>
+    <span>→</span>
+    <span id="bc-title"></span>
+  </div>
+
+  <div class="hero">
+    <div class="hero-inner">
+      <div class="hero-cover" id="hero-cover"></div>
+      <div class="hero-body">
+        <div class="hero-jp" id="hero-jp"></div>
+        <h1 class="hero-title" id="hero-title">LOADING</h1>
+        <div class="hero-romaji" id="hero-romaji"></div>
+        <div class="hero-meta-row" id="hero-meta"></div>
+        <p class="hero-desc" id="hero-desc"></p>
+        <div class="hero-genres" id="hero-genres"></div>
+        <div class="hero-links" id="hero-links"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats-row" id="stats-row"></div>
+
+  <div class="section" id="tags-section" style="display:none">
+    <div class="section-head">
+      <span class="section-label">// タグ</span>
+      <h2 class="section-title">TAGS</h2>
+    </div>
+    <div class="tags-cloud" id="tags-cloud"></div>
+  </div>
+
+  <div class="swipe-cta">
+    <div class="swipe-cta-inner">
+      <div class="cta-text">
+        <h2>LIKE WHAT YOU SEE?</h2>
+        <p>Swipe your taste profile and we'll find what you'll love next — powered by 17,000 shows and your actual reactions.</p>
+      </div>
+      <a href="/discover" class="cta-btn">OPEN THE APP →</a>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <div class="foot-inner">
+    <div>
+      <div class="foot-logo">OTAKULT<span>.</span></div>
+      <p class="foot-desc">A maximalist anime recommendation engine for people who take their obsessions seriously.</p>
+    </div>
+    <div class="foot-links">
+      <a href="/discover">App</a>
+      <a href="/browse">Directory</a>
+      <a href="/discover">Discord</a>
+      <a href="#">Manifesto</a>
+    </div>
+    <div class="foot-copy">
+      <p>© 2026 OTAKULT collective.</p>
+      <p>Hand-curated obsession engine.</p>
+    </div>
+  </div>
+</footer>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script>
+// ─── Firebase init ─────────────────────────────────────────────────────────────
+firebase.initializeApp({
+  apiKey:            "AIzaSyDa6gig9xfZk_82t8h3aeSJciwUdnnBysw",
+  authDomain:        "next-arc-b091b.firebaseapp.com",
+  projectId:         "next-arc-b091b",
+  storageBucket:     "next-arc-b091b.firebasestorage.app",
+  messagingSenderId: "488355535109",
+  appId:             "1:488355535109:web:40d86bfeae685d3dba3f6c",
+});
+const db = firebase.firestore();
+
+// ─── Slug extraction ───────────────────────────────────────────────────────────
+// Handles both /browse/slug and /browse/slug/index.html
+function getSlugFromPath() {
+  const parts = window.location.pathname.replace(/\/+$/, '').split('/');
+  // parts: ['', 'browse', 'the-slug']
+  const slug = parts[parts.length - 1];
+  // filter out 'anime.html' (the template filename itself)
+  return (slug && slug !== 'anime.html' && slug !== 'browse') ? slug : null;
+}
+
+const FORMAT_EMOJI = {TV:'📺',MOVIE:'🎬',OVA:'💿',ONA:'🌐',SPECIAL:'⭐',MUSIC:'🎵'};
+const GENRE_GRADIENTS = {
+  Action:          'linear-gradient(135deg,#141414 0%,#c81e1e 50%,#505050 100%)',
+  Adventure:       'linear-gradient(135deg,#fdb41e 0%,#c83200 50%,#321e0a 100%)',
+  Comedy:          'linear-gradient(135deg,#efef00 0%,#ff086b 50%,#0b0c16 100%)',
+  Drama:           'linear-gradient(135deg,#a78bfa 0%,#ec4899 50%,#1e0050 100%)',
+  Fantasy:         'linear-gradient(135deg,#8625fe 0%,#00d4f6 50%,#0b0c16 100%)',
+  Horror:          'linear-gradient(135deg,#141414 0%,#640014 50%,#c80000 100%)',
+  Mecha:           'linear-gradient(135deg,#00d4f6 0%,#0050c8 50%,#0b0c16 100%)',
+  Music:           'linear-gradient(135deg,#ec4899 0%,#a78bfa 50%,#f97316 100%)',
+  Mystery:         'linear-gradient(135deg,#1e1e3c 0%,#8625fe 50%,#00d4f6 100%)',
+  Psychological:   'linear-gradient(135deg,#8625fe 0%,#ff086b 50%,#141414 100%)',
+  Romance:         'linear-gradient(135deg,#ec4899 0%,#f97316 50%,#a78bfa 100%)',
+  'Sci-Fi':        'linear-gradient(135deg,#00d4f6 0%,#8625fe 50%,#0b0c16 100%)',
+  'Slice of Life': 'linear-gradient(135deg,#a7d4a0 0%,#efef00 50%,#0b5c14 100%)',
+  Sports:          'linear-gradient(135deg,#ffa000 0%,#141414 50%,#3c3c3c 100%)',
+  Supernatural:    'linear-gradient(135deg,#8625fe 0%,#00d4f6 50%,#141414 100%)',
+  Thriller:        'linear-gradient(135deg,#141414 0%,#c80000 50%,#3c0000 100%)',
+};
+
+function cardGradient(genres) {
+  const g = (genres||[]).find(g => GENRE_GRADIENTS[g]);
+  return GENRE_GRADIENTS[g] || 'linear-gradient(135deg,#0b0c16 0%,#8625fe 50%,#00d4f6 100%)';
+}
+
+// ─── Render page ───────────────────────────────────────────────────────────────
+function renderPage(d) {
+  const title   = d.title_english || d.title_romaji || 'Unknown';
+  const titleUP = title.toUpperCase();
+  const genres  = d.genres || [];
+  const allTags = [...(d.tags||[]), ...(d.adb_tags||[])];
+  const grad    = cardGradient(genres);
+
+  // Page title + meta
+  document.title = `${title} — OTAKULT`;
+  document.querySelector('meta[name="description"]').content =
+    d.description ? d.description.slice(0,160) : `${title} on OTAKULT anime directory.`;
+
+  // Structured data for SEO
+  const sd = {
+    "@context":"https://schema.org","@type":"Movie",
+    "name": title,
+    "description": d.description||'',
+    "image": d.cover_large||'',
+    "url": `https://otakult.app/browse/${d.slug||''}`,
+    "genre": genres,
+  };
+  const sdTag = document.createElement('script');
+  sdTag.type  = 'application/ld+json';
+  sdTag.text  = JSON.stringify(sd);
+  document.head.appendChild(sdTag);
+
+  // Breadcrumb
+  document.getElementById('bc-title').textContent = titleUP;
+
+  // Hero cover
+  const coverEl = document.getElementById('hero-cover');
+  if (d.cover_large) {
+    coverEl.style.background = '#111';
+    const img = document.createElement('img');
+    img.src = d.cover_large;
+    img.alt = title;
+    img.onerror = () => {
+      img.remove();
+      coverEl.style.background = grad;
+      const fallback = document.createElement('div');
+      fallback.className = 'hero-cover-fallback';
+      fallback.textContent = FORMAT_EMOJI[d.format]||'🎌';
+      coverEl.appendChild(fallback);
+    };
+    coverEl.appendChild(img);
+  } else {
+    coverEl.style.background = grad;
+    const fallback = document.createElement('div');
+    fallback.className = 'hero-cover-fallback';
+    fallback.textContent = FORMAT_EMOJI[d.format]||'🎌';
+    coverEl.appendChild(fallback);
+  }
+  if (d.anilist_score) {
+    const badge = document.createElement('div');
+    badge.className = 'hero-score-badge';
+    badge.textContent = `★ ${(d.anilist_score/10).toFixed(1)}`;
+    coverEl.appendChild(badge);
+  }
+
+  // Hero body
+  if (d.title_native) document.getElementById('hero-jp').textContent = d.title_native;
+  document.getElementById('hero-title').textContent = titleUP;
+  if (d.title_romaji && d.title_english)
+    document.getElementById('hero-romaji').textContent = d.title_romaji;
+
+  // Meta chips
+  const metaEl = document.getElementById('hero-meta');
+  const metaItems = [
+    d.format,
+    d.season_year ? String(d.season_year) : null,
+    d.episodes   ? `${d.episodes} EP`      : null,
+    d.duration   ? `${d.duration} MIN`     : null,
+    d.status,
+    d.source,
+  ].filter(Boolean);
+  metaItems.forEach((m,i) => {
+    const chip = document.createElement('span');
+    chip.className = `meta-chip${i===0?' highlight':''}`;
+    chip.textContent = m;
+    metaEl.appendChild(chip);
+  });
+
+  // Description
+  if (d.description) {
+    document.getElementById('hero-desc').textContent =
+      d.description.replace(/[<>]/g,'').slice(0,800) + (d.description.length>800?'…':'');
+  } else {
+    document.getElementById('hero-desc').style.display = 'none';
+  }
+
+  // Genres
+  const genreEl = document.getElementById('hero-genres');
+  genres.forEach(g => {
+    const pill = document.createElement('a');
+    pill.href = `/browse?genre=${encodeURIComponent(g)}`;
+    pill.className = 'genre-pill';
+    pill.textContent = g;
+    pill.onclick = (e) => {
+      e.preventDefault();
+      window.location.href = `/browse`;
+    };
+    genreEl.appendChild(pill);
+  });
+
+  // External links
+  const linksEl = document.getElementById('hero-links');
+  if (d.anilist_id) {
+    const a = document.createElement('a');
+    a.href = `https://anilist.co/anime/${d.anilist_id}`;
+    a.target = '_blank'; a.rel = 'noopener';
+    a.className = 'ext-link';
+    a.textContent = 'VIEW ON ANILIST →';
+    linksEl.appendChild(a);
+  }
+  if (d.mal_id) {
+    const a = document.createElement('a');
+    a.href = `https://myanimelist.net/anime/${d.mal_id}`;
+    a.target = '_blank'; a.rel = 'noopener';
+    a.className = 'ext-link outline';
+    a.textContent = 'MAL →';
+    linksEl.appendChild(a);
+  }
+
+  // Stats row
+  const statsEl = document.getElementById('stats-row');
+  const stats = [
+    { label:'ANILIST SCORE', val: d.anilist_score ? `${(d.anilist_score/10).toFixed(1)}` : '—', cls:'hot' },
+    { label:'POPULARITY',    val: d.anilist_popularity ? d.anilist_popularity.toLocaleString() : '—', cls:'electric' },
+    { label:'EPISODES',      val: d.episodes  || '—', cls:'' },
+    { label:'MAL RANK',      val: d.mal_rank  ? `#${d.mal_rank}` : '—', cls:'' },
+  ];
+  stats.forEach(s => {
+    const box = document.createElement('div');
+    box.className = 'stat-box';
+    box.innerHTML = `<div class="stat-label">${s.label}</div><div class="stat-val ${s.cls}">${s.val}</div>`;
+    statsEl.appendChild(box);
+  });
+
+  // Tags section
+  const uniqueTags = [...new Set(allTags)].slice(0,30);
+  if (uniqueTags.length > 0) {
+    document.getElementById('tags-section').style.display = '';
+    const cloud = document.getElementById('tags-cloud');
+    uniqueTags.forEach(t => {
+      const chip = document.createElement('span');
+      chip.className = 'tag-chip';
+      chip.textContent = t;
+      cloud.appendChild(chip);
+    });
+  }
+
+  // Show content
+  document.getElementById('loading-state').style.display = 'none';
+  document.getElementById('page-content').style.display  = '';
+}
+
+// ─── Load from Firestore ────────────────────────────────────────────────────────
+async function loadAnime() {
+  const slug = getSlugFromPath();
+
+  if (!slug) {
+    // No slug → redirect to directory
+    window.location.replace('/browse');
+    return;
+  }
+
+  try {
+    const snap = await db.collection('anime_catalog')
+      .where('slug','==', slug)
+      .limit(1)
+      .get();
+
+    if (snap.empty) {
+      document.getElementById('loading-state').style.display = 'none';
+      document.getElementById('not-found-state').style.display = '';
+      document.title = 'Not Found — OTAKULT';
+    } else {
+      renderPage(snap.docs[0].data());
+    }
+  } catch(e) {
+    console.error('Firestore error:', e);
+    document.getElementById('loading-state').innerHTML =
+      `<div style="max-width:640px;margin:0 auto;border:3px solid var(--ink);padding:40px;text-align:center;font-family:var(--font-display);font-size:18px;background:var(--cream);">
+        FAILED TO LOAD — ${e.message}
+        <br/><br/>
+        <a href="/browse" style="font-size:13px;color:var(--hot);">← BACK TO DIRECTORY</a>
+      </div>`;
+  }
+}
+
+loadAnime();
+</script>
+</body>
+</html>

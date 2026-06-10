@@ -17,6 +17,10 @@ service cloud.firestore {
       allow read: if true;
       allow write: if false;
     }
+    match /anime_catalog/{doc} {
+      allow read: if true;
+      allow write: if false;
+    }
 
     // ── App engagement data ───────────────────────────────────────────────
     // Likes are publicly readable (powers the marquee ticker) and writable
