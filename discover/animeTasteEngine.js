@@ -2127,8 +2127,35 @@ class NextArcEngine {
   pickNextSeedCard(remainingPool, shownCards, likedIds = new Set(), dislikedIds = new Set()) {
     if (!remainingPool.length) return null;
 
-    // Cold start: highest average score = best first card, most universally informative
+    // Cold start: pick randomly from the top-5 most discriminating candidates.
+    //
+    // "Discriminative power" = how much information a single swipe gives us:
+    //   • Wide bucket footprint → one card covers more taste dimensions
+    //   • High viewership (sqrt-scaled) → user has likely seen it, real opinion
+    //   • NOT universally loved → mild penalty above score 86, because shows
+    //     everyone agrees are perfect (FMA Brotherhood, 89) generate the same
+    //     "like" from almost every user and tell the engine almost nothing.
+    //     Shows with a broader spread of reactions are better discriminators.
+    //
+    // Random pick from top-5 so different users see different first cards.
     if (!shownCards.length) {
+      const scored = remainingPool
+        .filter(a => (a.averageScore || 0) >= 70 && (a.popularity || 0) >= 10000)
+        .map(a => {
+          const bucks   = extractFeatures(a).keys.emotionalBucket || [];
+          const pop     = Math.sqrt(a.popularity || 1);
+          const sc      = a.averageScore || 75;
+          // Penalise universally-loved shows slightly so they don't always win
+          const variance = sc > 86 ? 1 - (sc - 86) * 0.04 : 1;
+          return { anime: a, ds: bucks.length * pop * variance };
+        })
+        .sort((a, b) => b.ds - a.ds)
+        .slice(0, 5);
+
+      if (scored.length) {
+        return scored[Math.floor(Math.random() * scored.length)].anime;
+      }
+      // Fallback if pool is too small/obscure
       return remainingPool.reduce((best, a) =>
         (a.averageScore || 0) > (best.averageScore || 0) ? a : best);
     }
