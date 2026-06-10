@@ -877,7 +877,7 @@
               return `
                 <a href="/browse/" class="heat-card" style="transform:rotate(${rots[i % 4]})">
                   <div class="heat-art">
-                    <img src="${anime.coverImage.medium}" alt="${title}"
+                    <img src="${anime.coverImage.extraLarge}" alt="${title}"
                       style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;">
                     <span class="heat-score">${badge}</span>
                   </div>
@@ -890,49 +890,47 @@
             }).join('');
           }
 
-          async function fetchAndShow(picks) {
-            const ids    = picks.map(d => d.anilist_id);
-            const gemMap = {};
-            picks.forEach(d => { gemMap[d.anilist_id] = d.hidden_gem; });
+          // Pick today's 4 using the date as a seed — same picks all day,
+          // changes at midnight, consistent for every visitor.
+          const dateStr = new Date().toDateString(); // e.g. "Tue Jun 10 2026"
+          const dateSeed = dateStr.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+          function seededRandom(seed) {
+            const x = Math.sin(seed) * 10000;
+            return x - Math.floor(x);
+          }
+          // Deterministic shuffle using date seed
+          const shuffled = [...pool].sort((a, b) =>
+            seededRandom(dateSeed + pool.indexOf(a)) - seededRandom(dateSeed + pool.indexOf(b))
+          );
+          const picks  = shuffled.slice(0, 4);
+          const ids    = picks.map(d => d.anilist_id);
+          const gemMap = {};
+          picks.forEach(d => { gemMap[d.anilist_id] = d.hidden_gem; });
 
-            const res = await fetch('https://graphql.anilist.co', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ query: `
-                query($ids:[Int]){
-                  Page(page:1,perPage:4){
-                    media(id_in:$ids,type:ANIME){
-                      id title{ english romaji }
-                      coverImage{ medium }
-                      studios(isMain:true){ nodes{ name } }
-                      genres startDate{ year }
-                    }
+          const res = await fetch('https://graphql.anilist.co', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query: `
+              query($ids:[Int]){
+                Page(page:1,perPage:4){
+                  media(id_in:$ids,type:ANIME){
+                    id title{ english romaji }
+                    coverImage{ extraLarge }
+                    studios(isMain:true){ nodes{ name } }
+                    genres startDate{ year }
                   }
-                }`, variables: { ids } }),
-            });
-            const data  = await res.json();
-            const media = data?.data?.Page?.media || [];
-            if (!media.length) return;
+                }
+              }`, variables: { ids } }),
+          });
+          const data  = await res.json();
+          const media = data?.data?.Page?.media || [];
+          if (!media.length) return;
 
-            grid.style.opacity = '0';
-            setTimeout(() => {
-              grid.innerHTML = renderCards(media, gemMap);
-              grid.style.opacity = '1';
-            }, 400);
-          }
-
-          // Rotate through pool — fresh random 4 every 8 seconds
-          let used = new Set();
-          async function showNext() {
-            if (used.size + 4 > pool.length) used = new Set();
-            const available = pool.filter((_, i) => !used.has(i));
-            const picks = available.sort(() => Math.random() - 0.5).slice(0, 4);
-            picks.forEach(p => used.add(pool.indexOf(p)));
-            await fetchAndShow(picks);
-          }
-
-          await showNext(); // initial render
-          setInterval(showNext, 8000);
+          grid.style.opacity = '0';
+          setTimeout(() => {
+            grid.innerHTML = renderCards(media, gemMap);
+            grid.style.opacity = '1';
+          }, 400);
 
         } catch(e) { console.error('[HeatIndex]', e); }
       })();
