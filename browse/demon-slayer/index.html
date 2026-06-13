@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DEMON SLAYER &amp; anime like it — OTAKULT</title>
+  <meta name="description" content="Tanjiro Kamado returns home to find his family slaughtered by demons and his sister Nezuko turned into one. He becomes a Demon Slayer to find a cure for her — never losing his kindness, even toward his enemies." />
+  <meta name="author" content="OTAKULT" />
+  <link rel="canonical" href="https://otakult.app/browse/demon-slayer" />
+  <meta property="og:title" content="DEMON SLAYER &amp; anime like it — OTAKULT" />
+  <meta property="og:description" content="THE MOST BEAUTIFUL THING UFOTABLE EVER MADE IS A BOY BREATHING FIRE." />
+  <meta property="og:type" content="article" />
+  <meta property="og:url" content="https://otakult.app/browse/demon-slayer" />
+  <link rel="icon" href="/icons/icon-192.png" />
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"DEMON SLAYER & anime like it","description":"THE MOST BEAUTIFUL THING UFOTABLE EVER MADE IS A BOY BREATHING FIRE.","author":{"@type":"Organization","name":"OTAKULT"},"url":"https://otakult.app/browse/demon-slayer","breadcrumb":{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Browse","item":"https://otakult.app/browse"},{"@type":"ListItem","position":2,"name":"DEMON SLAYER","item":"https://otakult.app/browse/demon-slayer"}]}}</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Space+Grotesk:wght@400;500;600;700&family=M+PLUS+1+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root{
+      --ink:#0b0c16;--cream:#fbf5df;--hot:#ff086b;--electric:#8625fe;--acid:#efef00;--cyan:#00d4f6;
+      --font-display:'Bungee',system-ui,sans-serif;
+      --font-mono-jp:'M PLUS 1 Code',ui-monospace,monospace;
+      --font-body:'Space Grotesk',system-ui,sans-serif;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    body{
+      font-family:var(--font-body);color:var(--ink);overflow-x:hidden;
+      background-color:var(--cream);
+      background-image:
+        radial-gradient(var(--ink) 1px,transparent 1px),
+        radial-gradient(var(--ink) 1px,transparent 1px);
+      background-size:32px 32px,32px 32px;
+      background-position:0 0,16px 16px;
+      background-attachment:fixed;
+    }
+    @keyframes marquee{from{transform:translateX(0);}to{transform:translateX(-50%);}}
+    @keyframes wobble{0%,100%{transform:rotate(-2deg);}50%{transform:rotate(2deg);}}
+
+    /* ── NAV ───────────────────────────────────────────────────────────── */
+    header{position:sticky;top:0;z-index:50;border-bottom:3px solid var(--ink);background:rgba(251,245,223,0.95);backdrop-filter:blur(8px);}
+    .nav-inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:12px 24px;}
+    .nav-logo{display:flex;align-items:center;gap:8px;text-decoration:none;color:var(--ink);}
+    .logo-badge{width:40px;height:40px;border-radius:50%;background:var(--hot);color:#fff;display:grid;place-items:center;font-family:var(--font-display);font-size:14px;border:3px solid var(--ink);animation:wobble 2.5s ease-in-out infinite;}
+    .logo-text{font-family:var(--font-display);font-size:24px;letter-spacing:.01em;}
+    .logo-text .dot{color:var(--hot);}
+    .nav-links{display:flex;align-items:center;gap:8px;}
+    .nav-link{font-family:var(--font-display);font-size:14px;padding:6px 12px;text-decoration:none;color:var(--ink);transition:background .1s;}
+    .nav-link:hover{background:var(--acid);}
+    .nav-cta{font-family:var(--font-display);font-size:14px;padding:8px 16px;text-decoration:none;background:var(--ink);color:var(--cream);border:3px solid var(--ink);box-shadow:4px 4px 0 0 var(--ink);transition:background .1s;}
+    .nav-cta:hover{background:var(--hot);border-color:var(--hot);}
+
+    /* ── MARQUEE ───────────────────────────────────────────────────────── */
+    .marquee-bar{overflow:hidden;background:var(--ink);border-top:3px solid var(--ink);padding:6px 0;}
+    .marquee-track{display:flex;width:max-content;animation:marquee 30s linear infinite;}
+    .marquee-item{font-family:var(--font-display);font-size:11px;color:var(--cream);letter-spacing:.15em;padding:0 24px;white-space:nowrap;}
+    .marquee-item .sep{color:var(--hot);}
+
+    /* ── HERO ───────────────────────────────────────────────────────────── */
+    .hero{
+      position:relative;overflow:hidden;
+      background:linear-gradient(135deg,#1a0a2e 0%,#6b1a1a 40%,#1a0a0a 100%);
+      border-bottom:3px solid var(--ink);
+    }
+    .hero-halftone{position:absolute;inset:0;background-image:radial-gradient(var(--ink) 1.5px,transparent 1.6px);background-size:18px 18px;opacity:.25;pointer-events:none;}
+    .hero-inner{
+      position:relative;z-index:2;
+      max-width:1280px;margin:0 auto;padding:64px 24px 96px;
+      display:grid;grid-template-columns:1fr;gap:40px;align-items:center;
+    }
+    @media(min-width:1024px){.hero-inner{grid-template-columns:280px 1fr;}}
+    .art-card{
+      width:100%;max-width:240px;aspect-ratio:3/4;
+      background:linear-gradient(160deg,#8b1a1a,#2d0a0a);
+      border:3px solid var(--ink);box-shadow:8px 8px 0 0 rgba(0,0,0,.5);
+      display:flex;align-items:center;justify-content:center;font-size:96px;
+      position:relative;transform:rotate(-3deg);
+      margin:0 auto;
+    }
+    .art-score{position:absolute;top:10px;left:10px;background:var(--ink);color:var(--acid);font-family:var(--font-display);font-size:10px;padding:4px 8px;}
+    .art-jp{position:absolute;bottom:10px;right:10px;background:rgba(251,245,223,.95);font-family:var(--font-mono-jp);font-size:9px;padding:3px 8px;border:1.5px solid var(--ink);}
+    .hero-right{}
+    .breadcrumb-hero{font-family:var(--font-display);font-size:11px;letter-spacing:1.5px;margin-bottom:20px;}
+    .breadcrumb-hero a{color:rgba(255,255,255,.7);text-decoration:none;background:rgba(0,0,0,.35);padding:6px 12px;border:1.5px solid rgba(255,255,255,.3);}
+    .breadcrumb-hero a:hover{color:#fff;}
+    .hero-jp{font-family:var(--font-mono-jp);font-size:13px;color:rgba(255,255,255,.7);margin-bottom:8px;}
+    .hero-title{font-family:var(--font-display);font-size:clamp(40px,6.5vw,88px);color:#fff;line-height:.85;letter-spacing:1px;margin-bottom:20px;word-break:break-word;}
+    .hero-meta{display:flex;gap:0;flex-wrap:wrap;margin-bottom:20px;}
+    .hm-item{font-family:var(--font-display);font-size:11px;letter-spacing:1px;padding:7px 14px;background:rgba(0,0,0,.5);color:#fff;border:2px solid rgba(255,255,255,.3);border-right:none;}
+    .hm-item:last-child{border-right:2px solid rgba(255,255,255,.3);}
+    .hm-item .val{color:var(--acid);}
+    .hero-tagline{font-family:var(--font-display);font-size:clamp(12px,1.8vw,18px);color:#fff;font-style:italic;opacity:.95;letter-spacing:.5px;margin-bottom:20px;}
+    .hero-tags{display:flex;gap:8px;flex-wrap:wrap;}
+    .htag{font-family:var(--font-display);font-size:10px;letter-spacing:1.5px;padding:4px 8px;border:2px solid rgba(255,255,255,.5);color:#fff;background:rgba(0,0,0,.3);}
+
+    /* ── BODY ───────────────────────────────────────────────────────────── */
+    .body-wrap{max-width:1280px;margin:0 auto;padding:0 24px;display:grid;grid-template-columns:1fr;gap:0;align-items:start;}
+    @media(min-width:1024px){.body-wrap{grid-template-columns:8fr 4fr;}}
+    .body-main{padding:56px 0;}
+    @media(min-width:1024px){.body-main{padding:56px 48px 56px 0;border-right:3px solid var(--ink);}}
+    .body-sidebar{padding:40px 0;}
+    @media(min-width:1024px){.body-sidebar{padding:56px 0 56px 40px;position:sticky;top:80px;}}
+    .slabel{font-family:var(--font-mono-jp);font-size:11px;color:var(--hot);letter-spacing:3px;display:inline-block;border:2px solid var(--ink);padding:4px 10px;margin-bottom:18px;background:var(--cream);}
+    .post-title{font-family:var(--font-display);font-size:clamp(26px,4vw,48px);color:var(--ink);line-height:.95;letter-spacing:-.5px;margin-bottom:28px;}
+    .post-title .hl{background:var(--acid);padding:0 4px;}
+    .editorial-box{border:3px solid var(--ink);padding:28px 32px;background:var(--cream);box-shadow:8px 8px 0 0 var(--ink);margin-bottom:32px;}
+    .editorial-box p{font-size:16px;line-height:1.8;color:#333;}
+    .editorial-box p+p{margin-top:14px;}
+    .dashed-rule{border:none;border-top:2px dashed rgba(11,12,22,.2);margin:20px 0;}
+    .synopsis-label{font-family:var(--font-display);font-size:18px;color:var(--ink);letter-spacing:1px;margin-bottom:10px;}
+    .synopsis-text{font-size:16px;line-height:1.75;color:#444;margin-bottom:20px;}
+    .hashtags{display:flex;gap:8px;flex-wrap:wrap;}
+    .hashtag{font-family:var(--font-display);font-size:10px;letter-spacing:1.5px;padding:4px 8px;background:var(--electric);color:#fff;border:2px solid var(--ink);}
+
+    /* ── SIDEBAR VIBE CARD ─────────────────────────────────────────────── */
+    .vibe-card{background:var(--hot);border:3px solid var(--ink);box-shadow:8px 8px 0 0 var(--ink);padding:28px 24px;}
+    .vibe-card .slabel{background:transparent;border-color:rgba(255,255,255,.4);color:rgba(255,255,255,.8);}
+    .vibe-title{font-family:var(--font-display);font-size:36px;color:#fff;line-height:1;letter-spacing:-.5px;margin-bottom:24px;}
+    .vibe-list{display:flex;flex-direction:column;gap:10px;margin-bottom:24px;}
+    .vibe-item{display:flex;align-items:center;gap:10px;font-family:var(--font-display);font-size:12px;letter-spacing:1px;color:#fff;}
+    .vcheck{width:22px;height:22px;background:var(--acid);border:2px solid var(--ink);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
+    .btn-list{display:block;width:100%;font-family:var(--font-display);font-size:12px;letter-spacing:1.5px;padding:14px 20px;background:var(--ink);color:var(--cream);border:3px solid var(--ink);box-shadow:4px 4px 0 0 rgba(0,0,0,.4);cursor:pointer;text-align:center;text-decoration:none;transition:background .1s;}
+    .btn-list:hover{background:var(--hot);border-color:var(--hot);}
+
+    /* ── SIMILAR SECTION ──────────────────────────────────────────────── */
+    .similar-section{border-top:3px solid var(--ink);}
+    .similar-head{padding:48px 24px 40px;background:var(--electric);border-bottom:3px solid var(--ink);}
+    @media(min-width:1024px){.similar-head{padding:48px 60px 40px;}}
+    .sim-label{font-family:var(--font-mono-jp);font-size:11px;color:var(--acid);letter-spacing:3px;display:block;margin-bottom:12px;}
+    .sim-heading{font-family:var(--font-display);font-size:clamp(32px,5.5vw,68px);color:#fff;line-height:.92;letter-spacing:-1px;}
+    .sim-heading .hl{color:var(--acid);}
+    .sim-cards{display:grid;grid-template-columns:1fr;border-bottom:3px solid var(--ink);}
+    @media(min-width:640px){.sim-cards{grid-template-columns:repeat(2,1fr);}}
+    @media(min-width:1024px){.sim-cards{grid-template-columns:repeat(3,1fr);}}
+    .sim-card{border-bottom:3px solid var(--ink);text-decoration:none;color:var(--ink);display:flex;flex-direction:column;background:var(--cream);transition:transform .15s;}
+    @media(min-width:640px){.sim-card:nth-child(odd){border-right:3px solid var(--ink);}}
+    @media(min-width:1024px){.sim-card{border-right:3px solid var(--ink);border-bottom:none;}.sim-card:last-child{border-right:none;}}
+    .sim-card:hover{transform:translate(3px,3px);}
+    .sim-art{height:220px;display:flex;align-items:center;justify-content:center;font-size:68px;position:relative;border-bottom:3px solid var(--ink);}
+    .sim-score{position:absolute;top:10px;left:10px;background:var(--ink);color:var(--acid);font-family:var(--font-display);font-size:10px;padding:4px 8px;}
+    .sim-ep{position:absolute;top:10px;right:10px;background:var(--acid);font-family:var(--font-display);font-size:10px;padding:4px 8px;border:2px solid var(--ink);}
+    .sim-jp{position:absolute;bottom:10px;right:10px;background:rgba(251,245,223,.95);font-family:var(--font-mono-jp);font-size:9px;padding:3px 8px;border:1.5px solid var(--ink);}
+    .sim-body{padding:20px 20px 22px;flex:1;display:flex;flex-direction:column;gap:8px;}
+    .sim-title{font-family:var(--font-display);font-size:24px;line-height:1.1;}
+    .sim-tagline{font-size:13px;color:rgba(11,12,22,.6);line-height:1.6;font-style:italic;flex:1;}
+    .sim-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;}
+    .sim-tag{font-family:var(--font-display);font-size:10px;letter-spacing:1px;padding:3px 7px;border:2px solid var(--ink);background:var(--acid);}
+
+    /* ── CTA ────────────────────────────────────────────────────────────── */
+    .cta{background:var(--ink);padding:72px 24px;text-align:center;border-top:3px solid var(--ink);}
+    @media(min-width:1024px){.cta{padding:72px 60px;}}
+    .cta-label{font-family:var(--font-mono-jp);font-size:11px;color:var(--acid);letter-spacing:3px;display:block;margin-bottom:24px;}
+    .cta-title{font-family:var(--font-display);font-size:clamp(32px,5.5vw,68px);color:#fff;line-height:.92;letter-spacing:-1px;margin-bottom:40px;}
+    .cta-title .hl{color:var(--hot);}
+    .cta-btns{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;}
+    .btn{font-family:var(--font-display);font-size:12px;letter-spacing:1.5px;padding:14px 26px;text-decoration:none;display:inline-flex;align-items:center;gap:8px;border:3px solid var(--ink);box-shadow:4px 4px 0 0 var(--ink);transition:background .1s;}
+    .btn-acid{background:var(--acid);color:var(--ink);}
+    .btn-acid:hover{background:var(--cream);}
+    .btn-ghost{background:transparent;color:#fff;border-color:rgba(255,255,255,.5);box-shadow:4px 4px 0 0 rgba(255,255,255,.3);}
+    .btn-ghost:hover{background:var(--acid);color:var(--ink);border-color:var(--acid);box-shadow:4px 4px 0 0 var(--ink);}
+
+    /* ── FOOTER ─────────────────────────────────────────────────────────── */
+    footer{border-top:3px solid var(--ink);background:var(--ink);color:var(--cream);}
+    .foot-inner{max-width:1280px;margin:0 auto;padding:48px 24px;display:grid;grid-template-columns:1fr;gap:32px;}
+    @media(min-width:640px){.foot-inner{grid-template-columns:repeat(3,1fr);}}
+    .foot-logo{font-family:var(--font-display);font-size:30px;}
+    .foot-logo span{color:var(--hot);}
+    .foot-desc{font-size:13px;color:rgba(251,245,223,.7);line-height:1.7;max-width:280px;margin-top:8px;}
+    .foot-links{display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:14px;}
+    .foot-links a{color:var(--cream);text-decoration:none;}
+    .foot-links a:hover{color:var(--acid);}
+    .foot-copy{font-size:13px;color:rgba(251,245,223,.7);}
+    .foot-copy p+p{margin-top:4px;}
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<header>
+  <div class="nav-inner">
+    <a href="/" class="nav-logo">
+      <div class="logo-badge">O!</div>
+      <span class="logo-text">OTAKULT<span class="dot">.</span></span>
+    </a>
+    <nav class="nav-links">
+      <a href="/" class="nav-link">HOME</a>
+      <a href="/browse" class="nav-link">DIRECTORY</a>
+      <a href="/discover" class="nav-cta">GET THE APP →</a>
+    </nav>
+  </div>
+  <div class="marquee-bar">
+    <div class="marquee-track">
+      <span class="marquee-item">HAND-CURATED, NO ALGORITHM SLOP <span class="sep">✦</span></span>
+      <span class="marquee-item" style="font-family:var(--font-mono-jp)">全作品レビュー済み <span class="sep">✦</span></span>
+      <span class="marquee-item">CLICK ANY CARD FOR SIMILAR PICKS <span class="sep">✦</span></span>
+      <span class="marquee-item">NEW TITLES ADDED WEEKLY <span class="sep">✦</span></span>
+      <span class="marquee-item">HAND-CURATED, NO ALGORITHM SLOP <span class="sep">✦</span></span>
+      <span class="marquee-item" style="font-family:var(--font-mono-jp)">全作品レビュー済み <span class="sep">✦</span></span>
+      <span class="marquee-item">CLICK ANY CARD FOR SIMILAR PICKS <span class="sep">✦</span></span>
+      <span class="marquee-item">NEW TITLES ADDED WEEKLY <span class="sep">✦</span></span>
+    </div>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-halftone"></div>
+  <div class="hero-inner">
+
+    <!-- LEFT: art card -->
+    <div style="display:flex;justify-content:center;">
+      <div class="art-card">
+        🗡️
+        <div class="art-score">★ 8.7</div>
+        <div class="art-jp">鬼滅の刃</div>
+      </div>
+    </div>
+
+    <!-- RIGHT: all text -->
+    <div class="hero-right">
+      <div class="breadcrumb-hero"><a href="/browse">← BROWSE</a></div>
+      <div class="hero-jp">鬼滅の刃 · ufotable</div>
+      <h1 class="hero-title">DEMON SLAYER</h1>
+      <div class="hero-meta">
+        <div class="hm-item"><span class="val">★ 8.7</span></div>
+        <div class="hm-item"><span class="val">2019</span></div>
+        <div class="hm-item"><span class="val">44</span> EP</div>
+        <div class="hm-item">ufotable</div>
+      </div>
+      <p class="hero-tagline">"THE MOST BEAUTIFUL THING UFOTABLE EVER MADE IS A BOY BREATHING FIRE."</p>
+      <div class="hero-tags">
+        <span class="htag">ACTION</span>
+        <span class="htag">SUPERNATURAL</span>
+        <span class="htag">FAMILY</span>
+        <span class="htag">BREATHTAKING</span>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- BODY -->
+<div class="body-wrap">
+  <div class="body-main">
+    <span class="slabel">// THE.POST</span>
+    <h2 class="post-title">WHY <span class="hl">DEMON</span> SLAYER HITS.</h2>
+    <div class="editorial-box">
+      <p>Demon Slayer looks like a million dollars because it literally cost that per frame. But the secret isn't the animation — it's Tanjiro. In a genre full of revenge-obsessed protagonists, here's a boy who kills demons and mourns them. His gentleness in a brutal world is the whole thesis.</p>
+      <hr class="dashed-rule" />
+      <div class="synopsis-label">SYNOPSIS</div>
+      <p class="synopsis-text">Tanjiro Kamado returns home to find his family slaughtered by demons and his sister Nezuko turned into one. He becomes a Demon Slayer to find a cure for Nezuko and avenge his family — never losing his fundamental kindness, even toward his enemies.</p>
+      <div class="hashtags">
+        <span class="hashtag">#ACTION</span>
+        <span class="hashtag">#SUPERNATURAL</span>
+        <span class="hashtag">#FAMILY</span>
+        <span class="hashtag">#BREATHTAKING</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="body-sidebar">
+    <div class="vibe-card">
+      <span class="slabel">// VIBE.CHECK</span>
+      <div class="vibe-title">THE MOOD</div>
+      <div class="vibe-list">
+        <div class="vibe-item"><div class="vcheck">✓</div> ACTION</div>
+        <div class="vibe-item"><div class="vcheck">✓</div> SUPERNATURAL</div>
+        <div class="vibe-item"><div class="vcheck">✓</div> FAMILY</div>
+        <div class="vibe-item"><div class="vcheck">✓</div> BREATHTAKING</div>
+      </div>
+      <a href="/discover" class="btn-list">+ ADD TO MY LIST</a>
+    </div>
+  </div>
+</div>
+
+<!-- SIMILAR -->
+<div class="similar-section">
+  <div class="similar-head">
+    <span class="sim-label">// 類似作品</span>
+    <h2 class="sim-heading">IF YOU LOVED THIS,<br>YOU'LL <span class="hl">OBSESS</span> OVER</h2>
+  </div>
+  <div class="sim-cards">
+    <a href="/browse/fullmetal-alchemist" class="sim-card" style="transform:rotate(-1.5deg)">
+      <div class="sim-art" style="background:linear-gradient(135deg,#f0b020 0%,#8b2000 50%,#1a0a00 100%)">
+        ⚗️
+        <div class="sim-score">★ 9.1</div>
+        <div class="sim-ep">64 EP</div>
+        <div class="sim-jp">鋼の錬金術師</div>
+      </div>
+      <div class="sim-body">
+        <div class="sim-title">FULLMETAL ALCHEMIST</div>
+        <div class="sim-tagline">"Two brothers against the laws of the universe."</div>
+        <div class="sim-tags"><span class="sim-tag">ACTION</span><span class="sim-tag">PHILOSOPHY</span></div>
+      </div>
+    </a>
+    <a href="/browse/attack-on-titan" class="sim-card" style="transform:rotate(1.5deg)">
+      <div class="sim-art" style="background:linear-gradient(135deg,#1e1e1e 0%,#8b1414 50%,#3c3c3c 100%)">
+        ⚔️
+        <div class="sim-score">★ 9.0</div>
+        <div class="sim-ep">87 EP</div>
+        <div class="sim-jp">進撃の巨人</div>
+      </div>
+      <div class="sim-body">
+        <div class="sim-title">ATTACK ON TITAN</div>
+        <div class="sim-tagline">"What you fight is what you become."</div>
+        <div class="sim-tags"><span class="sim-tag">ACTION</span><span class="sim-tag">DARK FANTASY</span></div>
+      </div>
+    </a>
+    <a href="/browse/haikyuu" class="sim-card" style="transform:rotate(-1.5deg)">
+      <div class="sim-art" style="background:linear-gradient(135deg,#e08000 0%,#0a0a0a 50%,#3c3c3c 100%)">
+        🏐
+        <div class="sim-score">★ 8.7</div>
+        <div class="sim-ep">85 EP</div>
+        <div class="sim-jp">ハイキュー!!</div>
+      </div>
+      <div class="sim-body">
+        <div class="sim-title">HAIKYUU!!</div>
+        <div class="sim-tagline">"No magic powers. Just will."</div>
+        <div class="sim-tags"><span class="sim-tag">SPORTS</span><span class="sim-tag">FOUND FAMILY</span></div>
+      </div>
+    </a>
+  </div>
+</div>
+
+<!-- CTA -->
+<div class="cta">
+  <span class="cta-label">// 入信 — WANT MORE LIKE THIS?</span>
+  <h2 class="cta-title">GET PICKS <span class="hl">MATCHED</span><br>TO YOUR TASTE.</h2>
+  <div class="cta-btns">
+    <a href="/discover" class="btn btn-acid">START TASTE CHECK →</a>
+    <a href="/browse" class="btn btn-ghost">← BACK TO BROWSE</a>
+  </div>
+</div>
+
+<footer>
+  <div class="foot-inner">
+    <div>
+      <div class="foot-logo">OTAKULT<span>.</span></div>
+      <p class="foot-desc">A maximalist anime recommendation engine for people who take their obsessions seriously.</p>
+    </div>
+    <div class="foot-links">
+      <a href="/discover">iOS</a>
+      <a href="/discover">Android</a>
+      <a href="/discover">Discord</a>
+      <a href="#">Press kit</a>
+      <a href="#">Manifesto</a>
+      <a href="#">Tag glossary</a>
+    </div>
+    <div class="foot-copy">
+      <p>© 2026 OTAKULT collective.</p>
+      <p>Hand-curated in Tokyo, Berlin, Oakland.</p>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
